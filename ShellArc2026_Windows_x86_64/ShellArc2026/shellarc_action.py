@@ -285,6 +285,12 @@ class BackendCommunication:
         )
         if not upload_status:
             return "UPLOAD ERROR"
+        upload_status = r2_service.upload_file(
+            local_file_path=current_local_path,
+            cloud_file_path=f"cg/asset/{asset_name}/backup_{datetime.datetime.now().strftime("%y%m%d%H%M%S")}.blend"
+        )
+        if not upload_status:
+            return "UPLOAD ERROR"
         BlenderOperation.delete_snapshot_dir()
         return asset_name
     
