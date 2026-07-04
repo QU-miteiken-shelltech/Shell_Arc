@@ -34,6 +34,28 @@ echo "pipをアップグレード中..."
 echo "ディペンデンシーをインストール中..."
 "${VENV_DIR}/bin/python3" -m pip install -e "${SCRIPT_DIR}"
 
+read -p "秘密鍵を入力してください: " secret_key
+export EXPORT_SECRET_KEY="$secret_key"
+export EXPORT_SCRIPT_DIR="$SCRIPT_DIR"
+
+${VENV_DIR}/bin/python3 << 'EOF'
+import os
+from cryptography.fernet import Fernet
+script_dir = os.environ.get("EXPORT_SCRIPT_DIR")
+secret_key = os.environ.get("EXPORT_SECRET_KEY", "")
+bin_path = os.path.join(script_dir, "project_ctx", ".env.bin")
+env_path = os.path.join(script_dir, "project_ctx", ".env")
+with open(bin_path, "rb") as f:
+    token = f.read()
+key = secret_key.encode("utf-8")
+decrypted_data = Fernet(key).decrypt(token).decode("utf-8")
+with open(env_path, "w", encoding="utf-8") as f:
+    f.write(decrypted_data)
+EOF
+
+unset EXPORT_SECRET_KEY
+unset EXPORT_SCRIPT_DIR
+
 echo "--------------------------------------------------"
 echo "設定を反映するには: source ~/.zshrc を実行してください"
 echo "以降は、ターミナルから 'shellarc' コマンドで起動できます"
@@ -47,6 +69,7 @@ function set_shortcut(){
 
     cat << EOF > "${APP_DIR}/Contents/MacOS/ShellArc_Desktop"
 #!/bin/bash
+export SHELLARC_PROJECT_CTX="${SCRIPT_DIR}/project_ctx"
 "${VENV_DIR}/bin/python3" "${SCRIPT_DIR}/shellarc_desktop/shellarc_desktop.py"
 EOF
 
