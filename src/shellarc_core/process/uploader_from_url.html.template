@@ -142,12 +142,22 @@
             const file = fileInput.files[0];
             if (!file) return;
 
-            // プレースホルダー文字列（Python等でこの部分を置換してください）
-            const presignedUrl = "__S3_PRESIGNED_URL_PLACEHOLDER_XYZ__";
+            // Pythonの json.dumps(url_dict) で生成されたオブジェクトがここに直接置換されます
+            const urlMap = __S3_PRESIGNED_JS_URLMAP_CONST__;
 
-            // 万が一置換されていない場合のチェック
-            if (presignedUrl.startsWith("__S3_")) {
-                alert("エラー: 署名付きURLが正しく設定されていません。HTMLファイル内のテンプレート文字列を置換してください。");
+            // 万が一置換されていない場合の初期チェック
+            if (typeof urlMap === 'undefined' || urlMap === null) {
+                alert("エラー: プレサインドURLマップが正しく設定されていません。");
+                return;
+            }
+
+            // 選択されたファイルの拡張子を小文字で抽出
+            const fileExt = file.name.split('.').pop().toLowerCase();
+            const presignedUrl = urlMap[fileExt];
+
+            // 拡張子がマップに登録されていない場合のチェック
+            if (!presignedUrl) {
+                alert(`エラー: 拡張子「.${fileExt}」はアップロードに対応していません。`);
                 return;
             }
 
@@ -162,7 +172,6 @@
                     method: 'PUT',
                     body: file,
                     headers: {
-                        // 必要に応じてヘッダーを追加
                         'Content-Type': file.type
                     }
                 });

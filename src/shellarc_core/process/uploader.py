@@ -1,5 +1,6 @@
 import os
 import tempfile
+import json
 from pathlib import Path
 
 from shellarc_core.cloudio.io_r2 import R2_IO
@@ -98,7 +99,8 @@ class ShellArc_Upload:
 
     async def _get_upload_url(self,
                              submitter_name: str,
-                             message: str=""
+                             message: str="", 
+                             required_format: str=""
                              ) -> str:
         """Get a presigned URL for uploading a file to the R2 storage based on the provided submitter name and message,
         and update the corresponding information in the Google Spreadsheet to reflect the new submission (Internal method).
@@ -110,7 +112,6 @@ class ShellArc_Upload:
         Returns:
             str: A presigned URL for uploading the file to the R2 storage.
             """
-        required_format = self.cfg_io.get_cfg_setting(Cfg_item.COMPONENT, self.working_component, "format")
         collection_name = self.cfg_io.get_cfg_setting(Cfg_item.COLL_NAME)
 
         file_index_name = await self.git_io.update_data(
@@ -157,14 +158,23 @@ class ShellArc_Upload:
                 which can be used for uploading the file to the R2 storage via the presigned URL included in the HTML page.
                 The temporary directory should be cleaned up after the upload process is completed to avoid leaving unnecessary files on the server.
         """
-        presigned_url = await self._get_upload_url(
-            submitter_name=submitter_name,
-            message=message
-        )
+        allowed_formats = self.cfg_io.get_cfg_setting(Cfg_item.COMPONENT, self.working_component, "format").split("|")
+        allowed_formats_url = {}
+        for required_format in allowed_formats:
+            presigned_url = await self._get_upload_url(
+                submitter_name=submitter_name,
+                message=message,
+                required_format=required_format
+            )
+            allowed_formats_url[required_format] = presigned_url
+        allowed_formats_url_jsonstr = json.dumps(allowed_formats_url)
         html_template_path = Path(__file__).resolve().parent / "uploader_from_url.html.template"
         with open(html_template_path, "r", encoding="utf-8") as f:
             html_template = f.read()
-        html_page_code = html_template.replace("__S3_PRESIGNED_URL_PLACEHOLDER_XYZ__", presigned_url)
+        html_page_code = html_template.replace(
+            "__S3_PRESIGNED_JS_URLMAP_CONST__", 
+            allowed_formats_url_jsonstr
+            )
         temp_dir = tempfile.mkdtemp()
         html_path = Path(temp_dir) / f"cut{self.cut_num}_uploader.html"
         with open(html_path, 'w', encoding='utf-8') as f:
