@@ -7,7 +7,8 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QPushButton, QGridLayout, QScrollArea,
     QVBoxLayout, QHBoxLayout, QListWidget,
-    QListWidgetItem, QLabel
+    QListWidgetItem, QLabel, QCheckBox,
+    QFileDialog, QDialog
 )
 from PySide6.QtCore import QStringListModel
 
@@ -16,6 +17,20 @@ from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
 
+class DownloadReportDialog(QDialog):
+    def __init__(self,
+                 fail_list: list,
+                 download_destination: str):
+        super().__init__()
+        self.setWindowTitle("ダウンロード結果")
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel(f"{download_destination} にダウンロードしました"))
+        if not fail_list:
+            layout.addWidget(QLabel("全ファイルダウンロード成功"))
+        else:
+            for failed_item in fail_list:
+                layout.addWidget(QLabel(f"{failed_item} が存在しません"))
+        self.setLayout(layout)
 
 class AppWindow(QMainWindow):
     def __init__(self):
@@ -34,6 +49,7 @@ class AppWindow(QMainWindow):
         self.make_util_btns()
 
         self.selected_items_buffer = {}
+        self.fail_list = []
 
         main_widget.setLayout(self.main_layout)
 
@@ -117,6 +133,9 @@ class AppWindow(QMainWindow):
         reset_btn = QPushButton("リセット")
         reset_btn.clicked.connect(self.reset_selection)
         h_layout.addWidget(reset_btn)
+        latest_only_checkbox = QCheckBox("最新のみ")
+        h_layout.addWidget(latest_only_checkbox)
+        latest_only_checkbox.setChecked(True)
         container.setLayout(h_layout)
         self.main_layout.addWidget(container)
 
@@ -151,26 +170,48 @@ class AppWindow(QMainWindow):
 
     def download_selected(self):
         current_items = [self.list_to_dl.item(i) for i in range(0, self.list_to_dl.count())]
+        if not current_items:
+            return
+        file_dialog = QFileDialog()
+        file_dialog.setDirectory(str(Path.home() / "Downloads"))
+        download_destination = file_dialog.getExistingDirectory(self, "フォルダ選択")
+        if not download_destination:
+            return
         for item in current_items:
             file_prefix = self.selected_items_buffer[item.text()]
             print(f"START : {file_prefix}")
             try:
                 if not file_prefix.startswith("storyboard"):
-                    self._dl_from_r2(file_prefix=file_prefix)
+                    self._dl_from_r2(
+                        file_prefix=file_prefix,
+                        download_destination=download_destination
+                        )
                 else:
-                    self._dl_storyboard(r2_path=file_prefix)
+                    self._dl_storyboard(
+                        r2_path=file_prefix,
+                        download_destination=download_destination
+                        )
             except:
                 continue
             print(file_prefix)
         self.list_to_dl.clear()
+        DownloadReportDialog(
+            fail_list=self.fail_list,
+            download_destination=download_destination
+        ).exec()
+        self.fail_list = []
 
     def reset_selection(self):
         self.list_to_dl.clear()
 
     def _dl_from_r2(self,
-                    file_prefix: str):
+                    file_prefix: str,
+                    download_destination: str):
         r2_io = R2_IO()
         paths = r2_io.get_paths_with_prefix(file_prefix=file_prefix)
+        if paths is None:
+            self.fail_list.append(file_prefix)
+            return
         def extract_timemark(paths):
             match = re.search(r"_(\d+)\.[^.]+$", paths)
             if match:
@@ -179,18 +220,20 @@ class AppWindow(QMainWindow):
         latest_path = max(paths, key=extract_timemark)
         r2_io.download_file(
             to_download_file=latest_path,
-            download_destination="/Users/shiinaayame/Downloads",
+            download_destination=download_destination,
             file_naming=latest_path.split("/")[-1]
         )
 
     def _dl_storyboard(self,
-                       r2_path: str):
+                       r2_path: str,
+                       download_destination: str):
         url_prefix = Cfg_IO().get_cfg_setting(Cfg_item.STORYBOARD_URL)
         image_url = f"{url_prefix}/{r2_path}"
         response = requests.get(image_url)
         if response.status_code != 200:
-            raise Exception
-        with open(Path("/Users/shiinaayame/Downloads") / f"layout_{r2_path.split('/')[-1]}", "wb") as f:
+            self.fail_list.append(r2_path)
+            return
+        with open(Path(download_destination) / f"layout_{r2_path.split('/')[-1]}", "wb") as f:
             f.write(response.content)
         
 

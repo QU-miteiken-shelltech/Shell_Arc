@@ -85,11 +85,13 @@ class R2_IO:
     
     def get_paths_with_prefix(self,
                               file_prefix: str
-                              ) -> list[str]:
+                              ) -> list[str] | None:
         response = self.s3_client.list_objects_v2(
             Bucket=self.bucket_name,
             Prefix=file_prefix
             )
+        if "Contents" not in response:
+            return None
         paths_list = [response["Contents"][i]["Key"] for i in range(0, len(response["Contents"]))]
         return paths_list
     
