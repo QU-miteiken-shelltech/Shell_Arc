@@ -39,7 +39,7 @@ class DownloadReportDialog(QDialog):
 class AppWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Button Grid")
+        self.setWindowTitle("ShellArc Desktop")
         self.resize(800, 600)
 
         main_widget = QWidget()
@@ -93,11 +93,21 @@ class AppWindow(QMainWindow):
                 progress_name = item_name.removesuffix("_progress")
 
                 progress = row_data[item_idx - 1]
-                btn = QPushButton(f"{row},{col}")
-                btn.setFixedSize(50, 30)
+                btn = QPushButton(f"{row}-{cfg_io.get_cfg_setting(Cfg_item.COMPONENT, progress_name, 'diaplay')}")
+                btn.setFixedSize(85, 35)
                 if progress == "作業中":
+                    if f"{progress_name}_PIC" in spreadsheet_map["items_0"]:
+                        person = row_data[spreadsheet_map["items_0"][f"{progress_name}_PIC"] - 1]
+                    else:
+                        person = " "
+                    btn.setText(person)
                     btn.setStyleSheet("background-color: #f9dc5c;")
                 elif progress == "完了":
+                    if f"{progress_name}_PIC" in spreadsheet_map["items_0"]:
+                        person = row_data[spreadsheet_map["items_0"][f"{progress_name}_PIC"] - 1]
+                    else:
+                        person = " "
+                    btn.setText(person)
                     btn.setStyleSheet("background-color: #81b29a;")
                 else:
                     btn.setStyleSheet("background-color: #ff8b94;")

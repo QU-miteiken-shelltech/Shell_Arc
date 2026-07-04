@@ -22,8 +22,10 @@ VENV_DIR="${SCRIPT_DIR}/venv"
 ALIAS_LINE="alias shellarc='${VENV_DIR}/bin/python3 ${SCRIPT_DIR}/shellarc_desktop/shellarc_desktop.py'"
 
 echo "環境設定を追記中..."
+echo "#Appended by ShellArc :" >> "$ZSHRC"
 grep -qxF "$ENV_LINE" "$ZSHRC" || echo "$ENV_LINE" >> "$ZSHRC"
 grep -qxF "$ALIAS_LINE" "$ZSHRC" || echo "$ALIAS_LINE" >> "$ZSHRC"
+echo "#ShellArc END" >> "$ZSHRC"
 
 echo "Python仮想環境を作成中..."
 python3 -m venv "${VENV_DIR}"
