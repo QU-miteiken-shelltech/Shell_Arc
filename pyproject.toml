@@ -21,7 +21,8 @@ dependencies = [
     "discord.py",
     "requests",
     "gspread-formatting",
-    "notion_client"
+    "notion_client",
+    "PySide6"
 ]
 requires-python = ">=3.9"
 authors = [
