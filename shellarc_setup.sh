@@ -2,6 +2,20 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+if ! command -v python3 &> /dev/null; then
+    echo "ShellArc を使うのに、Pythonをインストールする必要があります"
+    echo "Pythonをインストールしてください"
+    read -p "Pythonインストールのチュートリアルが必要ですか? (Y/n): " has_tutorial
+    if [ "$confirmation" = "Y" ] || [ "$confirmation" = "y" ]; then
+        cat ${SCRIPT_DIR}/python_install_tutorial.txt
+    else
+        :
+    fi
+    exit 1 
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "export SHELLARC_PROJECT_CTX=\"${SCRIPT_DIR}/project_ctx\"" >> ~/.zshrc
 
 VENV_DIR="${SCRIPT_DIR}/venv"
