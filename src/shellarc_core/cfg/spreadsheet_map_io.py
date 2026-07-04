@@ -64,4 +64,7 @@ class SpreadsheetMap_IO:
                 error_code=SA_ErrorCode.SA_4102
             )
         return vert_offset
+    
+    def get_spreadsheet_map_raw(self) -> dict:
+        return self.spreadsheet_map
         
