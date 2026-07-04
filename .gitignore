@@ -12,3 +12,4 @@ project_setting.yaml
 *.zip
 **/keys/**
 docker-compose.yml
+**/venv/**
