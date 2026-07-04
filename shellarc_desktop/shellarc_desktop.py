@@ -1,4 +1,8 @@
 import sys
+import re
+import requests
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QPushButton, QGridLayout, QScrollArea,
@@ -7,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QStringListModel
 
+from shellarc_core.cloudio.io_r2 import R2_IO
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
@@ -65,20 +70,26 @@ class AppWindow(QMainWindow):
             for item_name, item_idx in spreadsheet_map["items_0"].items():
                 if not item_name.endswith("_progress"):
                     continue
+                progress_name = item_name.removesuffix("_progress")
 
                 progress = row_data[item_idx - 1]
                 btn = QPushButton(f"{row},{col}")
                 btn.setFixedSize(50, 30)
                 if progress == "作業中":
-                    btn.setStyleSheet("background-color: yellow;")
+                    btn.setStyleSheet("background-color: #f9dc5c;")
                 elif progress == "完了":
-                    btn.setStyleSheet("background-color: green;")
+                    btn.setStyleSheet("background-color: #81b29a;")
                 else:
-                    btn.setStyleSheet("background-color: red;")
+                    btn.setStyleSheet("background-color: #ff8b94;")
                     btn.setEnabled(False)
 
                 btn.clicked.connect(
-                    lambda checked=False, r=row, c=col: self.select_item_action(r, c)
+                    lambda checked=False,
+                    cut=row,
+                    progress=progress_name
+                    : self.select_item_action(
+                        cut=cut,
+                        progress=progress)
                 )
 
                 grid.addWidget(btn, row, col)
@@ -109,15 +120,19 @@ class AppWindow(QMainWindow):
         container.setLayout(h_layout)
         self.main_layout.addWidget(container)
 
-    def select_item_action(self, 
-                           row: int,
-                           col: int):
+    def select_item_action(self,
+                           cut: int, 
+                           progress: str):
         current_items = [self.list_to_dl.item(i).text() for i in range(0, self.list_to_dl.count())]
-        item_to_add_display = f"{row}-{col}をダウンロード"
-        item_to_add_internal = f"{row}-{col}_internal"
+        cfg_io = Cfg_IO()
+        item_to_add_display = f"カット{cut} - {cfg_io.get_cfg_setting(Cfg_item.COMPONENT, progress, 'diaplay')}"
+        if progress != "layout":
+            item_to_add_internal = f"{cfg_io.get_cfg_setting(Cfg_item.COLL_NAME)}/stage/cut{cut}_{progress}"
+        else:
+            item_to_add_internal = f"storyboard/cut{cut}.png"
         if item_to_add_display in current_items:
             return 
-        self.list_to_dl.addItem(f"{row}-{col}をダウンロード")
+        self.list_to_dl.addItem(item_to_add_display)
         self.selected_items_buffer[item_to_add_display] = item_to_add_internal
 
     def list_item_selected(self):
@@ -135,10 +150,49 @@ class AppWindow(QMainWindow):
 
 
     def download_selected(self):
-        print("Hello")
+        current_items = [self.list_to_dl.item(i) for i in range(0, self.list_to_dl.count())]
+        for item in current_items:
+            file_prefix = self.selected_items_buffer[item.text()]
+            print(f"START : {file_prefix}")
+            try:
+                if not file_prefix.startswith("storyboard"):
+                    self._dl_from_r2(file_prefix=file_prefix)
+                else:
+                    self._dl_storyboard(r2_path=file_prefix)
+            except:
+                continue
+            print(file_prefix)
+        self.list_to_dl.clear()
 
     def reset_selection(self):
         self.list_to_dl.clear()
+
+    def _dl_from_r2(self,
+                    file_prefix: str):
+        r2_io = R2_IO()
+        paths = r2_io.get_paths_with_prefix(file_prefix=file_prefix)
+        def extract_timemark(paths):
+            match = re.search(r"_(\d+)\.[^.]+$", paths)
+            if match:
+                return int(match.group(1))
+            return -1  
+        latest_path = max(paths, key=extract_timemark)
+        r2_io.download_file(
+            to_download_file=latest_path,
+            download_destination="/Users/shiinaayame/Downloads",
+            file_naming=latest_path.split("/")[-1]
+        )
+
+    def _dl_storyboard(self,
+                       r2_path: str):
+        url_prefix = Cfg_IO().get_cfg_setting(Cfg_item.STORYBOARD_URL)
+        image_url = f"{url_prefix}/{r2_path}"
+        response = requests.get(image_url)
+        if response.status_code != 200:
+            raise Exception
+        with open(Path("/Users/shiinaayame/Downloads") / f"layout_{r2_path.split('/')[-1]}", "wb") as f:
+            f.write(response.content)
+        
 
 
 

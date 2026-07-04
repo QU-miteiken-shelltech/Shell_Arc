@@ -83,6 +83,16 @@ class R2_IO:
         exact_path_w_ext = response["Contents"][0]["Key"]
         return exact_path_w_ext
     
+    def get_paths_with_prefix(self,
+                              file_prefix: str
+                              ) -> list[str]:
+        response = self.s3_client.list_objects_v2(
+            Bucket=self.bucket_name,
+            Prefix=file_prefix
+            )
+        paths_list = [response["Contents"][i]["Key"] for i in range(0, len(response["Contents"]))]
+        return paths_list
+    
     @overload
     def upload_file(self, 
                     uploading_file: bytes | str | Path,
