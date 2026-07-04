@@ -17,6 +17,10 @@ from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
 
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.append(str(Path(__file__).resolve().parent))
+from resolve_version import ResolveWindow
+
 class DownloadReportDialog(QDialog):
     def __init__(self,
                  fail_list: list,
@@ -133,9 +137,9 @@ class AppWindow(QMainWindow):
         reset_btn = QPushButton("リセット")
         reset_btn.clicked.connect(self.reset_selection)
         h_layout.addWidget(reset_btn)
-        latest_only_checkbox = QCheckBox("最新のみ")
-        h_layout.addWidget(latest_only_checkbox)
-        latest_only_checkbox.setChecked(True)
+        self.latest_only_checkbox = QCheckBox("最新のみ")
+        h_layout.addWidget(self.latest_only_checkbox)
+        self.latest_only_checkbox.setChecked(True)
         container.setLayout(h_layout)
         self.main_layout.addWidget(container)
 
@@ -213,16 +217,23 @@ class AppWindow(QMainWindow):
             self.fail_list.append(file_prefix)
             return
         def extract_timemark(paths):
-            match = re.search(r"_(\d+)\.[^.]+$", paths)
-            if match:
-                return int(match.group(1))
-            return -1  
-        latest_path = max(paths, key=extract_timemark)
-        r2_io.download_file(
-            to_download_file=latest_path,
-            download_destination=download_destination,
-            file_naming=latest_path.split("/")[-1]
-        )
+                match = re.search(r"_(\d+)\.[^.]+$", paths)
+                if match:
+                    return int(match.group(1))
+                return -1 
+        if len(paths) > 1 and not self.latest_only_checkbox.isChecked():
+            ResolveWindow(
+                version_list=sorted(paths, key=extract_timemark, reverse=True),
+                file_prefix=file_prefix,
+                download_destination=download_destination
+            ).exec()
+        else:
+            latest_path = max(paths, key=extract_timemark)
+            r2_io.download_file(
+                to_download_file=latest_path,
+                download_destination=download_destination,
+                file_naming=latest_path.split("/")[-1]
+            )
 
     def _dl_storyboard(self,
                        r2_path: str,
