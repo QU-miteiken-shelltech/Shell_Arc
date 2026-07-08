@@ -49,7 +49,7 @@ class ShellArc_Request:
         if requesting_take == "0":
             branch = ShellArcGitBranch.MAIN
             commit_id = None
-            frontend_msg_whenerror = "確定データはまだありません"
+            frontend_msg_whenerror = "確定データはまだありません\n（作業中データを取得する場合、「..check」でお願いします）"
         elif requesting_take == "-1":
             branch = ShellArcGitBranch.PENDING
             commit_id = None
