@@ -1,6 +1,7 @@
 import tempfile
 import datetime
 import os
+import asyncio
 import time
 from typing import overload, Union
 from pathlib import Path
@@ -177,7 +178,7 @@ class R2_IO:
                 to_download_file,
                 f"{download_destination}/{file_naming}"
             )
-            time.sleep(1)
+            asyncio.sleep(0.3)
         except Exception as e:
             raise SA_CommunicationError(
                 error_log=f"Communication error with R2 when downloading [{e}]",

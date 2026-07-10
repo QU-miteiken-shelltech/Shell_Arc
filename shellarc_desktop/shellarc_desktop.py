@@ -20,6 +20,7 @@ from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.append(str(Path(__file__).resolve().parent))
 from resolve_version import ResolveWindow
+from updater import UpdateWindow, AskRestartDialog
 
 class DownloadReportDialog(QDialog):
     def __init__(self,
@@ -258,11 +259,20 @@ class AppWindow(QMainWindow):
             f.write(response.content)
         
 
-
-
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = AppWindow()
-    window.show()
-    sys.exit(app.exec())
+
+    do_draw_main = True
+    update_available_status = UpdateWindow.check_available_update()
+    if update_available_status > 0:
+        update_dialog = UpdateWindow(update_available_status=update_available_status)
+        if update_dialog.exec() == QDialog.DialogCode.Accepted:
+            do_draw_main = False
+            AskRestartDialog().exec()
+
+    if do_draw_main:
+        window = AppWindow()
+        window.show()
+        sys.exit(app.exec())
+    else:
+        sys.exit(0)
