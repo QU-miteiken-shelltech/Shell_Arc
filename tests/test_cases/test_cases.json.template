@@ -1,9 +1,0 @@
-{
-    "id" : "xxxxxx",
-    "description" : "This is a template",
-    "testing_module" : "testingtesting",
-    "input" : "123",
-    "input_type" : "str",
-    "expected_output" : "456",
-    "expected_exception" : null
-}

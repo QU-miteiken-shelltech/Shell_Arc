@@ -33,7 +33,7 @@ from shellarc_core.exception.user_exception import ShellArcException
 
 # from .discord_notice_webhook import DiscordNotice as Notice
 
-ONOFF = True
+ONOFF: bool = True
 
 load_dotenv(verbose=True)
 project_ctx_dir = Path(os.environ.get("SHELLARC_PROJECT_CTX", None))
