@@ -337,8 +337,15 @@ async def on_push_action(interaction: discord.Interaction,
     if len(msg_splitted) > 1:
         if not msg_splitted[1].endswith("*"):
             git_message = msg_splitted[1]
-            if len(msg_splitted) > 2 and msg_splitted[2].endswith("*"):
-                submitting_person = msg_splitted[2].rstrip("*")
+            if len(msg_splitted) > 2:
+                if msg_splitted[2].endswith("*"):
+                    submitting_person = msg_splitted[2].rstrip("*")
+                else:
+                    await interaction.edit_original_response(
+                        content="提出を代行するには、代理対象の名前の後ろに*（半角）をつけてください\n意図せぬ誤提出を防ぐため本提出を棄却します", 
+                        view=None
+                        )
+                    return
         else:
             submitting_person = msg_splitted[1].rstrip("*")
     upload_page_path = ""
