@@ -331,8 +331,16 @@ async def on_push_action(interaction: discord.Interaction,
                          submitting_component, 
                          submitting_person
                          ):
+    msg_splitted = message.content.split(" ")
     submitting_component_en = component_name_j2e.get(submitting_component, submitting_component)
-    git_message = message.content.split(" ")[1] if len(message.content.split(" ")) > 1 else ""
+    git_message = ""
+    if len(msg_splitted) > 1:
+        if not msg_splitted[1].endswith("*"):
+            git_message = msg_splitted[1]
+            if len(msg_splitted) > 2 and msg_splitted[2].endswith("*"):
+                submitting_person = msg_splitted[2].rstrip("*")
+        else:
+            submitting_person = msg_splitted[1].rstrip("*")
     upload_page_path = ""
     temp_dir = ""
     try:
