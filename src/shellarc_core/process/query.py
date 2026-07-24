@@ -1,3 +1,5 @@
+import re
+
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.cloudio.io_git import Git_IO, SA_GitLogFilter, SA_CommitType, ShellArcGitBranch
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO
@@ -119,6 +121,24 @@ class ShellArc_Query:
             limit_scope=json_file_path
         )
         return hist_dict
+
+
+    @staticmethod
+    async def get_pending_status(is_raw: bool = False) -> str | list[tuple[int, str]]:
+        git_io = Git_IO()
+        pending_status = await git_io.get_pending_status()
+        if is_raw:
+            return pending_status
+        pending_status_ls = pending_status.split("\n")
+        pattern = r"cut(\d+).*\.sa_pending_(.+)"
+        rtn_list = []
+        for s in pending_status_ls:
+            match = re.search(pattern, s)
+            cut_num = int(match.group(1))
+            component = str(match.group(2))
+            rtn_list.append((cut_num, component))
+        return rtn_list
+
     
 
     @staticmethod

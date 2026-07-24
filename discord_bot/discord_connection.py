@@ -793,6 +793,19 @@ async def makech(ctx):
 
     await message.channel.send("完了です")
 
+
+@shell_arc_bot.command()
+async def status(ctx):
+    message: discord.Message = ctx.message
+    if message.author.bot: 
+        return
+    pending_status = await ShellArc_Query.get_pending_status(is_raw=False)
+    rtn_msg = ""
+    for s in pending_status:
+        rtn_msg += f"カット{s[0]} - {component_name_e2j.get(s[1], s[1])}\n"
+    await message.channel.send(rtn_msg)
+    
+
 @shell_arc_bot.command()
 async def onoff(ctx):
     global ONOFF

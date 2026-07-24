@@ -309,6 +309,20 @@ class Git_IO:
             if log_filter.log_length is not None and len(rtn) >= log_filter.log_length:
                 break
         return rtn
+
+
+    async def get_pending_status(self) -> str:
+        await self._continuous_git_command([[GitCommands.CHECKOUT, ShellArcGitBranch.PENDING]])
+        git_statuscheck_proc = await self._git_command(GitCommands.STATUS, "--porcelain")
+        stdout, stderr = await git_statuscheck_proc.communicate()
+        if git_statuscheck_proc.returncode != 0:
+            print(stderr.decode('utf-8'))
+            raise SA_LocalIOError(
+                error_log=f"A git command error : {stderr.decode('utf-8')}",
+                error_code=SA_ErrorCode.SA_8002
+            )
+        status_str = stdout.decode("utf-8").strip()
+        return status_str
     
 
     async def repoint_data(self,
@@ -378,7 +392,7 @@ class Git_IO:
                         is_approve: bool,
                         message: str=""
                         ) -> None:
-        """Pend the specified component data for approval or decline in the git repository,
+        """Pend the specified component data for approval or decline in the git repusository,
         by creating a new commit in the pending branch with the approval or decline information, and removing the pending status file for the component.
 
         Args:
