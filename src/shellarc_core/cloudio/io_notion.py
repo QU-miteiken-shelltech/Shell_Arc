@@ -80,6 +80,7 @@ class Notion_IO:
                         }
                     ]
         if self.cut_num > len(self.notion_db["results"]):
+            print(self.notion_db["results"])
             raise SA_InvalidRequestObj(
                 error_log="Requesting lo of an unexisting cut",
                 frontend_msg=f"カット{self.cut_num}のLOはまだ準備されていません"
@@ -95,4 +96,4 @@ class Notion_IO:
                 error_log="Request failed when uploadng image url to Notion",
                 error_code=SA_ErrorCode.SA_3000
             )
-        
+

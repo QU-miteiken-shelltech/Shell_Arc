@@ -339,6 +339,7 @@ async def on_push_action(interaction: discord.Interaction,
             git_message = msg_splitted[1]
             if len(msg_splitted) > 2:
                 if msg_splitted[2].endswith("*"):
+                    git_message += f" -agent by {submitting_person}"
                     submitting_person = msg_splitted[2].rstrip("*")
                 else:
                     await interaction.edit_original_response(
@@ -347,6 +348,7 @@ async def on_push_action(interaction: discord.Interaction,
                         )
                     return
         else:
+            git_message += f" -agent by {submitting_person}"
             submitting_person = msg_splitted[1].rstrip("*")
     upload_page_path = ""
     temp_dir = ""
