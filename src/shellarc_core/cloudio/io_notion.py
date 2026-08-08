@@ -18,7 +18,7 @@ class Notion_IO:
         self.notion_db = self.notion.data_sources.query(data_source_id = data_source_id)
         requied_page = ((cut_num - 1) // 100) + 1
         if requied_page > 1:
-            for _ in range(0,requied_page - 1):
+            for _ in range(0, requied_page - 1):
                 next_cursor = self.notion_db.get("next_cursor")
                 if not next_cursor: 
                     break
@@ -27,20 +27,21 @@ class Notion_IO:
                     start_cursor=next_cursor
                 )
         self.cut_num = cut_num
+        self.offset_cut_num = self.cut_num - (requied_page - 1) * 100
 
     def get_image_url(self,
                       attr_name: str="画像"
                       ) -> str:
-        if self.cut_num > len(self.notion_db["results"]):
+        if self.offset_cut_num > len(self.notion_db["results"]):
             raise SA_InvalidRequestObj(
                 error_log="Requesting lo of an unexisting cut",
                 frontend_msg=f"カット{self.cut_num}のLOはまだ存在しません"
             )
-        notion_response_files = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]
+        notion_response_files = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]
         if "files" in notion_response_files:
-            image_url = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]["file"]["url"]
+            image_url = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]["file"]["url"]
         elif "external" in notion_response_files:
-            image_url = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]["external"]["url"]
+            image_url = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]["external"]["url"]
         else:
             raise SA_CommunicationError(
                 error_log="Required key not in notion response",
@@ -54,16 +55,16 @@ class Notion_IO:
                        ) -> None:
         if isinstance(download_destination, Path):
             download_destination = str(download_destination)
-        if self.cut_num > len(self.notion_db["results"]):
+        if self.offset_cut_num > len(self.notion_db["results"]):
             raise SA_InvalidRequestObj(
                 error_log="Requesting lo of an unexisting cut",
                 frontend_msg=f"カット{self.cut_num}のLOはまだ存在しません"
             )
-        notion_response_files = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]
+        notion_response_files = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]
         if "files" in notion_response_files:
-            image_url = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]["file"]["url"]
+            image_url = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]["file"]["url"]
         elif "external" in notion_response_files:
-            image_url = self.notion_db["results"][self.cut_num * -1]["properties"][attr_name]["files"][0]["external"]["url"]
+            image_url = self.notion_db["results"][self.offset_cut_num * -1]["properties"][attr_name]["files"][0]["external"]["url"]
         else:
             raise SA_CommunicationError(
                 error_log="Required key not in notion response",
@@ -89,13 +90,15 @@ class Notion_IO:
                             "external": {"url": img_url}
                         }
                     ]
-        if self.cut_num > len(self.notion_db["results"]):
+        if self.offset_cut_num > len(self.notion_db["results"]):
             print(len(self.notion_db["results"]))
             raise SA_InvalidRequestObj(
                 error_log="Requesting lo of an unexisting cut",
                 frontend_msg=f"カット{self.cut_num}のLOはまだ準備されていません"
             )
-        target_page_id = self.notion_db["results"][self.cut_num * -1]["id"]
+        print(self.notion_db["results"])
+        print(len(self.notion_db["results"]))
+        target_page_id = self.notion_db["results"][self.offset_cut_num * -1]["id"]
         try:
             self.notion.pages.update(
                 page_id=target_page_id,
