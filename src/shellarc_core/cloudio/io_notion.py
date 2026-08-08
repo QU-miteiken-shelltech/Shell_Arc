@@ -105,6 +105,8 @@ class Notion_IO:
                 error_log="Requesting lo of an unexisting cut",
                 frontend_msg=f"カット{self.cut_num}のLOはまだ準備されていません"
             )
+        print(target_page_id = self.notion_db["results"][self.offset_cut_num * -1])
+        print(len(self.notion_db["results"]))
         target_page_id = self.notion_db["results"][self.offset_cut_num * -1]["id"]
 
         try:
