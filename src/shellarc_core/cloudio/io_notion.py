@@ -16,6 +16,16 @@ class Notion_IO:
         self.database_id = str(Cfg_IO().get_cfg_setting(Cfg_item.NOTION_DBID))
         data_source_id = self.notion.databases.retrieve(self.database_id)['data_sources'][0]['id']
         self.notion_db = self.notion.data_sources.query(data_source_id = data_source_id)
+        requied_page = ((cut_num - 1) // 100) + 1
+        if requied_page > 1:
+            for _ in range(0,requied_page - 1):
+                next_cursor = self.notion_db.get("next_cursor")
+                if not next_cursor: 
+                    break
+                self.notion_db = self.notion.data_sources.query(
+                    data_source_id=data_source_id,
+                    start_cursor=next_cursor
+                )
         self.cut_num = cut_num
         if cut_num < 100:
             self.offset_cut_num = self.cut_num
