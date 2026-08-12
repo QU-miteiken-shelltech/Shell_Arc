@@ -100,6 +100,7 @@ class ShellArcEvents(Enum):
     REG_Event = "register_action"
     UP_Event = "push_action"
     APPR_Event = "reviewing_action"
+    REG_DCONLY_EVENT = "on_register_dconly_action"
 
 
 
@@ -249,6 +250,16 @@ class ShellArcDropdown(discord.ui.Select):
                     processing_take
                 )
             elif self.sa_action == ShellArcActions.REG:
+                is_dconly = len(self.message.content.split(" ")) > 1 and self.message.content.split(" ")[1] == "o"
+                if is_dconly:
+                    shell_arc_bot.dispatch(
+                        ShellArcEvents.REG_DCONLY_EVENT.value,
+                        interaction,
+                        self.message,
+                        processing_cut,
+                        processing_component
+                    )
+                    return
                 is_force = len(self.message.content.split(" ")) > 1 and self.message.content.split(" ")[1] == "f"
                 processing_person = str(self.message.content.split(" ")[2]) if len(self.message.content.split(" ")) > 2 else processing_person
                 shell_arc_bot.dispatch(
@@ -531,16 +542,53 @@ async def on_register_action(interaction: discord.Interaction,
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
         return
 
-    current_channel_name = interaction.channel.name.split(channel_name_divider)
-    if len(current_channel_name) > 1:
-        current_channel_name[1] = registering_person
-    else:
-        current_channel_name.append(registering_person)
-    new_channel_name = channel_name_divider.join(current_channel_name)
     if "*" not in message.content:
+        current_channel_name = interaction.channel.name.split(channel_name_divider)
+        if len(current_channel_name) > 1:
+            current_channel_name[1] = registering_person
+        else:
+            current_channel_name.append(registering_person)
+        new_channel_name = channel_name_divider.join(current_channel_name)
         await interaction.channel.edit(name=new_channel_name)
     await interaction.edit_original_response(content=f"{registering_person}をカット{registering_cut} {registering_component}に登録しました", view=None)
     #await interaction.channel.send(f"..remind {deadline} あしたカット{registering_cut}の締切だよ {message.author.id}")
+
+async def on_register_dconly_action(interaction: discord.Interaction,
+                                    message: discord.Message,
+                                    registering_cut,
+                                    registering_component
+                                    ):
+    try:
+        registering_component_en = component_name_j2e.get(registering_component, registering_component)
+        get_info_type_name = f"{registering_component_en}_PIC"
+        component_pic = await ShellArc_Query.get_spreadsheet_info(
+            info_type=get_info_type_name,
+            cut_num=registering_cut
+        )
+    except ShellArcException as e:
+        await interaction.edit_original_response(content=e.frontend_msg, view=None)
+        return
+    except ShellArcError as e:
+        await interaction.edit_original_response(content=e.frontend_msg, view=None)
+        return
+    except Exception as e:
+        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        tb = traceback.format_exc()
+        error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
+        print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
+        return
+    current_channel_name = interaction.channel.name.split(channel_name_divider)
+    if len(current_channel_name) > 1:
+        current_channel_name[1] = component_pic
+    else:
+        current_channel_name.append(component_pic)
+    new_channel_name = channel_name_divider.join(current_channel_name)
+
+    if component_pic:
+        await interaction.channel.edit(name=new_channel_name)
+        await interaction.edit_original_response(content="スイッチできました", view=None)
+    else:
+        await interaction.edit_original_response(content="担当データが見つかりませんでした", view=None)
 
 
 

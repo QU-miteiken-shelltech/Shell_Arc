@@ -91,6 +91,17 @@ class ShellArc_Query:
         """
         git_io = Git_IO()
         return git_io.get_components(cut_num=cut_num)
+
+    @staticmethod
+    async def get_spreadsheet_info(info_type: str,
+                                   cut_num: int,
+                                   page_idx: int=0
+                                   ) -> str | None:
+        gcp_io = GCP_IO()
+        rtn = gcp_io.get_info(
+            info_type=info_type,
+            cut_num=cut_num)
+        return str(rtn)
     
 
     @staticmethod
