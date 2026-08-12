@@ -102,6 +102,7 @@ class ShellArc_Upload:
                              message: str="", 
                              required_format: str=""
                              ) -> str:
+        # DEPREACTED
         """Get a presigned URL for uploading a file to the R2 storage based on the provided submitter name and message,
         and update the corresponding information in the Google Spreadsheet to reflect the new submission (Internal method).
 
@@ -158,14 +159,39 @@ class ShellArc_Upload:
                 The temporary directory should be cleaned up after the upload process is completed to avoid leaving unnecessary files on the server.
         """
         allowed_formats = self.cfg_io.get_cfg_setting(Cfg_item.COMPONENT, self.working_component, "format").split("|")
+        collection_name = self.cfg_io.get_cfg_setting(Cfg_item.COLL_NAME)
+        file_index_name = await self.git_io.update_data(
+            cut_num=self.cut_num,
+            component=self.working_component,
+            creator_name=submitter_name,
+            message=message
+        )
         allowed_formats_url = {}
         for required_format in allowed_formats:
-            presigned_url = await self._get_upload_url(
-                submitter_name=submitter_name,
-                message=message,
-                required_format=required_format
+            presigned_url = self.r2_io.issue_presigned_url(
+                target_s3_file=f"{collection_name}/stage/{file_index_name}.{required_format}",
+                url_client_method="put_object",
+                http_method="PUT",
+                time_limit=300
             )
             allowed_formats_url[required_format] = presigned_url
+        await self.git_io.update_data(
+            cut_num=self.cut_num,
+            component=self.working_component,
+            creator_name=submitter_name,
+            message=message
+        )
+        self.gcp_io.update_info(
+            info_type=f"{self.working_component}_PIC",
+            cut_num=self.cut_num,
+            new_value=submitter_name
+        )
+        self.gcp_io.update_info(
+            info_type=f"{self.working_component}_progress",
+            cut_num=self.cut_num,
+            new_value="作業中"
+        )
+
         allowed_formats_url_jsonstr = json.dumps(allowed_formats_url)
         html_template_path = Path(__file__).resolve().parent / "uploader_from_url.html.template"
         with open(html_template_path, "r", encoding="utf-8") as f:

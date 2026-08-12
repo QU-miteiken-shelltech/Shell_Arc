@@ -484,7 +484,7 @@ class Git_IO:
                 json.dump(current_component_info, f, ensure_ascii=False, indent=3)
             git_commands = [
                 [GitCommands.ADD, f"stage/cut{cut_num}/{component}.json"],
-                [GitCommands.COMMIT, "-m", f"{SA_CommitType.SUBMIT} * {cut_num} * {component} * {creator_name} * {message} * {self._get_timemark} * {file_index_name}"]
+                [GitCommands.COMMIT, "-m", f"{SA_CommitType.SUBMIT} * {cut_num} * {component} * {creator_name} * {message} * {file_index_name.split('_')[-1]} * {file_index_name}"]
             ]
             await self._continuous_git_command(git_commands=git_commands)
             with open(self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}", "w") as f:
