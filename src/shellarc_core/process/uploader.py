@@ -141,7 +141,6 @@ class ShellArc_Upload:
 
         return presigned_url
     
-
     async def get_upload_page(self,
                               submitter_name: str,
                               message: str
