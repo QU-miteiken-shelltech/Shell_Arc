@@ -537,7 +537,8 @@ async def on_register_action(interaction: discord.Interaction,
     else:
         current_channel_name.append(registering_person)
     new_channel_name = channel_name_divider.join(current_channel_name)
-    await interaction.channel.edit(name=new_channel_name)
+    if "*" not in message.content:
+        await interaction.channel.edit(name=new_channel_name)
     await interaction.edit_original_response(content=f"{registering_person}をカット{registering_cut} {registering_component}に登録しました", view=None)
     #await interaction.channel.send(f"..remind {deadline} あしたカット{registering_cut}の締切だよ {message.author.id}")
 
