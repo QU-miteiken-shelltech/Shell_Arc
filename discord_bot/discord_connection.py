@@ -394,7 +394,7 @@ async def on_push_action(interaction: discord.Interaction,
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -454,7 +454,7 @@ async def on_reviewing_action(interaction: discord.Interaction,
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -502,7 +502,7 @@ async def on_download_action(interaction: discord.Interaction,
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -536,7 +536,7 @@ async def on_register_action(interaction: discord.Interaction,
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -572,7 +572,7 @@ async def on_register_dconly_action(interaction: discord.Interaction,
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await interaction.edit_original_response(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -776,7 +776,7 @@ async def sync(ctx):
     except ShellArcError as e:
         await message.channel.send(content=e.frontend_msg, view=None)
     except Exception as e:
-        await message.channel.send(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -816,7 +816,7 @@ async def sapyc(ctx):
     except ShellArcError as e:
         await message.channel.send(content=e.frontend_msg, view=None)
     except Exception as e:
-        await message.channel.send(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")

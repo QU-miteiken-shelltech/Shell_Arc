@@ -141,7 +141,7 @@ async def dl_lo(message: discord.Message,
         await message.channel.send(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await message.channel.send(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -176,7 +176,7 @@ async def up_lo(message: discord.Message,
         await message.channel.send(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await message.channel.send(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
@@ -198,7 +198,7 @@ async def rpt_lo(message: discord.Message,
         await message.channel.send(content=e.frontend_msg, view=None)
         return
     except Exception as e:
-        await message.channel.send(content=f"UNEXPECTED PYTHON EXCEPTION : {e}", view=None)
+        await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
         tb = traceback.format_exc()
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
