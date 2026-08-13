@@ -175,12 +175,6 @@ class ShellArc_Upload:
                 time_limit=300
             )
             allowed_formats_url[required_format] = presigned_url
-        await self.git_io.update_data(
-            cut_num=self.cut_num,
-            component=self.working_component,
-            creator_name=submitter_name,
-            message=message
-        )
         self.gcp_io.update_info(
             info_type=f"{self.working_component}_PIC",
             cut_num=self.cut_num,
