@@ -101,6 +101,16 @@ class ShellArc_Query:
                                    cut_num: int,
                                    page_idx: int=0
                                    ) -> str | None:
+        """Get the specified information from the Google Spreadsheet for the given cut number and page index by retrieving the corresponding value from the spreadsheet.
+
+        Args:
+            info_type (str): The type of information to retrieve from the spreadsheet.
+            cut_num (int): The cut number of the information to retrieve from the spreadsheet.
+            page_idx (int): The index of the spreadsheet page to retrieve the information from (Default : 0).
+
+        Returns:
+            str | None: The retrieved information from the spreadsheet as a string, or None if the specified information type or cut number is not found in the spreadsheet.
+        """
         rtn = self.gcp_io.get_info(
             info_type=info_type,
             cut_num=cut_num)
