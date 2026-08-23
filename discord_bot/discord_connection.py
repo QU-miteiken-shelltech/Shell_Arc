@@ -30,6 +30,8 @@ from shellarc_core.exception.structure_error import (
 )
 from shellarc_core.exception.user_exception import ShellArcException
 
+from shellarc_core.cloudio.io_spreadsheet import GCP_IO
+
 
 # from .discord_notice_webhook import DiscordNotice as Notice
 
@@ -522,7 +524,7 @@ async def on_register_action(interaction: discord.Interaction,
                              ):
     registering_component_en = component_name_j2e.get(registering_component, registering_component)
     try:
-        shellarc_register = ShellArc_Register()
+        shellarc_register = ShellArc_Register(GCP_IO())
         await shellarc_register.register_work(
             registering_person=registering_person,
             registering_component=registering_component_en,

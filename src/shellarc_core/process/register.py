@@ -1,9 +1,10 @@
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.exception.user_exception import SA_EditingRejection
 
 class ShellArc_Register:
-    def __init__(self):
-        self.gcp_io = GCP_IO()
+    def __init__(self,
+                 gcp_io_cls
+                 ):
+        self.gcp_io = gcp_io_cls
 
 
     async def register_work(self,
