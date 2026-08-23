@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 
-from shellarc_core.scheduler.manager import ShellArc_ScheduleManager 
+from shellarc_core.scheduler.manager import ShellArc_ScheduleManager
 from shellarc_core.process.storyboard import ShellArc_Storyboard
+from shellarc_core.interface import Interface_R2, Interface_Spreadsheet, NotionFactory
 from shellarc_core.cloudio.io_r2 import R2_IO
 from shellarc_core.cloudio.io_notion import Notion_IO
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
@@ -21,10 +22,6 @@ from shellarc_core.exception.user_exception import SA_InvalidUserQuery, ShellArc
 from shellarc_core.exception.structure_error import (
     ShellArcError, SA_LocalIOError, SA_ErrorCode
 )
-
-# Composition root - concrete IO instances
-_r2_io_storyboard = R2_IO(bucket_name="shellarc-storyboard")
-_gcp_io = GCP_IO()
 
 proj_ctx_dir = Path(os.environ.get("SHELLARC_PROJECT_CTX", None))
 load_dotenv(verbose=True)
@@ -127,14 +124,17 @@ async def daiben(ctx):
         return
     
 async def dl_lo(message: discord.Message,
-                cut_num: int
+                cut_num: int,
+                r2_io: Interface_R2,
+                notion_factory: NotionFactory,
+                gcp_io: Interface_Spreadsheet
                 ) -> None:
     try:
         sa_storyboard = ShellArc_Storyboard(
             cut_num=cut_num,
-            r2_io=_r2_io_storyboard,
-            notion_factory=Notion_IO,
-            gcp_io=_gcp_io
+            r2_io=r2_io,
+            notion_factory=notion_factory,
+            gcp_io=gcp_io
         )
         downloaded_lo_path = await sa_storyboard.download_storyboard()
         if not Path(downloaded_lo_path).exists():
@@ -168,16 +168,19 @@ async def dl_lo(message: discord.Message,
 
 
 async def up_lo(message: discord.Message,
-                cut_num: int
+                cut_num: int,
+                r2_io: Interface_R2,
+                notion_factory: NotionFactory,
+                gcp_io: Interface_Spreadsheet
                 ) -> None:
     try:
         lo_file = message.attachments[0]
         lo_file_bytes = await lo_file.read()
         sa_storyboard = ShellArc_Storyboard(
             cut_num=cut_num,
-            r2_io=_r2_io_storyboard,
-            notion_factory=Notion_IO,
-            gcp_io=_gcp_io
+            r2_io=r2_io,
+            notion_factory=notion_factory,
+            gcp_io=gcp_io
         )
         await sa_storyboard.upload_storyboard(file_obj=lo_file_bytes)
         confirm_msg = f"カット{cut_num}レイアウト が提出されました"
@@ -202,14 +205,17 @@ async def up_lo(message: discord.Message,
 
 async def rpt_lo(message: discord.Message,
                  cut_num: int,
-                 repoint_target_cut: int
+                 repoint_target_cut: int,
+                 r2_io: Interface_R2,
+                 notion_factory: NotionFactory,
+                 gcp_io: Interface_Spreadsheet
                  ) -> None:
     try:
         sa_storyboard = ShellArc_Storyboard(
             cut_num=cut_num,
-            r2_io=_r2_io_storyboard,
-            notion_factory=Notion_IO,
-            gcp_io=_gcp_io
+            r2_io=r2_io,
+            notion_factory=notion_factory,
+            gcp_io=gcp_io
         )
         await sa_storyboard.repoint_storyboard(repoint_taregt_cut=repoint_target_cut)
         await message.channel.send(f"カット{cut_num}LOがカット{repoint_target_cut}にリポイントされました")
@@ -234,6 +240,9 @@ async def lo(ctx):
         return
     channel_name = message.channel.name
     cut_num = int(process_cut_num(channel_name.split(channel_name_divider)[0]))
+    r2_io = R2_IO(bucket_name="shellarc-storyboard")
+    notion_factory = Notion_IO
+    gcp_io = GCP_IO()
     message_breakdown = message.content.split(" ")
     if len(message_breakdown) > 2:
         if message_breakdown[1] == "repoint":
@@ -241,19 +250,28 @@ async def lo(ctx):
             await rpt_lo(
                 message=message,
                 cut_num=cut_num,
-                repoint_target_cut=repoint_target_cut
+                repoint_target_cut=repoint_target_cut,
+                r2_io=r2_io,
+                notion_factory=notion_factory,
+                gcp_io=gcp_io
             )
         return
     file_attachments = message.attachments
     if not file_attachments:
         await dl_lo(
             message=message,
-            cut_num=cut_num
+            cut_num=cut_num,
+            r2_io=r2_io,
+            notion_factory=notion_factory,
+            gcp_io=gcp_io
         )
     else:
         await up_lo(
             message=message,
-            cut_num=cut_num
+            cut_num=cut_num,
+            r2_io=r2_io,
+            notion_factory=notion_factory,
+            gcp_io=gcp_io
         )
 
 
