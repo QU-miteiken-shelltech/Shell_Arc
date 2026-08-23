@@ -1,5 +1,4 @@
-from shellarc_core.cloudio.io_git import Git_IO
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
+from shellarc_core.interface import Interface_Git, Interface_Spreadsheet
 from shellarc_core.cfg.cfg_io import Cfg_IO
 
 from shellarc_core.exception.user_exception import SA_InvalidRequestObj
@@ -7,7 +6,9 @@ from shellarc_core.exception.user_exception import SA_InvalidRequestObj
 class ShellArc_Review:
     def __init__(self,
                  cut_num: int,
-                 reviewing_component: str
+                 reviewing_component: str,
+                 git_io: Interface_Git,
+                 gcp_io: Interface_Spreadsheet
                  ) -> None:
         """Initialize the ShellArc_Review class with the specified cut number and reviewing component,
         and set up the necessary cloud I/O instances for Git operations, Google Spreadsheet interactions, and configuration management.
@@ -15,9 +16,11 @@ class ShellArc_Review:
         Args:
             cut_num (int): The cut number for which the review process is being conducted.
             reviewing_component (str): The name of the component being reviewed (e.g., "modeling", "texturing").
+            git_io (Interface_Git): The Git IO interface instance.
+            gcp_io (Interface_Spreadsheet): The Spreadsheet IO interface instance.
         """
-        self.git_io = Git_IO()
-        self.gcp_io = GCP_IO()
+        self.git_io = git_io
+        self.gcp_io = gcp_io
         self.cfg_io = Cfg_IO()
         self.cut_num = cut_num
         self.reviewing_component = reviewing_component

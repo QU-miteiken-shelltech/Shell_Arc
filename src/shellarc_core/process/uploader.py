@@ -3,9 +3,7 @@ import tempfile
 import json
 from pathlib import Path
 
-from shellarc_core.cloudio.io_r2 import R2_IO
-from shellarc_core.cloudio.io_git import Git_IO
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
+from shellarc_core.interface import Interface_R2, Interface_Git, Interface_Spreadsheet
 from shellarc_core.utils.file_operation import FileOperation
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 
@@ -14,11 +12,14 @@ from shellarc_core.exception.user_exception import SA_InvalidUserQuery
 class ShellArc_Upload:
     def __init__(self,
                  cut_num: int,
-                 working_component: str
+                 working_component: str,
+                 r2_io: Interface_R2,
+                 git_io: Interface_Git,
+                 gcp_io: Interface_Spreadsheet
                  ) -> None:
-        self.r2_io = R2_IO()
-        self.git_io = Git_IO()
-        self.gcp_io = GCP_IO()
+        self.r2_io = r2_io
+        self.git_io = git_io
+        self.gcp_io = gcp_io
         self.cfg_io = Cfg_IO()
         self.working_component = working_component
         self.cut_num = cut_num
@@ -202,7 +203,10 @@ class ShellArc_Upload:
 
 
     @staticmethod
-    async def sync_vps_with_remote() -> None:
+    async def sync_vps_with_remote(git_io: Interface_Git) -> None:
         """Synchronize the VPS with the remote Git repository
+
+        Args:
+            git_io (Interface_Git): The Git IO interface instance.
         """
-        await Git_IO().sync_remote()
+        await git_io.sync_remote()
