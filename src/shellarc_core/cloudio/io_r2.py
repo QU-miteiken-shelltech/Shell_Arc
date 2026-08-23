@@ -77,7 +77,6 @@ class R2_IO:
     def get_path_with_ext(self,
                           path_without_ext: str
                           ) -> str:
-        print(path_without_ext)
         response = self.s3_client.list_objects_v2(
             Bucket=self.bucket_name,
             Prefix=path_without_ext

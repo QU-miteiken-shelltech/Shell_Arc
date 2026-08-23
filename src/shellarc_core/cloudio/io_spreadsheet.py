@@ -101,11 +101,7 @@ class GCP_IO:
             spreadsheet,
             cell_address,
             fmt
-        )
-
-
-    # def make_csv(self,)
-        
+        )        
 
     @property
     def spreadsheet_cache(self,
