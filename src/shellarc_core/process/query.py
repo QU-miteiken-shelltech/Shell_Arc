@@ -1,21 +1,28 @@
 import re
 
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
-from shellarc_core.cloudio.io_git import Git_IO, SA_GitLogFilter, SA_CommitType, ShellArcGitBranch
+from shellarc_core.interface import Interface_Spreadsheet, Interface_Git
+from shellarc_core.cloudio.io_git import SA_GitLogFilter, SA_CommitType, ShellArcGitBranch
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO
 
 from shellarc_core.exception.structure_error import SA_InternalSyntaxError, SA_ErrorCode
 
-class ShellArc_Query:   
-    @staticmethod
-    async def efficient_get_spreadsheet_info(target_index_value: str,
+class ShellArc_Query:
+    def __init__(self,
+                 gcp_io: Interface_Spreadsheet,
+                 git_io: Interface_Git
+                 ):
+        self.gcp_io = gcp_io
+        self.git_io = git_io
+
+    async def efficient_get_spreadsheet_info(self,
+                                             target_index_value: str,
                                              index_info_types: list[str],
                                              target_info_types: list[str],
                                              search_range: list[int],
                                              output_key: str="index_info_type",
                                              page_idx: int=0
                                              ) -> dict:
-        """Efficiently retrieve specific information from the Google Spreadsheet by searching for a target index value 
+        """Efficiently retrieve specific information from the Google Spreadsheet by searching for a target index value
         within a specified range and returning the corresponding information based on the provided index and target information types.
 
         Args:
@@ -23,15 +30,14 @@ class ShellArc_Query:
             index_info_types (list[str]): A list of information types corresponding to the columns that contain the index values to be searched for in the spreadsheet.
             target_info_types (list[str]): A list of information types corresponding to the columns that contain the target values to be retrieved from the spreadsheet.
             search_range (list[int]): A list containing two integers representing the starting and ending cut numbers that define the range of rows to be searched in the spreadsheet.
-            output_key (str): A string that specifies the key to be used in the returned dictionary for the retrieved information, 
+            output_key (str): A string that specifies the key to be used in the returned dictionary for the retrieved information,
                 which can be either "index_info_type" to use the index information type as the key or "target_info_type" to use the target information type as the key (Default : "index_info_type").
             page_idx (int): The index of the spreadsheet page to perform the search and retrieval from (Default : 0).
 
         Returns:
-            dict: A dictionary containing the retrieved information from the spreadsheet, 
+            dict: A dictionary containing the retrieved information from the spreadsheet,
                 where the keys are determined by the specified output_key parameter and the values are the corresponding retrieved values from the spreadsheet.
         """
-        gcp_io = GCP_IO()
         smap_io = SpreadsheetMap_IO()
         vert_offset = smap_io.get_vert_offset()
         if len(search_range) != 2:
@@ -49,8 +55,8 @@ class ShellArc_Query:
                 error_log="index_info_types must be of same length of target_info_types",
                 error_code=SA_ErrorCode.SA_7000
             )
-        
-        current_spreadsheet_cache = gcp_io.spreadsheet_cache
+
+        current_spreadsheet_cache = self.gcp_io.spreadsheet_cache
         rtn = {}
         cycle = len(index_info_types)
         for i in range(0, cycle):
@@ -75,12 +81,11 @@ class ShellArc_Query:
                         rtn[index_info_type] = str(target_value)
                     else:
                         rtn[target_info_type] = str(target_value)
-        
-        return rtn
-    
 
-    @staticmethod
-    def get_components_enname(cut_num: int) -> list[str]:
+        return rtn
+
+
+    def get_components_enname(self, cut_num: int) -> list[str]:
         """Get the list of component names in English for the specified cut number by retrieving the information from the Git repository.
 
         Args:
@@ -89,23 +94,21 @@ class ShellArc_Query:
         Returns:
             list[str]: A list of component names in English corresponding to the specified cut number.
         """
-        git_io = Git_IO()
-        return git_io.get_components(cut_num=cut_num)
+        return self.git_io.get_components(cut_num=cut_num)
 
-    @staticmethod
-    async def get_spreadsheet_info(info_type: str,
+    async def get_spreadsheet_info(self,
+                                   info_type: str,
                                    cut_num: int,
                                    page_idx: int=0
                                    ) -> str | None:
-        gcp_io = GCP_IO()
-        rtn = gcp_io.get_info(
+        rtn = self.gcp_io.get_info(
             info_type=info_type,
             cut_num=cut_num)
         return str(rtn)
-    
 
-    @staticmethod
-    async def get_history(cut_num: int,
+
+    async def get_history(self,
+                    cut_num: int,
                     component: str,
                     max_length: int | None=None
                     ) -> dict[str, str]:
@@ -120,13 +123,12 @@ class ShellArc_Query:
         Returns:
             hist_dict (dict[str, str]): A dictionary containing the commit history for the specified cut number and component
         """
-        git_io = Git_IO()
         json_file_path = f"stage/cut{cut_num}/{component}.json"
         log_filter = SA_GitLogFilter(
             commit_type=SA_CommitType.SUBMIT,
             log_length=max_length
         )
-        hist_dict = await git_io.get_log(
+        hist_dict = await self.git_io.get_log(
             output_format=[5, 3, 4],
             log_filter=log_filter,
             limit_scope=json_file_path
@@ -134,10 +136,8 @@ class ShellArc_Query:
         return hist_dict
 
 
-    @staticmethod
-    async def get_pending_status(is_raw: bool = False) -> str | list[tuple[int, str]]:
-        git_io = Git_IO()
-        pending_status = await git_io.get_pending_status()
+    async def get_pending_status(self, is_raw: bool = False) -> str | list[tuple[int, str]]:
+        pending_status = await self.git_io.get_pending_status()
         if is_raw:
             return pending_status
         pending_status_ls = pending_status.split("\n")
@@ -150,10 +150,10 @@ class ShellArc_Query:
             rtn_list.append((cut_num, component))
         return rtn_list
 
-    
 
-    @staticmethod
-    async def get_approve_history(cut_num: int,
+
+    async def get_approve_history(self,
+                            cut_num: int,
                             component: str,
                             max_length: int | None=None
                             ) -> dict[str, str]:
@@ -168,18 +168,15 @@ class ShellArc_Query:
         Returns:
             hist_dict (dict[str, str]): A dictionary containing the approval commit history for the specified cut number and component
         """
-        git_io = Git_IO()
         json_file_path = f"stage/cut{cut_num}/{component}.json"
         log_filter = SA_GitLogFilter(
             commit_type=SA_CommitType.APPROVE,
             log_length=max_length
         )
-        hist_dict = await git_io.get_log(
+        hist_dict = await self.git_io.get_log(
             output_format=[5, 3, 4],
             log_filter=log_filter,
             limit_scope=json_file_path,
             branch=ShellArcGitBranch.MAIN
         )
         return hist_dict
-
-    
