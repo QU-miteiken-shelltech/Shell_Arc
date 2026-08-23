@@ -13,4 +13,3 @@ project_setting.yaml
 **/keys/**
 docker-compose.yml
 **/venv/**
-.vscode/**

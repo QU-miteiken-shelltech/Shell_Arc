@@ -24,10 +24,6 @@ from shellarc_core.process.reviewing import ShellArc_Review
 from shellarc_core.process.uploader import ShellArc_Upload
 from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
-from shellarc_core.interface import Interface_R2, Interface_Git, Interface_Spreadsheet
-from shellarc_core.cloudio.io_r2 import R2_IO
-from shellarc_core.cloudio.io_git import Git_IO
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.exception.structure_error import (
     ShellArcError, SA_AuthError, SA_ErrorCode,
     SA_LocalIOError
@@ -71,29 +67,9 @@ shellarc_center = config["center_channel_names"]
 
 
 shell_arc_bot = commands.Bot(
-    command_prefix=bot_command,
+    command_prefix=bot_command, 
     intents=discord.Intents.all()
     )
-
-
-def setup_shellarc_io(bot: commands.Bot,
-                      r2_io: Interface_R2,
-                      git_io: Interface_Git,
-                      gcp_io: Interface_Spreadsheet
-                      ) -> None:
-    """Attach IO instances to the bot for use by command/event handlers.
-
-    Args:
-        bot: The Discord bot instance.
-        r2_io: R2 storage IO instance.
-        git_io: Git IO instance.
-        gcp_io: Spreadsheet IO instance.
-    """
-    bot.r2_io = r2_io
-    bot.git_io = git_io
-    bot.gcp_io = gcp_io
-    bot.shellarc_query = ShellArc_Query(gcp_io=gcp_io, git_io=git_io)
-    bot.sapyc_interpreter = SAPYC_Interpreter(git_io=git_io, gcp_io=gcp_io)
 
 def process_cut_num(cut_cluster):
     match = re.search(cut_extraction_regex, cut_cluster)
@@ -334,7 +310,7 @@ class ShellArcDropdownView(discord.ui.View):
         except Exception as e:
             print(f"Error occurred while processing the submission selection : {e}")
             return
-        component_enname_ls = shell_arc_bot.shellarc_query.get_components_enname(cut_num=int(processing_cut))
+        component_enname_ls = ShellArc_Query.get_components_enname(cut_num=int(processing_cut))
         options=[discord.SelectOption(label=component_name_e2j.get(component_en, component_en)) for component_en in component_enname_ls]
         self.add_item(ShellArcDropdown(options=options, sa_action=sa_action, message=message))
 
@@ -391,9 +367,6 @@ async def on_push_action(interaction: discord.Interaction,
         shellarc_upload = ShellArc_Upload(
             cut_num=int(submitting_cut),
             working_component=submitting_component_en,
-            r2_io=shell_arc_bot.r2_io,
-            git_io=shell_arc_bot.git_io,
-            gcp_io=shell_arc_bot.gcp_io
         )
         submissions_raw = message.attachments
         if submissions_raw:
@@ -463,9 +436,7 @@ async def on_reviewing_action(interaction: discord.Interaction,
     try:
         shellarc_review = ShellArc_Review(
             cut_num=int(reviewing_cut),
-            reviewing_component=reviewing_component_en,
-            git_io=shell_arc_bot.git_io,
-            gcp_io=shell_arc_bot.gcp_io
+            reviewing_component=reviewing_component_en
         )
         await shellarc_review.pending_action(
             reviewer_name=reviewing_person,
@@ -501,9 +472,7 @@ async def on_download_action(interaction: discord.Interaction,
     try:
         shellarc_request = ShellArc_Request(
             cut_num=int(requesting_cut),
-            requesting_component=requesting_component_en,
-            r2_io=shell_arc_bot.r2_io,
-            git_io=shell_arc_bot.git_io
+            requesting_component=requesting_component_en
         )
         downloaded_material = await shellarc_request.download_material(requesting_take=requesting_take)
         downloaded_path = downloaded_material[0]
@@ -553,7 +522,7 @@ async def on_register_action(interaction: discord.Interaction,
                              ):
     registering_component_en = component_name_j2e.get(registering_component, registering_component)
     try:
-        shellarc_register = ShellArc_Register(gcp_io=shell_arc_bot.gcp_io)
+        shellarc_register = ShellArc_Register()
         await shellarc_register.register_work(
             registering_person=registering_person,
             registering_component=registering_component_en,
@@ -592,7 +561,7 @@ async def on_register_dconly_action(interaction: discord.Interaction,
     try:
         registering_component_en = component_name_j2e.get(registering_component, registering_component)
         get_info_type_name = f"{registering_component_en}_PIC"
-        component_pic = await shell_arc_bot.shellarc_query.get_spreadsheet_info(
+        component_pic = await ShellArc_Query.get_spreadsheet_info(
             info_type=get_info_type_name,
             cut_num=registering_cut
         )
@@ -737,13 +706,13 @@ async def history(ctx):
         except:
             max_length = None
     if len(message_command) == 4 and message_command[3] == "-appr":
-        history_dict = await shell_arc_bot.shellarc_query.get_approve_history(
+        history_dict = await ShellArc_Query.get_approve_history(
             cut_num=quering_cut,
             component=quering_component,
             max_length=max_length
         )
     else:
-        history_dict = await shell_arc_bot.shellarc_query.get_history(
+        history_dict = await ShellArc_Query.get_history(
             cut_num=quering_cut,
             component=quering_component,
             max_length=max_length
@@ -768,7 +737,8 @@ async def ask(ctx):
     except:
         asking_person = str(message.author.display_name)
     await message.reply("検索中...\n10秒ほどお待ちいただく場合があります")
-    query_result = await shell_arc_bot.shellarc_query.efficient_get_spreadsheet_info(
+    shellarc_query = ShellArc_Query()
+    query_result = await shellarc_query.efficient_get_spreadsheet_info(
         target_index_value=asking_person,
         index_info_types=[f"{c}_PIC" for c in component_name_e2j],
         target_info_types=["cut_num"] * len(component_name_e2j),
@@ -799,7 +769,7 @@ async def sync(ctx):
     if message.author.bot:
         return
     try:
-        await ShellArc_Upload.sync_vps_with_remote(git_io=shell_arc_bot.git_io)
+        await ShellArc_Upload.sync_vps_with_remote()
         await message.channel.send("同期しました")
     except ShellArcException as e:
         await message.channel.send(content=e.frontend_msg, view=None)
@@ -839,7 +809,7 @@ async def sapyc(ctx):
         return
     try:
         cmd = message.content.lstrip("..sapyc").strip()
-        rtn = await shell_arc_bot.sapyc_interpreter.interpret_sapyc(cmd=cmd)
+        rtn = await SAPYC_Interpreter.interpret_sapyc(cmd=cmd)
         await message.channel.send(rtn)
     except ShellArcException as e:
         await message.channel.send(content=e.frontend_msg, view=None)
@@ -895,7 +865,7 @@ async def status(ctx):
     message: discord.Message = ctx.message
     if message.author.bot: 
         return
-    pending_status = await shell_arc_bot.shellarc_query.get_pending_status(is_raw=False)
+    pending_status = await ShellArc_Query.get_pending_status(is_raw=False)
     rtn_msg = ""
     for s in pending_status:
         rtn_msg += f"カット{s[0]} - {component_name_e2j.get(s[1], s[1])}\n"
@@ -944,12 +914,6 @@ async def onoff(ctx):
 
 @shell_arc_bot.event
 async def on_ready():
-    setup_shellarc_io(
-        bot=shell_arc_bot,
-        r2_io=R2_IO(),
-        git_io=Git_IO(),
-        gcp_io=GCP_IO()
-    )
     print("ログインしました")
 
 @shell_arc_bot.command()

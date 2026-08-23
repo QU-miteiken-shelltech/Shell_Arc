@@ -1,8 +1,8 @@
 import tempfile
 import os
 
-from shellarc_core.interface import Interface_R2, Interface_Git
-from shellarc_core.cloudio.io_git import ShellArcGitBranch
+from shellarc_core.cloudio.io_r2 import R2_IO
+from shellarc_core.cloudio.io_git import Git_IO, ShellArcGitBranch
 from shellarc_core.utils.file_operation import FileOperation as FileOp
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 
@@ -14,21 +14,17 @@ from shellarc_core.exception.structure_error import (
 class ShellArc_Request:
     def __init__(self,
                  cut_num: int,
-                 requesting_component: str,
-                 r2_io: Interface_R2,
-                 git_io: Interface_Git
+                 requesting_component: str
                  ) -> None:
-        """Initialize the ShellArc_Request class with the specified cut number and requesting component,
+        """Initialize the ShellArc_Request class with the specified cut number and requesting component, 
         and set up the necessary cloud I/O instances for R2 storage and Git operations.
 
         Args:
             cut_num (int): The cut number for which the request is being made.
             requesting_component (str): The name of the component for which the request is being made (e.g., "modeling", "texturing").
-            r2_io (Interface_R2): The R2 storage IO interface instance.
-            git_io (Interface_Git): The Git IO interface instance.
         """
-        self.r2_io = r2_io
-        self.git_io = git_io
+        self.r2_io = R2_IO()
+        self.git_io = Git_IO()
         self.cfg_io = Cfg_IO()
         self.working_component = requesting_component
         self.cut_num = cut_num
