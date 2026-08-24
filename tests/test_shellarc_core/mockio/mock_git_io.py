@@ -145,13 +145,13 @@ class Mock_Git_IO:
 
 
     async def make_proj_repo(self,
-                             proj_settings: dict
+                             proj_settings: dict 
                              ) -> None:
         """Initialize the local git repository for the project based on the provided project settings, and create the necessary directory structure and initial commit.
 
         Args:
-            proj_settings (dict): A dictionary containing the project settings,
-                including "cut_num" (the number of cuts in the project) and "components" (a dictionary of components for each cut).
+            proj_settings (dict): A dictionary containing the project settings, 
+                including "cut_num" (the number of cuts in the project) and "components" (a dictionary of components for each cut). 
                 The "components" dictionary should have the format {component_name: {"format": component_format}}
         """
         self.git_repo_local_dir.mkdir(parents=True, exist_ok=True)

@@ -1,3 +1,5 @@
+IS_PRODUCTION : bool = False
+
 import re
 import os
 import sys
@@ -18,33 +20,50 @@ from discord import Webhook as Webhook
 from dotenv import load_dotenv
 import gspread
 
+if IS_PRODUCTION:
+    from shellarc_core.cloudio.io_r2 import R2_IO as R2_IO
+    from shellarc_core.cloudio.io_git import Git_IO as Git_IO
+    from shellarc_core.cloudio.io_spreadsheet import GCP_IO as GCP_IO
+else:
+    from test_shellarc_core.mockio.mock_r2_io import Mock_R2_IO as R2_IO
+    from test_shellarc_core.mockio.mock_git_io import Mock_Git_IO as Git_IO
+    from test_shellarc_core.mockio.mock_spreadsheet_io import Mock_Spreadsheet_IO as GCP_IO
+    print("MOCK")
+    print("****************")
+
+from shellarc_core.interface import Interface_R2, Interface_Git, Interface_Spreadsheet
 from shellarc_core.process.register import ShellArc_Register
 from shellarc_core.process.requesting import ShellArc_Request
 from shellarc_core.process.reviewing import ShellArc_Review
 from shellarc_core.process.uploader import ShellArc_Upload
 from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
-from shellarc_core.interface import Interface_R2, Interface_Git, Interface_Spreadsheet
-from shellarc_core.cloudio.io_r2 import R2_IO
-from shellarc_core.cloudio.io_git import Git_IO
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
+from shellarc_core.exception.user_exception import ShellArcException
 from shellarc_core.exception.structure_error import (
     ShellArcError, SA_AuthError, SA_ErrorCode,
     SA_LocalIOError
 )
-from shellarc_core.exception.user_exception import ShellArcException
-
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 
 
 # from .discord_notice_webhook import DiscordNotice as Notice
 
 ONOFF: bool = True
 
+if not IS_PRODUCTION:
+    proj_setting_path = str(input("Input path to project setting json file : ")).strip()
+    git_repo_local_dir=sys.argv[1] if len(sys.argv) > 1 else None
+    with open(proj_setting_path, "r", encoding="utf-8") as f:
+        proj_settings = json.load(f)
+    git_io = Git_IO(git_repo_local_dir=git_repo_local_dir)
+    asyncio.run(git_io.make_proj_repo(proj_settings=proj_settings))
+
 load_dotenv(verbose=True)
-project_ctx_dir = Path(os.environ.get("SHELLARC_PROJECT_CTX", None))
+if IS_PRODUCTION: 
+    project_ctx_dir = Path(os.environ["SHELLARC_PROJECT_CTX"]) if "SHELLARC_PROJECT_CTX" in os.environ else None
+else:
+    project_ctx_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else None
 dotenv_path = project_ctx_dir / ".env"
-if not dotenv_path.exists():
+if dotenv_path is None or not dotenv_path.exists():
     raise SA_AuthError(
         error_log=f"dotenv_path {dotenv_path} not exist",
         error_code=SA_ErrorCode.SA_9001
@@ -53,6 +72,7 @@ load_dotenv(dotenv_path)
 TOKEN = os.environ.get("Discord_token")
 SERVER_ID = os.environ.get("Discord_server_id")
 print(SERVER_ID)
+
 
 #load config
 discord_config_file_path = project_ctx_dir / "discord_config.json"
@@ -946,10 +966,12 @@ async def onoff(ctx):
 
 @shell_arc_bot.event
 async def on_ready():
+    if not IS_PRODUCTION:
+        git_repo_local_dir = sys.argv[1] if len(sys.argv) > 1 else None
     setup_shellarc_io(
         bot=shell_arc_bot,
         r2_io=R2_IO(),
-        git_io=Git_IO(),
+        git_io=Git_IO() if IS_PRODUCTION else Git_IO(git_repo_local_dir=git_repo_local_dir),
         gcp_io=GCP_IO()
     )
     print("ログインしました")
