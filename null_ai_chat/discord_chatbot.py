@@ -90,8 +90,7 @@ async def summary(ctx):
     if message.author.bot:
         return
     target_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-    target_message = str(target_message)
-    print(target_message)
+    target_message = str(target_message.content)
     await message.channel.send("考えているぬる...")
     sender_name = str(message.author.display_name)
     server_id = str(message.guild.id)
