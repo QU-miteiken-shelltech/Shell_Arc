@@ -83,6 +83,32 @@ async def nuru(ctx):
         return
     await message.channel.send(resp)
 
+
+@shell_arc_chatbot.command()
+async def summary(ctx):
+    message = ctx.message
+    if message.author.bot:
+        return
+    target_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+    target_message = str(target_message)
+    print(target_message)
+    await message.channel.send("考えているぬる...")
+    sender_name = str(message.author.display_name)
+    server_id = str(message.guild.id)
+    casual_server = config.get("casual_server", [])
+    chat_mode = "casual" if server_id in casual_server else "technical"
+    try:
+        resp = await response_user(
+            q = f"以下の内容を日本語でわかりやすく要約してください：{target_message}",
+            asking_person=sender_name,
+            chat_mode=chat_mode
+        )
+    except Exception as e:
+        print(f"Dify error : {e}")
+        return
+    await message.channel.send(resp)
+
+
 @shell_arc_chatbot.command()
 async def weather(ctx):
     message = ctx.message
