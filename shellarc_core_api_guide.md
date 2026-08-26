@@ -14,7 +14,7 @@
 6. [認証レイヤー (auth)](#6-認証レイヤー-auth)
 7. [クラウドIOレイヤー (cloudio)](#7-クラウドioレイヤー-cloudio)
 8. [ユーティリティ (utils)](#8-ユーティリティ-utils)
-9. [ビジネスロジックレイヤー (operations)](#9-ビジネスロジックレイヤー-operations)
+9. [ビジネスロジックレイヤー (process)](#9-ビジネスロジックレイヤー-process)
 10. [Gitコミットメッセージ仕様](#10-gitコミットメッセージ仕様)
 11. [典型的なユースケースとフロー](#11-典型的なユースケースとフロー)
 
@@ -64,7 +64,7 @@ shellarc_core/
 │   ├── exceptions.py          # 例外タイプ列挙
 │   ├── user_exception.py      # ユーザー起因の例外クラス
 │   └── structure_error.py     # システム起因の例外クラス
-└── operations/                # ※以下はライブラリ利用側のビジネスロジック例
+└── process/                # ※以下はライブラリ利用側のビジネスロジック例
     ├── uploader.py            # ファイルアップロード処理
     ├── requesting.py          # ファイルダウンロード処理
     ├── reviewing.py           # レビュー（承認/却下）処理
@@ -1225,7 +1225,7 @@ NotionデータベースのレコードにExternal画像URLをセットする。
 
 ---
 
-## 9. ビジネスロジックレイヤー (operations)
+## 9. ビジネスロジックレイヤー (process)
 
 このレイヤーのクラスは `shellarc_core` の各IOクラスを組み合わせて、アプリケーションのユースケースを実装する。新しいアプリを構築する際の参考実装として読むこと。
 
@@ -1547,7 +1547,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 ### ユースケース1: 素材の提出（アップロード）
 
 ```python
-from shellarc_core.operations.uploader import ShellArc_Upload
+from shellarc_core.process.uploader import ShellArc_Upload
 
 uploader = ShellArc_Upload(cut_num=5, working_component="modeling")
 
@@ -1562,7 +1562,7 @@ await uploader.upload_file(
 ### ユースケース2: 署名付きURLでの大容量ファイルアップロード
 
 ```python
-from shellarc_core.operations.uploader import ShellArc_Upload
+from shellarc_core.process.uploader import ShellArc_Upload
 
 uploader = ShellArc_Upload(cut_num=5, working_component="modeling")
 html_path, temp_dir = await uploader.get_upload_page(
@@ -1578,7 +1578,7 @@ shutil.rmtree(temp_dir)
 ### ユースケース3: 素材のダウンロード
 
 ```python
-from shellarc_core.operations.requesting import ShellArc_Request
+from shellarc_core.process.requesting import ShellArc_Request
 
 req = ShellArc_Request(cut_num=5, requesting_component="modeling")
 
@@ -1600,7 +1600,7 @@ else:
 ### ユースケース4: レビュー（承認）
 
 ```python
-from shellarc_core.operations.reviewing import ShellArc_Review
+from shellarc_core.process.reviewing import ShellArc_Review
 
 review = ShellArc_Review(cut_num=5, reviewing_component="modeling")
 await review.pending_action(
@@ -1613,7 +1613,7 @@ await review.pending_action(
 ### ユースケース5: 担当者登録
 
 ```python
-from shellarc_core.operations.register import ShellArc_Register
+from shellarc_core.process.register import ShellArc_Register
 
 register = ShellArc_Register()
 await register.register_work(
@@ -1641,7 +1641,7 @@ await git_io.make_proj_repo({
 ### ユースケース7: 提出履歴の照会
 
 ```python
-from shellarc_core.operations.query import ShellArc_Query
+from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.cloudio.io_git import SA_GitLogFilter, SA_CommitType
 
 history = await ShellArc_Query.get_history(

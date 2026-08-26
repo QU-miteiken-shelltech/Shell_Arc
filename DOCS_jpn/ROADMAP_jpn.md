@@ -1,11 +1,8 @@
-# ShellArc: Animation Production Pipeline Server Framework
 # ShellArc: アニメーション制作パイプラインサーバーフレームワーク
 
-> ### **Development Branch / 開発ブランチ**: `dev_2027`
+> ### **開発ブランチ**: `dev_2027`
 
 ---
-
-## [日本語 / Japanese]
 
 ### プロジェクト概要
 ShellArcは、アニメーション制作パイプラインを統合・効率化するためのサーバーフレームワークです。
@@ -16,6 +13,7 @@ ShellArcは、アニメーション制作パイプラインを統合・効率化
 ### 開発アジェンダとタスク一覧
 
 #### 1. コード品質 (Code Quality)
+- 依存性注入の実装 [緊急度: 5 / スケール: 4] *解決済み
 - 包括的な単体テスト（ユニットテスト）の実装 [緊急度: 5 / スケール: 4]
 - 操作可能な包括的なダミーUIの実装 [緊急度: 4 / スケール: 3]
 - CI/CDテスト自動化の確立 [緊急度: 5 / スケール: 3]
@@ -56,55 +54,5 @@ ShellArcは、アニメーション制作パイプラインを統合・効率化
 #### 8. 自動化サーバー (Automation Server)
 - Item Action自動スケジューリングサーバーのプロダクションレベルへの引き上げ [緊急度: 3 / スケール: 2]
 
----
-
-## [English / 英語]
-
-### Project Overview
-ShellArc is an animation production pipeline server framework designed to integrate and streamline production workflows. 
-This roadmap and agenda target development on the **`dev_2027`** branch. Each task is annotated with **[Urgency / Scale (1-5)]** to visualize priorities.
-
----
-
-### Development Agenda & Tasks
-
-#### 1. Code Quality
-- Implementation of comprehensive unit tests [Urgency: 5 / Scale: 4]
-- Implementation of a comprehensive dummy-operatable UI [Urgency: 4 / Scale: 3]
-- Establish CI/CD test automation [Urgency: 5 / Scale: 3]
-- Improve docstrings [Urgency: 4 / Scale: 1]
-- Refactor codes with low readability and excessively lengthy scripts [Urgency: 4 / Scale: 3]
-
-#### 2. Math and Data Science
-- Embed ShellArc Railgun Architecture Model into the ShellArc core module [Urgency: 4 / Scale: 5]
-  - (https://github.com/shinonome-MiDUki/Shell_Arc_Railgun_scheduler)
-
-#### 3. Cloud and Infrastructure
-- Implement auto-backup on AWS Deep Glacier [Urgency: 3 / Scale: 2]
-- Allow safe HTTPS communication with desktop apps and local programs [Urgency: 3 / Scale: 4]
-- Revise Docker configurations for improving development iteration [Urgency: 4 / Scale: 1]
-
-#### 4. Format and Data Structure
-- Migrate from subprocess commands to PyGit2 for better performance and higher flexibility [Urgency: 2 / Scale: 4]
-- Standardize project description data format for projects under ShellArc's management [Urgency: 3 / Scale: 5]
-
-#### 5. Desktop Applications
-- Incorporate Shell DELTA into the ShellArc eco-system [Urgency: 4 / Scale: 4]
-  - (https://github.com/shinonome-MiDUki/Shell_DELTA)
-- Extend compositing features of Shell DELTA and improve GLSL support [Urgency: 4 / Scale: 2]
-- Implement Python scripting for Shell DELTA [Urgency: 3 / Scale: 3]
-- Improve UI of the ShellArc Desktop app [Urgency: 4 / Scale: 2]
-- Extend project management features and project progress visualization [Urgency: 4 / Scale: 5]
-
-#### 6. Graphics and Media
-- Improve GPU usage and efficiency of the NUDEC codec format [Urgency: 3 / Scale: 4]
-- Improve synchronization with surrounding audio systems [Urgency: 4 / Scale: 3]
-- Establish CI workflow for `.nuanim` cloud rendering [Urgency: 3 / Scale: 2]
-
-#### 7. AI and Machine Learning
-- Establish an automation workflow for RAG updates upon updates [Urgency: 4 / Scale: 1]
-- Establish an auto-coloring system via Runpod and ComfyUI [Urgency: 3 / Scale: 3]
-- Improve skill sheets for agent-driven ShellArc extension and customization developments [Urgency: 3 / Scale: 1]
-
-#### 8. Automation Server
-- Improve Item Action auto-scheduling server to production level [Urgency: 3 / Scale: 2]
+#### 9. マイナーな機能 (Minor Features)
+- 入力時に実行されるカスタム可能な変換エクスプレッションの実装 [緊急度: 3 / スケール: 1]
