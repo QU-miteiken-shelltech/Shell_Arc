@@ -1,10 +1,10 @@
-# shellarc_core
+# ShellArc
 
 ### *日本語版はこちら → [README_jpn.md](./README_jpn.md)*
 
-Anime and video production is full of small headaches — "where's that file?", "who approved this again?", "oops, forgot to update the spreadsheet…". `shellarc_core` takes care of all of that for you, automatically.
+Anime and video production is full of small headaches — "where's that file?", "who approved this again?", "oops, forgot to update the spreadsheet…". `ShellArc` takes care of all of that for you, automatically.
 
-Plug it into whatever front end you like — a Discord bot, a Slack bot, a web dashboard, a CLI tool — and let `shellarc_core` handle everything happening behind the scenes.
+Plug it into whatever front end you like — a Discord bot, a Slack bot, a web dashboard, a CLI tool — and let `ShellArc` handle everything happening behind the scenes.
 
 ---
 

@@ -1,10 +1,10 @@
-# shellarc_core
+# ShellArc
 
 ### *For the English version, see [README.md](./README.md).*
 
 アニメ・映像制作の現場にありがちな「あのファイルどこ？」「これ誰が承認したっけ？」「スプレッドシートの更新忘れてた…」を、まるごと自動化するライブラリです。
 
-Discordボット・Slackボット・Webダッシュボード・CLIなど、好きな見た目のツールに組み込んで、裏側の面倒な作業はぜんぶ `shellarc_core` に任せられます。
+Discordボット・Slackボット・Webダッシュボード・CLIなど、好きな見た目のツールに組み込んで、裏側の面倒な作業はぜんぶ `ShellArc` に任せられます。
 
 ---
 
