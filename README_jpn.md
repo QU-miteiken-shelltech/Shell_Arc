@@ -1,175 +1,20 @@
 # shellarc_core
 
-### For English version, please refer to [README.md](./README.md)
+### *For the English version, see [README.md](./README.md).*
 
-`shellarc_core` は、アニメ・映像制作の**カット管理**を行うパイプラインバックエンドフレームワークです。以下のクラウドサービスを組み合わせて、カット素材のバージョン管理・レビューフロー・進捗管理を自動化します。
+`shellarc_core` は、アニメ・映像制作の現場で発生する面倒な手作業——ファイルバージョンの管理、スプレッドシートの更新、誰が何を承認したかの記録——を、数行のコードで済ませてしまうライブラリです。Discordボット、Slackボット、Webダッシュボード、CLIツールなど、どんなインターフェースからでも組み込んで、制作パイプラインの運用を任せることができます。
 
-| サービス | 用途 |
-|---|---|
-| **Cloudflare R2**（S3互換） | 素材ファイルのストレージ |
-| **Google Spreadsheet** | 進捗・担当者管理台帳 |
-| **Git**（ローカル＋リモート） | カットごとのバージョン管理・承認フロー |
-| **Notion** | レイアウト画像（絵コンテ）の管理 |
-| **Firebase Firestore** | 汎用データベース（認証情報管理など） |
-
-内部設計・レイヤー構造・データフローの詳細は [ARCHITECTURE_jpn.md](./DOCS_jpn/ARCHITECTURE_jpn.md) を参照してください。このREADMEは「どう使うか」に焦点を当てています。
+内部ではGit・Cloudflare R2・Google Spreadsheet・Notion・Firebaseを連携させていますが、利用する側はその複雑さを意識する必要はほとんどありません。`upload_file()` や `pending_action()` のような関数を呼ぶだけで、あとは自動的に処理が進みます。
 
 ---
 
-## 目次
+## このライブラリで実現できること
 
-- [基本概念](#基本概念)
-- [セットアップ](#セットアップ)
-- [クイックスタート](#クイックスタート)
-- [ディレクトリ構成](#ディレクトリ構成)
-- [例外処理](#例外処理)
-- [参考: ユースケース一覧](#参考-ユースケース一覧)
-
----
-
-## 基本概念
-
-| 用語 | 説明 |
-|---|---|
-| カット (cut) | 映像制作の最小作業単位。`cut_num`（int）で識別 |
-| コンポーネント (component) | カットを構成する作業種別（例: `modeling`, `texturing`） |
-| テイク (take) | コンポーネントの提出バージョン。Gitコミットに対応 |
-| ペンディング (pending) | レビュー待ちの提出状態。Gitの `pending` ブランチで管理 |
-
----
-
-## セットアップ
-
-### 1. 環境変数
-
-`SHELLARC_PROJECT_CTX`（必須）にプロジェクトコンテキストディレクトリの絶対パスを設定します。
-
-```bash
-export SHELLARC_PROJECT_CTX=/path/to/project_context
-```
-
-### 2. プロジェクトコンテキストディレクトリの用意
-
-このディレクトリに以下の3ファイルを配置します。
-
-```
-$SHELLARC_PROJECT_CTX/
-├── project_settings.json   # プロジェクト設定（バケット名・コンポーネント定義など）
-├── spreadsheet_map.json    # スプレッドシートのセル座標マッピング
-└── .env                    # 各サービスの認証情報
-```
-
-**`project_settings.json` の例：**
-
-```json
-{
-  "project_name": "MyProject",
-  "bucket_name": "my-r2-bucket",
-  "collection_name": "my-collection",
-  "spreadsheet_key": "GOOGLE_SPREADSHEET_KEY",
-  "cut_num": 100,
-  "git_repo_local": "/path/to/local/git/repo",
-  "local_backup_dir": "/path/to/backup",
-  "notion_dbid": "NOTION_DATABASE_ID",
-  "components": {
-    "modeling": {
-      "format": "blend",
-      "naming_section": 3,
-      "name_component_1": "-cut",
-      "name_component_2": "modeling",
-      "name_component_3": "-take"
-    },
-    "texturing": {
-      "format": "png|zip",
-      "naming_section": 2,
-      "name_component_1": "-cut",
-      "name_component_2": "-take"
-    }
-  }
-}
-```
-
-**`spreadsheet_map.json` の例：**
-
-```json
-{
-  "vert_offset_0": 2,
-  "items_0": {
-    "modeling_PIC": 3,
-    "modeling_progress": 4,
-    "texturing_PIC": 5,
-    "texturing_progress": 6,
-    "layout_progress": 7
-  }
-}
-```
-
-**`.env` に必要な変数：**
-
-```dotenv
-# Google Cloud Platform (Spreadsheet)
-GCP_type=service_account
-GCP_project_id=...
-GCP_private_key_id=...
-GCP_private_key=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n
-GCP_client_email=...
-GCP_client_id=...
-GCP_auth_uri=https://accounts.google.com/o/oauth2/auth
-GCP_token_uri=https://oauth2.googleapis.com/token
-GCP_auth_provider_x509_cert_url=https://www.googleapis.com/oauth2/v1/certs
-GCP_client_x509_cert_url=...
-GCP_universe_domain=googleapis.com
-
-# Cloudflare R2
-CloudflareR2_access_key_id=...
-CloudflareR2_secret_access_key=...
-CloudflareR2_jurisdiction_specific_endpoints=https://...r2.cloudflarestorage.com
-
-# Firebase Firestore
-firebase_type=service_account
-firebase_project_id=...
-firebase_private_key_id=...
-firebase_private_key=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n
-firebase_client_email=...
-firebase_client_id=...
-firebase_auth_uri=https://accounts.google.com/o/oauth2/auth
-firebase_token_uri=https://oauth2.googleapis.com/token
-firebase_auth_provider_x509_cert_url=https://www.googleapis.com/oauth2/v1/certs
-firebase_client_x509_cert_url=...
-firebase_universe_domain=googleapis.com
-
-# Notion
-Notion_token=secret_...
-```
-
-### 3. 新規プロジェクトのGitリポジトリ初期化（初回のみ）
+### 🎬 バージョンを絶対に見失わない提出パイプライン
+チームメンバーが提出するファイルは、コードのようにすべてバージョン管理されます。「最新の承認済みバージョン」「現在レビュー中のもの」を指定するだけで即座に取得でき、共有ドライブの中から `_final_v3_本当の最終版.blend` を探し回る必要がなくなります。
 
 ```python
-from shellarc_core.cloudio.io_git import Git_IO
-
-git_io = Git_IO()
-await git_io.make_proj_repo({
-    "cut_num": 100,
-    "components": {
-        "modeling": {"format": "blend"},
-        "texturing": {"format": "png|zip"}
-    }
-})
-```
-
-これにより `git_repo_local` に `main` / `pending` の2ブランチを持つリポジトリと、全カット分の `stage/cut{N}/` ディレクトリが作成されます。
-
----
-
-## クイックスタート
-
-### 素材の提出（アップロード）
-
-```python
-from shellarc_core.operations.uploader import ShellArc_Upload
-
 uploader = ShellArc_Upload(cut_num=5, working_component="modeling")
-
 await uploader.upload_file(
     file={"cut5_model_v1.blend": file_bytes},
     submitter_name="YamadaTaro",
@@ -177,43 +22,18 @@ await uploader.upload_file(
 )
 ```
 
-### 素材のダウンロード
+### ✅ 自動で状態が更新されるレビュー・承認フロー
+監督が提出物を承認・却下すると、Git側の記録はもちろん、進捗管理用スプレッドシートのステータス文言やセルの色まで自動で更新されます。誰も手作業で台帳を更新する必要がありません。
 
 ```python
-from shellarc_core.operations.requesting import ShellArc_Request
-
-req = ShellArc_Request(cut_num=5, requesting_component="modeling")
-
-# "0" = 最新確定版(main) / "-1" = 作業中(pending) / それ以外 = 特定コミットID
-path_or_url, filename, type_indicator = await req.download_material("0")
-
-if type_indicator == "url":
-    print(f"ダウンロードURL: {path_or_url}")
-else:
-    with open(path_or_url, "rb") as f:
-        file_bytes = f.read()
-    import os
-    os.unlink(path_or_url)  # 一時ファイルなので使用後に削除
-```
-
-### レビュー（承認・却下）
-
-```python
-from shellarc_core.operations.reviewing import ShellArc_Review
-
 review = ShellArc_Review(cut_num=5, reviewing_component="modeling")
-await review.pending_action(
-    reviewer_name="DirectorSato",
-    is_approve=True,
-    message="問題なし、OKです"
-)
+await review.pending_action(reviewer_name="DirectorSato", is_approve=True)
 ```
 
-### 担当者登録
+### 📊 常に最新の状態を保つ進捗管理
+担当者名・作業状況・完了状態が、パイプラインの進行に合わせてスプレッドシートに自動反映されます。スプレッドシートに直接書き込む作業は不要です。
 
 ```python
-from shellarc_core.operations.register import ShellArc_Register
-
 register = ShellArc_Register()
 await register.register_work(
     registering_person="YamadaTaro",
@@ -222,67 +42,186 @@ await register.register_work(
 )
 ```
 
-### 提出履歴の照会
+### 🖼️ 絵コンテ管理もお任せ
+Notion APIを直接扱うことなく、絵コンテ画像のアップロード・取得が可能です。URLの設定や進捗更新もライブラリが代行します。
+
+### 🔁 ファイルを複製せずにカット間で素材を使い回す
+2つのカットで同じ背景を使いたい場合、あるカットのコンポーネントを別カットのデータへ「参照」させる、あるいは「実体コピー」する——どちらも関数呼び出し1つで完結し、通常の提出と同じレビューフローに乗ります。
+
+### 📦 大容量ファイルも意識せず扱える
+10MB以下のファイルはすぐに使えるローカルパスとして返され、それより大きいファイルは自動的に署名付きURLに切り替わります。ボットやアプリ側で大きなファイルをメモリに保持する必要はありません。
+
+### 🔍 履歴はいつでも自由に照会可能
+任意のカットの提出履歴・承認履歴・現在のコンポーネント一覧を取得できます。ダッシュボードの構築や、Discordの `/history cut5` のようなコマンド、監査ログの作成に活用できます。
 
 ```python
-from shellarc_core.operations.query import ShellArc_Query
-
-history = await ShellArc_Query.get_history(
-    cut_num=5,
-    component="modeling",
-    max_length=10
-)
-# → {"abc1234": "20240101120000 YamadaTaro 初回提出", ...}
+history = await ShellArc_Query.get_history(cut_num=5, component="modeling", max_length=10)
 ```
-
-その他のユースケース（署名付きURLでの大容量ファイルアップロード、絵コンテのアップロード/ダウンロードなど）は [ARCHITECTURE_jpn.md の主要な処理フロー](./DOCS_jpn/ARCHITECTURE_jpn.md#9-主要な処理フロー) を参照してください。
 
 ---
 
-## ディレクトリ構成
+## 🚀 クイックスタート：コード不要、Discordサーバーとしてすぐ使える
 
-```
-shellarc_core/
-├── cfg/          # 設定ファイル(JSON)の読み込み
-├── auth/         # 各クラウドサービスへの認証
-├── cloudio/      # 各クラウドサービスへの実際のCRUD操作
-├── utils/        # ローカルファイル操作ユーティリティ
-├── exception/    # 例外クラス群
-└── operations/   # ビジネスロジック（ライブラリ利用側の実装例）
-```
+ShellArcには、標準のフロントエンドとしてDiscordボット一式が同梱されています。上記の機能はすべて、コマンドやボタンとして既にDiscord上に実装済みです。利用者側は設定とデプロイをするだけで、アプリケーションコードを書く必要はありません。
 
-各モジュールの詳細な責務は [ARCHITECTURE_jpn.md](./DOCS_jpn/ARCHITECTURE_jpn.md#2-レイヤードアーキテクチャ) にまとめています。
-
----
-
-## 例外処理
-
-`shellarc_core` の例外は2系統に分かれます。
-
-| 系統 | 基底クラス | 特徴 |
+| docker-composeサービス | 使用するDockerfile | 追加されるDiscordコマンド |
 |---|---|---|
-| ユーザー起因 | `ShellArcException`（`exception/user_exception.py`） | `frontend_msg` をそのままUIに表示できる |
-| システム起因 | `ShellArcError`（`exception/structure_error.py`） | `frontend_msg` は固定文言（`"技術班にご連絡ください : {error_code.name}"`） |
+| `bot`（メインの作業フローボット） | `Dockerfile.dc` | `..up` ファイル提出 ・ `..upbig` 大容量ファイルを一時アップロードリンクで提出 ・ `..appr` ボタンで承認/却下 ・ `..dl` テイクのダウンロード ・ `..check` レビュー待ち状況の確認 ・ `..reg` 担当者登録 ・ `..history` 提出・承認履歴の照会 ・ `..ask` 「自分の担当作業は？」 ・ `..sync` ローカルGitをリモートへ同期 |
+| `itemi_action`（進行管理・リマインダーボット） | `Dockerfile.itemi` | `..lo` 絵コンテ画像のアップロード/ダウンロード/リポイント ・ `..remind` リマインダーの予約 ・ `..daiben` 誰かに代わってメッセージを中継 |
+| `ai_chat`（AIチャットボット） | `Dockerfile.nullai` | `..nuru` AIアシスタントに質問（Dify経由） ・ `..summary` 返信先メッセージの要約 ・ `..weather` 天気の照会 |
 
-代表的なユーザー起因の例外：`SA_DataNotExist`, `SA_InvalidUserQuery`, `SA_InvalidRequestObj`, `SA_EditingRejection`
+### 1. プロジェクトコンテキストディレクトリを準備する
 
-詳細な例外一覧・エラーコード表は [ARCHITECTURE_jpn.md の例外設計](./DOCS_jpn/ARCHITECTURE_jpn.md#8-例外設計) を参照してください。
+```
+project_ctx/
+├── project_settings.json     # コアライブラリの設定
+├── spreadsheet_map.json      # コアライブラリの設定
+├── discord_config.json       # コマンドプレフィックス・チャンネル/ロールのマッピングなど
+└── .env                      # 各サービスの認証情報 + Discordボットのトークン
+```
+
+コアライブラリ自体の認証情報に加えて、`.env` には以下が必要です。
+
+```dotenv
+Discord_token=...              # メインの "bot" サービス用
+Discord_pmmanager_token=...    # itemi_action サービス用
+Discord_charbot_token=...      # ai_chat サービス用
+Discord_server_id=...
+Dify_token=...                 # ai_chat サービスでのみ必要
+Dify_baseurl=...
+```
+
+`discord_config.json` はサーバーごとの挙動（コマンドプレフィックス、チャンネル/ロール名、カット番号の抽出方法など）を制御します。具体的な項目についてはボット側のソースコードを参照してください。
+
+### 2. テンプレートを実際の `docker-compose.yml` にする
+
+`docker-compose_yml.template` には、本番運用の前に埋める必要があるプレースホルダーが含まれています。
+
+```bash
+cp docker-compose_yml.template docker-compose.yml
+```
+
+`docker-compose.yml` 内で、以下の2種類のプレースホルダーを編集します。
+
+**a. Gitのアイデンティティ — `###` のプレースホルダー（`bot`サービスのみ）**
+
+すべての提出・承認はGitコミットとして記録されます。Gitがコミットを作成するにはauthor/committerのアイデンティティが必要です。これはコミットメッセージ内に格納される `submitter_name`（提出者名）や `reviewer_name`（レビュアー名）とは別物です。ボットのプロセス自体を表す固定のアイデンティティを設定してください。
+
+```yaml
+environment:
+  - SHELLARC_PROJECT_CTX
+  - GIT_AUTHOR_NAME=ShellArc Bot
+  - GIT_AUTHOR_EMAIL=shellarc-bot@yourproject.local
+  - GIT_COMMITTER_NAME=ShellArc Bot
+  - GIT_COMMITTER_EMAIL=shellarc-bot@yourproject.local
+```
+
+**b. 永続化ボリューム — `〜_in_code:〜_in_server` のプレースホルダー**
+
+これらはそれぞれ `<ホスト側のパスまたは名前付きボリューム>:<コンテナ側のパス>` のペアです。左側はデータが実際に存在する場所（コンテナを再ビルドしてもデータが消えないようにする）、右側はコンテナ側が期待するパスです。
+
+| プレースホルダー | 使用サービス | 保存内容 | コンテナ側パスが一致すべき設定 |
+|---|---|---|---|
+| `version_management_dir_in_code:actual_version_management_dir_in_server` | `bot`, `itemi_action`, `ai_chat` | 提出・承認状態を保持するGitリポジトリ（`Git_IO`） | `project_settings.json` の `git_repo_local` |
+| `itemi_action_dir_in_code:itemi_action_dir_in_server` | `itemi_action` のみ | リマインダースケジューラ（`ShellArc_ScheduleManager`）の永続化データ | `discord_config.json` の `schedule_path` |
+| `.config_dir_in_code:.config_dir_in_server` | `itemi_action` のみ | コンテナ内のLinux標準の `~/.config` ディレクトリ。`platformdirs`/`keyring`（`pyproject.toml`参照）などのライブラリが認証情報やキャッシュの永続化に使用する | コンテナ内ユーザーの `~/.config`（rootで実行している場合は `/root/.config` など） |
+
+例（`project_settings.json` で `"git_repo_local": "/data/git_repo"` と設定している場合）：
+
+```yaml
+services:
+  bot:
+    volumes:
+      - ${SHELLARC_PROJECT_CTX}:${SHELLARC_PROJECT_CTX}
+      - shellarc_git_data:/data/git_repo
+
+  itemi_action:
+    volumes:
+      - ${SHELLARC_PROJECT_CTX}:${SHELLARC_PROJECT_CTX}
+      - shellarc_git_data:/data/git_repo
+      - shellarc_scheduler_data:/data/schedule
+      - shellarc_config:/root/.config
+# ...
+volumes:
+  shellarc_git_data:
+  shellarc_scheduler_data:
+  shellarc_config:
+```
+
+**重要**：Gitリポジトリ用のボリュームは、3つのサービスすべてで**同じボリューム・同じコンテナ側パス**をマウントする必要があります。`bot` / `itemi_action` / `ai_chat` がそれぞれ異なるボリュームやパスを使ってしまうと、各サービスが別々の（同期されていない）リポジトリのコピーを見てしまうことになります。
+
+### 3. プロジェクトコンテキストを指定する
+
+```bash
+export SHELLARC_PROJECT_CTX=/path/to/project_ctx
+```
+
+### 4. Docker Composeで3つのボットを起動する
+
+```bash
+docker compose up -d --build
+```
+
+これにより `bot` / `itemi_action` / `ai_chat` の3つのコンテナがビルド・起動されます。いずれもプロジェクトコンテキストディレクトリをマウントし、同一のGitバージョン管理用ボリュームを共有するため、3つのボットは常に同じパイプライン状態を参照します。
+
+### 5. Discord上で使う
+
+```
+..up            # ファイルを添付し、ドロップダウンでコンポーネントを選び、確認するだけ
+..appr          # コンポーネントを選び、「確定」または「要修正」を選択
+..dl 0          # 最新の承認済みテイクをダウンロード
+..history modeling 5    # 「modeling」の直近5件の提出履歴
+```
+
+これだけで、Pythonのコードを一切書かずに「提出 → レビュー → 進捗管理」の一連の流れが完結します。
 
 ---
 
-## 参考: ユースケース一覧
+## この設計が有効な理由
 
-| ユースケース | 使用クラス |
+- **インターフェースはあなたが作り、パイプラインの運用はライブラリが担う。** Discordボットでも、Slackアプリでも、Webダッシュボードでも、単純なCLIでも、呼び出すのは同じ `operations` 配下の少数のクラスだけです。Git・ストレージ・スプレッドシート・Notionを連携させる複雑なロジックは、すでにライブラリ側で解決済みです。
+- **状態が食い違うことがない。** Gitを唯一の真実の情報源とし、他のサービスはすべてその反映先という設計のため、「スプレッドシート上は承認済みなのに実際のファイルは未レビュー」といった不整合が起きません。
+- **エラーが「誰の責任か」を教えてくれる。** すべてのエラーは「ユーザー側で修正が必要なもの」（そのまま表示できるメッセージ付き）か、「実際にシステム側で壊れているもの」（パイプライン運用担当者への通知用）のどちらかに分類されます。どちらか迷う必要はありません。
+
+---
+
+## 🛠️ shellarc_devkit — 補助ツール群
+
+Discordフロントエンドとは別に、`shellarc_devkit` にはプロジェクトのセットアップ・保守を助けるいくつかの単体スクリプトが含まれています。いずれもDiscordボットの稼働状態に依存せず利用できます。
+
+| スクリプト | 内容 |
 |---|---|
-| 素材の提出 | `operations.uploader.ShellArc_Upload` |
-| 署名付きURLでの大容量アップロード | `operations.uploader.ShellArc_Upload.get_upload_page` |
-| 素材のダウンロード | `operations.requesting.ShellArc_Request` |
-| レビュー（承認・却下） | `operations.reviewing.ShellArc_Review` |
-| 担当者登録 | `operations.register.ShellArc_Register` |
-| 絵コンテのアップロード・ダウンロード | `operations.storyboard.ShellArc_Storyboard` |
-| 提出・承認履歴の照会 | `operations.query.ShellArc_Query` |
-| 新規プロジェクトの初期化 | `cloudio.io_git.Git_IO.make_proj_repo` |
+| `project_init_cli.py` | 新規プロジェクトのセットアップを対話式で行うウィザード。Gitリポジトリの初期化（`Git_IO.make_proj_repo`）、スプレッドシートへの疎通確認を行い、希望すれば新規スプレッドシートにヘッダー行とカット番号列も自動で書き込みます。 |
+| `cloud_access_check.py` | Firebase・Cloudflare R2・Google Spreadsheetへの疎通を一度にチェックします。デプロイ前の確認や、パイプラインの一部が突然反応しなくなった際の一次切り分けに便利です。 |
+| `backup_on_local.py` + `init_settings.sh` | チームメンバーが各自の端末（または共有端末）で実行し、R2に新しく提出されたカット素材をローカルフォルダに取り込むためのバックアップバッチです。メインパイプラインとは独立した、個人用の保険として機能します。 |
+
+### ローカルバックアップバッチのセットアップ
+
+これは中央で一括運用するものではなく、各メンバーに個別に配布して使うことを想定しています。
+
+1. `backup_on_local.py`・`init_settings.sh`・`requirements.txt`・（R2の認証情報を含む）`.env` を同じフォルダにまとめて配置します（例：`~/shellarc_backup/`）。
+2. セットアップスクリプトを一度だけ実行します。
+   ```bash
+   bash init_settings.sh
+   ```
+   これにより専用のvirtualenvが作成され、依存パッケージがインストールされ、シェルの設定ファイルに `SHELLARC_LOCAL_BACKUP`（そのフォルダの親ディレクトリ）が登録され、`nuru` というエイリアスが設定されます。
+3. シェルを再読み込み（`source ~/.zshrc`）した後は、いつでも次のコマンドを実行するだけです。
+   ```bash
+   nuru
+   ```
+   前回のバックアップ以降に提出された分だけを取り込みます。最終バックアップ時刻は `backup_config.json` に記録されるため、毎回差分のみが取得されます。
 
 ---
 
-*このREADMEおよび ARCHITECTURE.md は `shellarc_core_api_guide.md` の内容をもとに作成されています。全公開インターフェースの詳細な仕様（引数の型・送出例外・返り値の形式など）は元のAPIガイドを参照してください。*
+## 自分でフロントエンドを作る場合
+
+Discordを使いたくない場合、上記のクイックスタートは同じライブラリの上に作られたフロントエンドの一例に過ぎません。Slackボット・Webダッシュボード・CLIなど独自のフロントエンドを作る場合は、プロジェクト設定・スプレッドシートのマッピング・各サービスの認証情報をまとめたプロジェクトコンテキストディレクトリの用意と、初回のみのGitリポジトリ初期化が必要です——この初期化は、上記の `project_init_cli.py` を使えば対話式で進められます。それが済めば、日常的な利用は先述の `operations` 配下の各クラスだけで完結します。
+
+具体的なセットアップ手順・設定ファイルの形式・全APIの詳細仕様（引数・返り値・送出例外）については、設計ドキュメントおよびAPI仕様書を参照してください。
+
+- [ARCHITECTURE_jpn.md](./DOCS_jpn/ARCHITECTURE_jpn.md) — 内部設計・データモデル・処理フロー
+- [shellarc_core_api_guide.md](./shellarc_core_api_guide.md) — 完全なAPI仕様書
+
+---
+
+*This project is licensed under the Apache 2.0 License - see the [LICENSE](./LICENSE) file for details.*
