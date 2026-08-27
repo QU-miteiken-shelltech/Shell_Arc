@@ -1,36 +1,33 @@
-import re
-import os
-import sys
-import io
-import time
 import asyncio
-import json
-import random
-import traceback
 import datetime
 import hashlib
+import json
+import os
+import random
+import re
+import traceback
 from enum import Enum
 from pathlib import Path
 
-import regex
 import discord
-from discord.ext import commands
+import regex
 from discord import Webhook as Webhook
+from discord.ext import commands
 from dotenv import load_dotenv
-import gspread
 
+from shellarc_core.exception.structure_error import (
+    SA_AuthError,
+    SA_ErrorCode,
+    SA_LocalIOError,
+    ShellArcError,
+)
+from shellarc_core.exception.user_exception import ShellArcException
+from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.process.register import ShellArc_Register
 from shellarc_core.process.requesting import ShellArc_Request
 from shellarc_core.process.reviewing import ShellArc_Review
 from shellarc_core.process.uploader import ShellArc_Upload
-from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
-from shellarc_core.exception.structure_error import (
-    ShellArcError, SA_AuthError, SA_ErrorCode,
-    SA_LocalIOError
-)
-from shellarc_core.exception.user_exception import ShellArcException
-
 
 ONOFF: bool = True
 
@@ -383,7 +380,7 @@ async def on_push_action(interaction: discord.Interaction,
                 message=git_message
             )
             await interaction.channel.send(
-                f"180秒以内、このからファイルをアップロードしてください",
+                "180秒以内、このからファイルをアップロードしてください",
                 file=discord.File(upload_page_path)
                 )
     except ShellArcException as e:
@@ -793,7 +790,7 @@ async def spin(ctx):
         return
     spin_msg = await message.channel.send("選ばれたのは。。。。。。。")
     await asyncio.sleep(0.5)
-    await spin_msg.edit(content=f"気になるよね〜〜")
+    await spin_msg.edit(content="気になるよね〜〜")
     await asyncio.sleep(0.5)
     mentioned_role_id = int(regex_search.group(1))
     mentioned_role = message.guild.get_role(mentioned_role_id)

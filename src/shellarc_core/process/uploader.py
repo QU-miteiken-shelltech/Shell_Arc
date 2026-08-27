@@ -1,15 +1,15 @@
+import json
 import os
 import tempfile
-import json
 from pathlib import Path
 
-from shellarc_core.cloudio.io_r2 import R2_IO
-from shellarc_core.cloudio.io_git import Git_IO
-from shellarc_core.cloudio.io_spreadsheet import GCP_IO
-from shellarc_core.utils.file_operation import FileOperation
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
-
+from shellarc_core.cloudio.io_git import Git_IO
+from shellarc_core.cloudio.io_r2 import R2_IO
+from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.exception.user_exception import SA_InvalidUserQuery
+from shellarc_core.utils.file_operation import FileOperation
+
 
 class ShellArc_Upload:
     def __init__(self,
@@ -74,7 +74,7 @@ class ShellArc_Upload:
                 uploading_file=fileobj,
                 file_path=f"{collection_name}/stage/{file_index_name}.{submission_format}"
             )
-        except Exception as e:
+        except Exception:
             raise
         finally:
             if Path(filename).exists():

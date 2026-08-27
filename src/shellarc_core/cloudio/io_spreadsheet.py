@@ -1,9 +1,10 @@
+import gspread_formatting as g_fmt
+from gspread.utils import rowcol_to_a1
+
 from shellarc_core.auth.access_spread_sheet import AccessSpreadSheet as A_GCP
 from shellarc_core.cfg.cfg_io import Cfg_IO as Cfg_IO
 from shellarc_core.cfg.cfg_io import Cfg_item
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
-import gspread_formatting as g_fmt
-from gspread.utils import rowcol_to_a1
 
 
 class GCP_IO:

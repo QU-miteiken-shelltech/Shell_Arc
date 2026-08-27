@@ -1,8 +1,8 @@
+from shellarc_core.cfg.cfg_io import Cfg_IO
 from shellarc_core.cloudio.io_git import Git_IO
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
-from shellarc_core.cfg.cfg_io import Cfg_IO
-
 from shellarc_core.exception.user_exception import SA_InvalidRequestObj
+
 
 class ShellArc_Review:
     def __init__(self,

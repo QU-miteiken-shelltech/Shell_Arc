@@ -14,3 +14,4 @@ project_setting.yaml
 docker-compose.yml
 **/venv/**
 .vscode/**
+ruff_log_report.txt

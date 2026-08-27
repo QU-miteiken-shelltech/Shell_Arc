@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class SA_ExceptionType(Enum):
     DATA_NOTEXIST_ERROR = "Finding data not exist"
     INVALID_USER_QUERY = "Invalid query from user end"

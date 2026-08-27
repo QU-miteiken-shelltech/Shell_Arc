@@ -1,11 +1,11 @@
-import os
 import json
+import os
 from pathlib import Path
 
-import requests
-from dotenv import load_dotenv
 import discord
+import requests
 from discord.ext import commands
+from dotenv import load_dotenv
 
 proj_ctx_dir = Path(os.environ.get("SHELLARC_PROJECT_CTX", None))
 load_dotenv(verbose=True)

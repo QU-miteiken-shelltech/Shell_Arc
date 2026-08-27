@@ -1,30 +1,10 @@
-import re
-import os
-import sys
-import io
-import time
 import asyncio
-import json
-import random
-from enum import Enum
-from pathlib import Path
 
-import discord
-from discord.ext import commands
 from discord import Webhook as Webhook
-from dotenv import load_dotenv
-import gspread
 
-from shellarc_core.process.register import ShellArc_Register
-from shellarc_core.process.requesting import ShellArc_Request
-from shellarc_core.process.reviewing import ShellArc_Review
-from shellarc_core.process.uploader import ShellArc_Upload
 from shellarc_core.process.query import ShellArc_Query
-from shellarc_core.exception.structure_error import (
-    ShellArcError, SA_AuthError, SA_ErrorCode,
-    SA_LocalIOError
-)
-from shellarc_core.exception.user_exception import ShellArcException
+
+
 async def ask(n):
 
     asking_person = "TESTER"

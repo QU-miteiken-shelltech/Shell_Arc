@@ -2,6 +2,7 @@ from shellarc_core.cloudio.io_git import Git_IO, SA_GitLogFilter
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.exception.user_exception import SA_SapycSyntaxError
 
+
 class SAPYC_Interpreter:
     def __init__(self):
         pass
