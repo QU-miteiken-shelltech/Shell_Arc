@@ -41,18 +41,21 @@ This roadmap and agenda target development on the **`dev_2027`** branch. Each ta
 - Improve UI of the ShellArc Desktop app [Urgency: 4 / Scale: 2]
 - Extend project management features and project progress visualization [Urgency: 4 / Scale: 5]
 
-#### 6. Graphics and Media
+#### 6. Expression and Intepreter
+- Enhance the embedded SAPYC expression language for more flexible and safe operations without directly touching the backend [Urgency: 4 / Scale: 4]
+
+#### 7. Graphics and Media
 - Improve GPU usage and efficiency of the NUDEC codec format [Urgency: 3 / Scale: 4]
 - Improve synchronization with surrounding audio systems [Urgency: 4 / Scale: 3]
 - Establish CI workflow for `.nuanim` cloud rendering [Urgency: 3 / Scale: 2]
 
-#### 7. AI and Machine Learning
+#### 8. AI and Machine Learning
 - Establish an automation workflow for RAG updates upon updates [Urgency: 4 / Scale: 1]
 - Establish an auto-coloring system via Runpod and ComfyUI [Urgency: 3 / Scale: 3]
 - Improve skill sheets for agent-driven ShellArc extension and customization developments [Urgency: 3 / Scale: 1]
 
-#### 8. Automation Server
+#### 9. Automation Server
 - Improve Item Action auto-scheduling server to production level [Urgency: 3 / Scale: 2]
 
-#### 9. Minor Features
+#### 10. Minor Features
 - Implement customisable entry point expression [Urgency: 3 / Scale : 1]
