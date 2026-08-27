@@ -12,6 +12,7 @@ import hashlib
 from enum import Enum
 from pathlib import Path
 
+import regex
 import discord
 from discord.ext import commands
 from discord import Webhook as Webhook
@@ -30,8 +31,6 @@ from shellarc_core.exception.structure_error import (
 )
 from shellarc_core.exception.user_exception import ShellArcException
 
-
-# from .discord_notice_webhook import DiscordNotice as Notice
 
 ONOFF: bool = True
 
@@ -72,7 +71,7 @@ shell_arc_bot = commands.Bot(
     )
 
 def process_cut_num(cut_cluster):
-    match = re.search(cut_extraction_regex, cut_cluster)
+    match = regex.search(cut_extraction_regex, cut_cluster)
     if match:
         return str(match.group(1))
     return None
