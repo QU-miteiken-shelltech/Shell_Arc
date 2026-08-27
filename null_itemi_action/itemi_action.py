@@ -39,7 +39,8 @@ with open(discord_config_file_path, mode="r", encoding="utf-8") as config_file:
     config = discord_config_dict
 bot_command = config["bot_command"]
 admin_roles = config["admin_roles"]
-schedule_file_path = config.get("schedule_path", "default")
+schedule_file_path = str(Path(config.get("itemi_action_dir", "default")) / "itemi_schedule.json")
+memo_file_path = str(Path(config.get("itemi_action_dir", "default")) / "itemi_memo.json")
 mainbot_id = int(config["shellarc_bot_id"])
 cut_extraction_regex = config["notice_message_cut_extraction_regex"]
 channel_name_divider = config.get("channel_name_divider", "_")
@@ -234,6 +235,52 @@ async def lo(ctx):
             cut_num=cut_num
         )
 
+
+@shell_arc_pmbot.command()
+async def memo(ctx):
+    message: discord.Message = ctx.message
+    if message.author.bot:
+        return
+    memo_file = Path(memo_file_path)
+    if len(message.content.split(" ")) > 2 and message.content.split(" ")[1] == "get":
+        kw = message.content.split(" ")[2]
+        if memo_file.exists():
+            with open(memo_file, "r", encoding="utf-8") as f:
+                current_memo = json.load(f)
+        else:
+            await message.channel.send("メモはありません")
+            return
+        hits = [m for m in current_memo if kw in m] if kw.lower() != "all" else [m for m in current_memo]
+        rtn = ""
+        for hit in hits:
+            msg_url = current_memo[hit]["url"]
+            memo_person = current_memo[hit]["author"]
+            rtn += f"{memo_person} : {hit} - {msg_url} \n"
+        await message.channel.send(rtn)
+
+    else:
+        memo_content = message.content.strip("..memo").strip()
+        channel_id = str(message.channel.id)
+        msg_id = str(message.id)
+        guild_id = str(message.guild.id)
+        memo_person = str(message.author.display_name)
+        if memo_file.exists():
+            with open(memo_file, "r", encoding="utf-8") as f:
+                current_memo = json.load(f)
+                current_memo[memo_content] = {
+                    "author" : memo_person, 
+                    "url" : f"https://discord.com/channels/{guild_id}/{channel_id}/{msg_id}"
+                }
+        else:
+            current_memo = {
+                memo_content : {
+                    "author" : memo_person, 
+                    "url" : f"https://discord.com/channels/{guild_id}/{channel_id}/{msg_id}"
+                }
+            }
+        with open(memo_file, "w", encoding="utf-8") as f:
+            json.dump(current_memo, f, ensure_ascii=False, indent=3)
+        await message.channel.send("メモを記録しました！")
 
 
 @shell_arc_pmbot.command()
