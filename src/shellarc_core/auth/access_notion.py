@@ -1,11 +1,11 @@
 import os
-import json
 from pathlib import Path
 
 from dotenv import load_dotenv
 from notion_client import Client
 
 from shellarc_core.exception.structure_error import SA_AuthError, SA_ErrorCode
+
 
 class Notion_Access:
     def __init__(self):

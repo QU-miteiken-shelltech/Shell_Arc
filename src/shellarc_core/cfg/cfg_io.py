@@ -1,10 +1,11 @@
 import json
 import os
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
-from shellarc_core.exception.structure_error import SA_ProjStructError, SA_ErrorCode
+from shellarc_core.exception.structure_error import SA_ErrorCode, SA_ProjStructError
+
 
 class Cfg_item(Enum):
     """Enum for configuration items in the project settings.

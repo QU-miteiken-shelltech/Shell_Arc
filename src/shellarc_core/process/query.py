@@ -1,10 +1,14 @@
 import re
 
-from shellarc_core.interface import Interface_Spreadsheet, Interface_Git
-from shellarc_core.cloudio.io_git import SA_GitLogFilter, SA_CommitType, ShellArcGitBranch
 from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO
+from shellarc_core.cloudio.io_git import (
+    SA_CommitType,
+    SA_GitLogFilter,
+    ShellArcGitBranch,
+)
+from shellarc_core.exception.structure_error import SA_ErrorCode, SA_InternalSyntaxError
+from shellarc_core.interface import Interface_Git, Interface_Spreadsheet
 
-from shellarc_core.exception.structure_error import SA_InternalSyntaxError, SA_ErrorCode
 
 class ShellArc_Query:
     def __init__(self,
@@ -59,7 +63,7 @@ class ShellArc_Query:
         current_spreadsheet_cache = self.gcp_io.spreadsheet_cache
         rtn = {}
         cycle = len(index_info_types)
-        for i in range(0, cycle):
+        for i in range(cycle):
             index_info_type = index_info_types[i]
             target_info_type = target_info_types[i]
             index_col = smap_io.get_cell_coord(

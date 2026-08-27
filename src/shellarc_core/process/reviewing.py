@@ -1,7 +1,7 @@
-from shellarc_core.interface import Interface_Git, Interface_Spreadsheet
 from shellarc_core.cfg.cfg_io import Cfg_IO
-
 from shellarc_core.exception.user_exception import SA_InvalidRequestObj
+from shellarc_core.interface import Interface_Git, Interface_Spreadsheet
+
 
 class ShellArc_Review:
     def __init__(self,

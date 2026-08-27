@@ -1,6 +1,7 @@
 
-from shellarc_core.interface import Interface_Spreadsheet
 from shellarc_core.exception.user_exception import SA_EditingRejection
+from shellarc_core.interface import Interface_Spreadsheet
+
 
 class ShellArc_Register:
     def __init__(self,

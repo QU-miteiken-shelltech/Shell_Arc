@@ -1,9 +1,9 @@
-import yaml
-import os
 
 class LinkerParser:
     def __init__(self):
-        from shellarc_core.utils.common_initialisation import CommonInitialisation as Common
+        from shellarc_core.utils.common_initialisation import (
+            CommonInitialisation as Common,
+        )
         common = Common(
             uninit=["project_db", "setting_db", "r2", "spreadsheet"], 
             exclude_init_confirm=True

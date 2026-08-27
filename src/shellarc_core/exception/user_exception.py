@@ -2,6 +2,7 @@ from datetime import datetime
 
 from shellarc_core.exception.exceptions import SA_ExceptionType
 
+
 class ShellArcException(Exception):
     def __init__(self,
                  error_log: str,

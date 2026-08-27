@@ -18,11 +18,24 @@ import re
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QListWidget, QTextEdit, QLineEdit,
-    QPushButton, QComboBox, QLabel, QHBoxLayout, QVBoxLayout, QTabWidget,
-    QTableWidget, QTableWidgetItem, QPlainTextEdit, QFrame, QMessageBox,
+    QApplication,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMainWindow,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-
 from test_shellarc_core.emulator.emu_backend import ShellArcEmulatorBackend
 from test_shellarc_core.utils.emu_state import FakeAttachment, FakeMessage
 from test_shellarc_core.utils.mock_media import generate_mock_file

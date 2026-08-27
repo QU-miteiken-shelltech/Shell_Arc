@@ -1,12 +1,12 @@
+import os
 import tempfile
 import zipfile
-import os
-import traceback
 from pathlib import Path
 
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
-from shellarc_core.exception.structure_error import SA_LocalIOError, SA_ErrorCode
+from shellarc_core.exception.structure_error import SA_ErrorCode, SA_LocalIOError
 from shellarc_core.exception.user_exception import SA_InvalidUserQuery
+
 
 class FileOperation:
     @staticmethod
@@ -40,11 +40,11 @@ class FileOperation:
                     if Path(name).suffix.lstrip(".").lower() != "png":
                         print(Path(name).suffix.lstrip(".").lower())
                         raise SA_InvalidUserQuery(
-                            error_log=f"file with invalid extension format uploaded detected during auto zipping",
-                            frontend_msg=f"PNG形式のみ圧縮可能です"
+                            error_log="file with invalid extension format uploaded detected during auto zipping",
+                            frontend_msg="PNG形式のみ圧縮可能です"
                         )
                     zf.writestr(name, byte_data)
-        except Exception as e:
+        except Exception:
             if Path(tempzip_path_name).exists():
                 os.unlink(tempzip_path_name)
             raise SA_LocalIOError(

@@ -1,8 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from shellarc_core.cloudio.io_git import (
-    ShellArcGitBranch, SA_GitLogFilter
-)
+from shellarc_core.cloudio.io_git import SA_GitLogFilter, ShellArcGitBranch
 
 
 @runtime_checkable

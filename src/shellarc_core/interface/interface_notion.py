@@ -1,5 +1,5 @@
-from typing import Protocol, runtime_checkable, Callable
 from pathlib import Path
+from typing import Callable, Protocol, runtime_checkable
 
 
 @runtime_checkable

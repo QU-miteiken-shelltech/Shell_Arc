@@ -18,21 +18,23 @@ Mock_Git_IO`)との互換性のため `Mock_Git_IO` のまま維持している�
 """
 
 import asyncio
-import os
-import json
-import hashlib
 import datetime
-
+import hashlib
+import json
+import os
 from pathlib import Path
 
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 from shellarc_core.cloudio.io_git import (
-    GitCommands, SA_GitLogFilter, SA_CommitType,
-    ShellArcGitBranch
-    )
+    GitCommands,
+    SA_CommitType,
+    SA_GitLogFilter,
+    ShellArcGitBranch,
+)
 from shellarc_core.exception.structure_error import (
-    SA_ProjStructError, SA_LocalIOError, SA_ErrorCode,
-    SA_InternalSyntaxError
+    SA_ErrorCode,
+    SA_LocalIOError,
+    SA_ProjStructError,
 )
 from shellarc_core.exception.user_exception import SA_InvalidRequestObj
 
@@ -244,9 +246,9 @@ class Mock_Git_IO:
         if log_filter is None:
             log_filter = SA_GitLogFilter()
         if limit_scope is None:
-            git_log_proc = await self._git_command(GitCommands.LOG, branch, f"--format=%h=&=%s")
+            git_log_proc = await self._git_command(GitCommands.LOG, branch, "--format=%h=&=%s")
         else:
-            git_log_proc = await self._git_command(GitCommands.LOG, branch, f"--format=%h=&=%s", "--", limit_scope)
+            git_log_proc = await self._git_command(GitCommands.LOG, branch, "--format=%h=&=%s", "--", limit_scope)
         stdout, stderr = await git_log_proc.communicate()
         if git_log_proc.returncode != 0:
             raise SA_LocalIOError(
@@ -263,11 +265,7 @@ class Mock_Git_IO:
             if output_format and max(output_format) >= len(breakdown_commit_record_ls):
                 continue
             breakdown_commit_record_ls = [x.strip() for x in breakdown_commit_record_ls]
-            if log_filter.commit_type is not None and log_filter.commit_type != breakdown_commit_record_ls[0]:
-                continue
-            elif log_filter.cut_num is not None and str(log_filter.cut_num) != breakdown_commit_record_ls[1]:
-                continue
-            elif log_filter.component is not None and log_filter.component != breakdown_commit_record_ls[2]:
+            if log_filter.commit_type is not None and log_filter.commit_type != breakdown_commit_record_ls[0] or log_filter.cut_num is not None and str(log_filter.cut_num) != breakdown_commit_record_ls[1] or log_filter.component is not None and log_filter.component != breakdown_commit_record_ls[2]:
                 continue
             filtered_record_ls = [breakdown_commit_record_ls[i] for i in output_format]
             filtered_record = " ".join(filtered_record_ls)
@@ -405,7 +403,7 @@ class Mock_Git_IO:
             git_commands = git_commands_approve if is_approve else git_commands_decline
             try:
                 await self._continuous_git_command(git_commands=git_commands)
-            except Exception as e:
+            except Exception:
                 with open(self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}", "w") as f:
                     f.write("")
                 raise SA_LocalIOError(

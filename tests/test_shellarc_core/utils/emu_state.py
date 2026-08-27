@@ -14,9 +14,8 @@ emu_backend.py が mock_git_io.py / mock_r2_io.py / mock_spreadsheet_io.py
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import datetime
-
+from dataclasses import dataclass, field
 
 # ---------------------------------------------------------------------------
 # 疑似Discordデータモデル

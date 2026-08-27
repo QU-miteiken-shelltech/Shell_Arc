@@ -36,16 +36,16 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from shellarc_core.process.uploader import ShellArc_Upload
-from shellarc_core.process.reviewing import ShellArc_Review
-from shellarc_core.process.query import ShellArc_Query
-from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
-from shellarc_core.exception.structure_error import ShellArcError
-from shellarc_core.exception.user_exception import ShellArcException
-
 from test_shellarc_core.mockio.mock_git_io import Mock_Git_IO
 from test_shellarc_core.mockio.mock_r2_io import Mock_R2_IO
 from test_shellarc_core.mockio.mock_spreadsheet_io import Mock_Spreadsheet_IO
+
+from shellarc_core.exception.structure_error import ShellArcError
+from shellarc_core.exception.user_exception import ShellArcException
+from shellarc_core.process.query import ShellArc_Query
+from shellarc_core.process.reviewing import ShellArc_Review
+from shellarc_core.process.uploader import ShellArc_Upload
+from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
 
 
 class ShellArcEmulatorBackend:
@@ -62,7 +62,7 @@ class ShellArcEmulatorBackend:
         self.event_log: list[str] = []
 
     @classmethod
-    async def create(cls, git_repo_dir: Path, proj_settings: dict) -> "ShellArcEmulatorBackend":
+    async def create(cls, git_repo_dir: Path, proj_settings: dict) -> ShellArcEmulatorBackend:
         """
         社内の初期化スクリプトにある make_proj_repo() 関数と同じ手順で疑似リポジトリを
         生成してからバックエンドを返す:

@@ -1,8 +1,9 @@
 import asyncio
-import json
 import datetime
-from pathlib import Path
+import json
 from collections.abc import Callable
+from pathlib import Path
+
 
 async def shellarc_maintimer(schedule_file_path: Path | str,
                              task_callable: Callable):

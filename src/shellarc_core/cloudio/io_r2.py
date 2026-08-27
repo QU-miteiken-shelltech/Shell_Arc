@@ -1,10 +1,8 @@
-import tempfile
-import datetime
 import asyncio
 import os
-import time
-from typing import overload, Union
+import tempfile
 from pathlib import Path
+from typing import overload
 
 import boto3
 
@@ -12,8 +10,11 @@ from shellarc_core.auth.access_r2 import Cloudflare_R2_service_Access as A_R2
 from shellarc_core.cfg.cfg_io import Cfg_IO as Cfg_IO
 from shellarc_core.cfg.cfg_io import Cfg_item
 from shellarc_core.exception.structure_error import (
-    SA_ProjStructError, SA_CommunicationError, SA_ErrorCode
+    SA_CommunicationError,
+    SA_ErrorCode,
+    SA_ProjStructError,
 )
+
 
 class R2_IO:
     def __init__(self, 
@@ -93,7 +94,7 @@ class R2_IO:
             )
         if "Contents" not in response:
             return None
-        paths_list = [response["Contents"][i]["Key"] for i in range(0, len(response["Contents"]))]
+        paths_list = [response["Contents"][i]["Key"] for i in range(len(response["Contents"]))]
         return paths_list
     
     @overload

@@ -4,9 +4,9 @@ import requests
 
 from shellarc_core.auth.access_notion import Notion_Access
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
-
 from shellarc_core.exception.structure_error import SA_CommunicationError, SA_ErrorCode
 from shellarc_core.exception.user_exception import SA_InvalidRequestObj
+
 
 class Notion_IO:
     def __init__(self,
@@ -18,7 +18,7 @@ class Notion_IO:
         self.notion_db = self.notion.data_sources.query(data_source_id = data_source_id)
         requied_page = ((cut_num - 1) // 100) + 1
         if requied_page > 1:
-            for _ in range(0,requied_page - 1):
+            for _ in range(requied_page - 1):
                 next_cursor = self.notion_db.get("next_cursor")
                 if not next_cursor: 
                     break

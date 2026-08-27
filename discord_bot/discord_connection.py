@@ -1,49 +1,49 @@
 IS_PRODUCTION : bool = False
 
-import re
-import os
-import sys
-import io
-import time
 import asyncio
-import json
-import random
-import traceback
 import datetime
 import hashlib
+import json
+import os
+import random
+import re
+import sys
+import traceback
 from enum import Enum
 from pathlib import Path
 
 import discord
-from discord.ext import commands
 from discord import Webhook as Webhook
+from discord.ext import commands
 from dotenv import load_dotenv
-import gspread
 
 if IS_PRODUCTION:
-    from shellarc_core.cloudio.io_r2 import R2_IO as R2_IO
     from shellarc_core.cloudio.io_git import Git_IO as Git_IO
+    from shellarc_core.cloudio.io_r2 import R2_IO as R2_IO
     from shellarc_core.cloudio.io_spreadsheet import GCP_IO as GCP_IO
 else:
-    from test_shellarc_core.mockio.mock_r2_io import Mock_R2_IO as R2_IO
     from test_shellarc_core.mockio.mock_git_io import Mock_Git_IO as Git_IO
-    from test_shellarc_core.mockio.mock_spreadsheet_io import Mock_Spreadsheet_IO as GCP_IO
+    from test_shellarc_core.mockio.mock_r2_io import Mock_R2_IO as R2_IO
+    from test_shellarc_core.mockio.mock_spreadsheet_io import (
+        Mock_Spreadsheet_IO as GCP_IO,
+    )
     print("MOCK")
     print("****************")
 
-from shellarc_core.interface import Interface_R2, Interface_Git, Interface_Spreadsheet
+from shellarc_core.exception.structure_error import (
+    SA_AuthError,
+    SA_ErrorCode,
+    SA_LocalIOError,
+    ShellArcError,
+)
+from shellarc_core.exception.user_exception import ShellArcException
+from shellarc_core.interface import Interface_Git, Interface_R2, Interface_Spreadsheet
+from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.process.register import ShellArc_Register
 from shellarc_core.process.requesting import ShellArc_Request
 from shellarc_core.process.reviewing import ShellArc_Review
 from shellarc_core.process.uploader import ShellArc_Upload
-from shellarc_core.process.query import ShellArc_Query
 from shellarc_core.sapyc.sapyc_interpreter import SAPYC_Interpreter
-from shellarc_core.exception.user_exception import ShellArcException
-from shellarc_core.exception.structure_error import (
-    ShellArcError, SA_AuthError, SA_ErrorCode,
-    SA_LocalIOError
-)
-
 
 # from .discord_notice_webhook import DiscordNotice as Notice
 
@@ -433,7 +433,7 @@ async def on_push_action(interaction: discord.Interaction,
                 message=git_message
             )
             await interaction.channel.send(
-                f"180秒以内、このからファイルをアップロードしてください",
+                "180秒以内、このからファイルをアップロードしてください",
                 file=discord.File(upload_page_path)
                 )
     except ShellArcException as e:
@@ -846,7 +846,7 @@ async def spin(ctx):
         return
     spin_msg = await message.channel.send("選ばれたのは。。。。。。。")
     await asyncio.sleep(0.5)
-    await spin_msg.edit(content=f"気になるよね〜〜")
+    await spin_msg.edit(content="気になるよね〜〜")
     await asyncio.sleep(0.5)
     mentioned_role_id = int(regex_search.group(1))
     mentioned_role = message.guild.get_role(mentioned_role_id)

@@ -1,0 +1,1656 @@
+PLC0414 Import alias does not rename original package
+  --> discord_bot/discord_connection.py:14:21
+   |
+12 | import discord
+13 | import regex
+14 | from discord import Webhook as Webhook
+   |                     ^^^^^^^^^^^^^^^^^^
+15 | from discord.ext import commands
+16 | from dotenv import load_dotenv
+   |
+help: Remove import alias
+
+SIM103 Return the negated condition directly
+  --> discord_bot/discord_connection.py:83:5
+   |
+81 |           for authorized in admin_roles.get(authority_group, [])
+82 |           ]
+83 | /     if not set(admin_roles_ctx).intersection(set(message.author.roles)):
+84 | |         return False
+85 | |     return True
+   | |_______________^
+86 |
+87 |   class ShellArcActions(Enum):
+   |
+help: Inline condition
+
+F841 Local variable `message` is assigned to but never used
+   --> discord_bot/discord_connection.py:106:5
+    |
+104 | @shell_arc_bot.check
+105 | async def check_if_running(ctx):
+106 |     message = ctx.message
+    |     ^^^^^^^
+107 |     if ctx.command.name == "onoff":
+108 |         return True
+    |
+help: Remove assignment to unused variable `message`
+
+PLW0602 Using global for `ONOFF` but no assignment is done
+   --> discord_bot/discord_connection.py:109:12
+    |
+107 |     if ctx.command.name == "onoff":
+108 |         return True
+109 |     global ONOFF
+    |            ^^^^^
+110 |     if not ONOFF:
+111 |         raise commands.CheckFailure("ShellArcメインテナンス中です\n申し訳ございませんがしばらく経ってから再度実行してください")
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:226:16
+    |
+224 |             processing_person = str(interaction.user.display_name)
+225 |             processing_component = str(self.values[0])
+226 |         except Exception as e:
+    |                ^^^^^^^^^
+227 |             print("Error occurred while processing the submission selection")
+228 |             print(e)
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:239:21
+    |
+237 |                     try:
+238 |                         processing_take = str(self.message.content.split(" ")[1])
+239 |                     except:
+    |                     ^^^^^^
+240 |                         processing_take = "0"
+241 |                 shell_arc_bot.dispatch(
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:306:16
+    |
+304 |             processing_cut = process_cut_num(processing_cut_cluster)
+305 |             print(f"submitting_cut is {processing_cut}")
+306 |         except Exception as e:
+    |                ^^^^^^^^^
+307 |             print(f"Error occurred while processing the submission selection : {e}")
+308 |             return
+    |
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+   --> discord_bot/discord_connection.py:326:27
+    |
+324 |                               ) -> None:
+325 |     submission_log_channel = discord.utils.get(message.guild.channels, id=int(shellarc_center["notice_center"])) #**********
+326 |     submission_datetime = datetime.datetime.now()
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^
+327 |     submission_datetime_str = datetime.datetime.strftime(submission_datetime, "%d/%m/%Y, %H:%M:%S")
+328 |     await submission_log_channel.send(
+    |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:392:12
+    |
+390 |         await interaction.edit_original_response(content=e.frontend_msg, view=None)
+391 |         return
+392 |     except Exception as e:
+    |            ^^^^^^^^^
+393 |         await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+394 |         tb = traceback.format_exc()
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:404:9
+    |
+402 |             if temp_dir and Path(temp_dir).exists():
+403 |                 os.rmdir(temp_dir)
+404 |         except:
+    |         ^^^^^^
+405 |             print("Unable to delete tempdir")
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:452:12
+    |
+450 |         await interaction.edit_original_response(content=e.frontend_msg, view=None)
+451 |         return
+452 |     except Exception as e:
+    |            ^^^^^^^^^
+453 |         await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+454 |         tb = traceback.format_exc()
+    |
+
+F841 Local variable `downloaded_filename` is assigned to but never used
+   --> discord_bot/discord_connection.py:475:9
+    |
+473 |         downloaded_material = await shellarc_request.download_material(requesting_take=requesting_take)
+474 |         downloaded_path = downloaded_material[0]
+475 |         downloaded_filename = downloaded_material[1]
+    |         ^^^^^^^^^^^^^^^^^^^
+476 |         downloaded_method = downloaded_material[2]
+477 |         take_name = requesting_take
+    |
+help: Remove assignment to unused variable `downloaded_filename`
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:500:12
+    |
+498 |         await interaction.edit_original_response(content=e.frontend_msg, view=None)
+499 |         return
+500 |     except Exception as e:
+    |            ^^^^^^^^^
+501 |         await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+502 |         tb = traceback.format_exc()
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:534:12
+    |
+532 |         await interaction.edit_original_response(content=e.frontend_msg, view=None)
+533 |         return
+534 |     except Exception as e:
+    |            ^^^^^^^^^
+535 |         await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+536 |         tb = traceback.format_exc()
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:570:12
+    |
+568 |         await interaction.edit_original_response(content=e.frontend_msg, view=None)
+569 |         return
+570 |     except Exception as e:
+    |            ^^^^^^^^^
+571 |         await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+572 |         tb = traceback.format_exc()
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:695:12
+    |
+693 |         quering_cut = int(process_cut_num(quering_cut_cluster))
+694 |         print(f"submitting_cut is {quering_cut}")
+695 |     except Exception as e:
+    |            ^^^^^^^^^
+696 |         print(f"Error occurred while processing the submission selection : {e}")
+697 |         return
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:702:9
+    |
+700 |         try:
+701 |             max_length = int(message_command[2])
+702 |         except:
+    |         ^^^^^^
+703 |             max_length = None
+704 |     if len(message_command) == 4 and message_command[3] == "-appr":
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:733:5
+    |
+731 |     try:
+732 |         asking_person = str(message.content.split(" ")[1])
+733 |     except:
+    |     ^^^^^^
+734 |         asking_person = str(message.author.display_name)
+735 |     await message.reply("検索中...\n10秒ほどお待ちいただく場合があります")
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:774:12
+    |
+772 |     except ShellArcError as e:
+773 |         await message.channel.send(content=e.frontend_msg, view=None)
+774 |     except Exception as e:
+    |            ^^^^^^^^^
+775 |         await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+776 |         tb = traceback.format_exc()
+    |
+
+B005 Using `.strip()` with multi-character strings is misleading
+   --> discord_bot/discord_connection.py:807:15
+    |
+805 |         return
+806 |     try:
+807 |         cmd = message.content.lstrip("..sapyc").strip()
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+808 |         rtn = await SAPYC_Interpreter.interpret_sapyc(cmd=cmd)
+809 |         await message.channel.send(rtn)
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:814:12
+    |
+812 |     except ShellArcError as e:
+813 |         await message.channel.send(content=e.frontend_msg, view=None)
+814 |     except Exception as e:
+    |            ^^^^^^^^^
+815 |         await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+816 |         tb = traceback.format_exc()
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:838:5
+    |
+836 |         range_from = int(message_breakdown[3])
+837 |         range_to = int(message_breakdown[4])
+838 |     except:
+    |     ^^^^^^
+839 |         await message.channel.send("無効な形式です（..makech カタゴリID 命名規則 開始カット 終了カット）")
+840 |         return
+    |
+
+E722 Do not use bare `except`
+   --> discord_bot/discord_connection.py:843:5
+    |
+841 |     try: 
+842 |         catagory = discord.utils.get(message.guild.categories, id=catagory_id)
+843 |     except:
+    |     ^^^^^^
+844 |         await message.channel.send("無効なカタゴリIDです")
+845 |         return
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> discord_bot/discord_connection.py:852:12
+    |
+850 |             if count % 5 == 0:
+851 |                 await asyncio.sleep(1.1)
+852 |     except Exception as e:
+    |            ^^^^^^^^^
+853 |         await message.channel.send(f"Discord make channel error : {e}")
+854 |         return
+    |
+
+PLC0414 Import alias does not rename original package
+ --> discord_bot/emulator.py:3:21
+  |
+1 | import asyncio
+2 |
+3 | from discord import Webhook as Webhook
+  |                     ^^^^^^^^^^^^^^^^^^
+4 |
+5 | from shellarc_core.process.query import ShellArc_Query
+  |
+help: Remove import alias
+
+PLR1722 Use `sys.exit()` instead of `exit`
+  --> null_ai_chat/discord_chatbot.py:15:5
+   |
+13 | if not dotenv_path.exists():
+14 |     print(".env file not exist")
+15 |     exit()
+   |     ^^^^
+16 | load_dotenv(dotenv_path)
+17 | DIFY_KEY = os.environ.get("Dify_token")
+   |
+help: Replace `exit` with `sys.exit()`
+
+PLR1722 Use `sys.exit()` instead of `exit`
+  --> null_ai_chat/discord_chatbot.py:24:5
+   |
+22 | if not discord_config_file_path.exists():
+23 |     print("discord_config file not exist")
+24 |     exit()
+   |     ^^^^
+25 | with open(discord_config_file_path, mode="r", encoding="utf-8") as config_file:
+26 |     discord_config_dict = json.load(config_file)
+   |
+help: Replace `exit` with `sys.exit()`
+
+ASYNC210 Async functions should not call blocking HTTP methods
+  --> null_ai_chat/discord_chatbot.py:55:16
+   |
+53 |     }
+54 |
+55 |     response = requests.post(endpoint, headers=headers, json=payload)
+   |                ^^^^^^^^^^^^^
+56 |     data = response.json()
+57 |     ans = str(data.get('answer'))
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> null_ai_chat/discord_chatbot.py:81:12
+   |
+79 |             chat_mode=chat_mode
+80 |         )
+81 |     except Exception as e:
+   |            ^^^^^^^^^
+82 |         print(f"Dify error : {e}")
+83 |         return
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> null_ai_chat/discord_chatbot.py:105:12
+    |
+103 |             chat_mode=chat_mode
+104 |         )
+105 |     except Exception as e:
+    |            ^^^^^^^^^
+106 |         print(f"Dify error : {e}")
+107 |         return
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> null_ai_chat/discord_chatbot.py:117:10
+    |
+115 |         return
+116 |     city_name = "福岡" if len(message.content.split(" ")) < 2 else message.content.split(" ")[1]
+117 |     with open(Path(__file__).resolve().parent / "city_id.json", "r", encoding="utf-8") as f:
+    |          ^^^^
+118 |         city_id_dict = json.load(f)
+119 |     city_id = city_id_dict.get(city_name, None)
+    |
+
+ASYNC210 Async functions should not call blocking HTTP methods
+   --> null_ai_chat/discord_chatbot.py:123:16
+    |
+121 |         await message.channel.send("無効な地名です")
+122 |         return
+123 |     response = requests.get(f"https://weather.tsukumijima.net/api/forecast/city/{city_id}")
+    |                ^^^^^^^^^^^^
+124 |     if response.status_code != 200:
+125 |         await message.channel.send("API通信無効です")
+    |
+
+PLR1722 Use `sys.exit()` instead of `exit`
+  --> null_itemi_action/itemi_action.py:30:5
+   |
+28 | if not dotenv_path.exists():
+29 |     print(".env file not exist")
+30 |     exit()
+   |     ^^^^
+31 | load_dotenv(dotenv_path)
+32 | DIFY_KEY = os.environ.get("Dify_token")
+   |
+help: Replace `exit` with `sys.exit()`
+
+PLR1722 Use `sys.exit()` instead of `exit`
+  --> null_itemi_action/itemi_action.py:39:5
+   |
+37 | if not discord_config_file_path.exists():
+38 |     print("discord_config file not exist")
+39 |     exit()
+   |     ^^^^
+40 | with open(discord_config_file_path, mode="r", encoding="utf-8") as config_file:
+41 |     discord_config_dict = json.load(config_file)
+   |
+help: Replace `exit` with `sys.exit()`
+
+ASYNC210 Async functions should not call blocking HTTP methods
+  --> null_itemi_action/itemi_action.py:83:16
+   |
+81 |     }
+82 |
+83 |     response = requests.post(endpoint, headers=headers, json=payload, files=file)
+   |                ^^^^^^^^^^^^^
+84 |     data = response.json()
+85 |     ans = str(data.get('answer'))
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> null_itemi_action/itemi_action.py:122:12
+    |
+120 |         target_person = discord.utils.get(message.guild.members, id=target_person_id)
+121 |         await target_channel.send(f"{message_to_say} {target_person.mention}")
+122 |     except Exception as e:
+    |            ^^^^^^^^^
+123 |         await message.channel.send(f"無効なコマンドです : {e}")
+124 |         return
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> null_itemi_action/itemi_action.py:147:12
+    |
+145 |         await message.channel.send(content=e.frontend_msg, view=None)
+146 |         return
+147 |     except Exception as e:
+    |            ^^^^^^^^^
+148 |         await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+149 |         tb = traceback.format_exc()
+    |
+
+E722 Do not use bare `except`
+   --> null_itemi_action/itemi_action.py:159:13
+    |
+157 |         if download_lo_dir.exists():
+158 |             try: os.rmdir(download_lo_dir)
+159 |             except: pass
+    |             ^^^^^^
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+   --> null_itemi_action/itemi_action.py:159:13
+    |
+157 |         if download_lo_dir.exists():
+158 |             try: os.rmdir(download_lo_dir)
+159 |             except: pass
+    |             ^^^^^^^^^^^^
+
+BLE001 Do not catch blind exception: `Exception`
+   --> null_itemi_action/itemi_action.py:182:12
+    |
+180 |         await message.channel.send(content=e.frontend_msg, view=None)
+181 |         return
+182 |     except Exception as e:
+    |            ^^^^^^^^^
+183 |         await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+184 |         tb = traceback.format_exc()
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> null_itemi_action/itemi_action.py:204:12
+    |
+202 |         await message.channel.send(content=e.frontend_msg, view=None)
+203 |         return
+204 |     except Exception as e:
+    |            ^^^^^^^^^
+205 |         await message.channel.send(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
+206 |         tb = traceback.format_exc()
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> null_itemi_action/itemi_action.py:251:18
+    |
+249 |         kw = message.content.split(" ")[2]
+250 |         if memo_file.exists():
+251 |             with open(memo_file, "r", encoding="utf-8") as f:
+    |                  ^^^^
+252 |                 current_memo = json.load(f)
+253 |         else:
+    |
+
+B005 Using `.strip()` with multi-character strings is misleading
+   --> null_itemi_action/itemi_action.py:265:24
+    |
+264 |     else:
+265 |         memo_content = message.content.strip("..memo").strip()
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+266 |         channel_id = str(message.channel.id)
+267 |         msg_id = str(message.id)
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> null_itemi_action/itemi_action.py:271:18
+    |
+269 |         memo_person = str(message.author.display_name)
+270 |         if memo_file.exists():
+271 |             with open(memo_file, "r", encoding="utf-8") as f:
+    |                  ^^^^
+272 |                 current_memo = json.load(f)
+273 |                 current_memo[memo_content] = {
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> null_itemi_action/itemi_action.py:284:14
+    |
+282 |                 }
+283 |             }
+284 |         with open(memo_file, "w", encoding="utf-8") as f:
+    |              ^^^^
+285 |             json.dump(current_memo, f, ensure_ascii=False, indent=3)
+286 |         await message.channel.send("メモを記録しました！")
+    |
+
+DTZ001 `datetime.datetime()` called without a `tzinfo` argument
+   --> null_itemi_action/itemi_action.py:309:29
+    |
+307 |               )
+308 |           try:
+309 |               task_datetime = datetime.datetime(
+    |  _____________________________^
+310 | |                 int(when[0:4]),
+311 | |                 int(when[4:6]),
+312 | |                 int(when[6:8]),
+313 | |                 int(when[8:10]),
+314 | |                 int(when[10:12])
+315 | |                 )
+    | |_________________^
+316 |           except:
+317 |               raise SA_InvalidUserQuery(
+    |
+help: Pass a `datetime.timezone` object to the `tzinfo` parameter
+
+E722 Do not use bare `except`
+   --> null_itemi_action/itemi_action.py:316:9
+    |
+314 |                 int(when[10:12])
+315 |                 )
+316 |         except:
+    |         ^^^^^^
+317 |             raise SA_InvalidUserQuery(
+318 |                 error_log="Invalid value for datetime",
+    |
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+   --> null_itemi_action/itemi_action.py:321:29
+    |
+319 |                 frontend_msg="無効な日時数値です"
+320 |             )
+321 |         if (task_datetime - datetime.datetime.now()).total_seconds() <= 0:
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^
+322 |             raise SA_InvalidUserQuery(
+323 |                 error_log="Past datetime scheduled",
+    |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> shellarc_devkit/cloud_access_check.py:53:37
+   |
+52 |     check_completed_action()
+53 |     print(f"Access check finished ({datetime.datetime.now().strftime("%Y%m%d%H%M%S")})")
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^
+54 |     print("--------------------")
+55 |     print()
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+invalid-syntax: Cannot reuse outer quote character in f-strings on Python 3.9 (syntax was added in Python 3.12)
+  --> shellarc_devkit/cloud_access_check.py:53:70
+   |
+52 |     check_completed_action()
+53 |     print(f"Access check finished ({datetime.datetime.now().strftime("%Y%m%d%H%M%S")})")
+   |                                                                      ^
+54 |     print("--------------------")
+55 |     print()
+   |
+
+invalid-syntax: Cannot reuse outer quote character in f-strings on Python 3.9 (syntax was added in Python 3.12)
+  --> shellarc_devkit/key_encoder.py:26:27
+   |
+24 | print(f"Generated key file : {generated_key_file}")
+25 | print("------YOUR SECRET KEY <NEVER EXPOSE THE KEY TO ANY UNTRUSTED THIRD PARTIES>------")
+26 | print(f"KEY : {key.decode("utf-8")}")
+   |                           ^
+27 | print("------------")
+   |
+
+TRY002 Create your own exception
+  --> shellarc_devkit/local_dl/backup_on_local.py:16:19
+   |
+14 |         if not dotenv_path.exists():
+15 |             print(f"dotenv_path {dotenv_path} not exist")
+16 |             raise Exception
+   |                   ^^^^^^^^^
+17 |         load_dotenv(dotenv_path)
+18 |         R2_ACCESS_KEY_ID = os.environ.get("CloudflareR2_access_key_id")
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> shellarc_devkit/local_dl/backup_on_local.py:30:16
+   |
+28 |                 region_name="auto"
+29 |             )
+30 |         except Exception as e:
+   |                ^^^^^^^^^
+31 |             self._s3_client = None
+32 |             print(f"Auth error in CloudflareR2 [{e}]")
+   |
+
+TRY002 Create your own exception
+  --> shellarc_devkit/local_dl/backup_on_local.py:33:19
+   |
+31 |             self._s3_client = None
+32 |             print(f"Auth error in CloudflareR2 [{e}]")
+33 |             raise Exception
+   |                   ^^^^^^^^^
+34 |
+35 |     @property
+   |
+
+TRY002 Create your own exception
+  --> shellarc_devkit/local_dl/backup_on_local.py:49:15
+   |
+47 |     if backup_environ is None:
+48 |         print("Environment variable not set")
+49 |         raise Exception
+   |               ^^^^^^^^^
+50 |     local_backup_dir = Path(os.environ.get("SHELLARC_LOCAL_BACKUP"))
+51 |     if not local_backup_dir.exists():
+   |
+
+DTZ007 Naive datetime constructed using `datetime.datetime.strptime()` without %z
+  --> shellarc_devkit/local_dl/backup_on_local.py:71:24
+   |
+69 |         print("Invalid backup config file")
+70 |         return
+71 |     last_backup_time = datetime.datetime.strptime(backup_config["last_backup_time"], "%Y%m%d%H%M%S")
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+72 |     local_backup_dir = backup_config["local_backup_dir"]
+73 |     s3_client = Cloudflare_R2_service_Access().s3_client
+   |
+help: Call `.replace(tzinfo=<timezone>)` or `.astimezone()` to convert to an aware datetime
+
+DTZ007 Naive datetime constructed using `datetime.datetime.strptime()` without %z
+  --> shellarc_devkit/local_dl/backup_on_local.py:87:34
+   |
+85 |                 obj_key = obj_info.get("Key")
+86 |                 obj_name = obj_key.split("/")[-1]
+87 |                 saved_timemark = datetime.datetime.strptime(obj_name.split("_")[-1].split(".")[0], "%Y%m%d%H%M%S")
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+88 |                 if saved_timemark <= last_backup_time:
+89 |                     continue
+   |
+help: Call `.replace(tzinfo=<timezone>)` or `.astimezone()` to convert to an aware datetime
+
+BLE001 Do not catch blind exception: `Exception`
+   --> shellarc_devkit/local_dl/backup_on_local.py:100:20
+    |
+ 98 |                     f"{cut_dir}/{obj_name}"
+ 99 |                 )
+100 |             except Exception as e:
+    |                    ^^^^^^^^^
+101 |                 print(f"ERROR : {e}")
+102 |                 continue
+    |
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+   --> shellarc_devkit/local_dl/backup_on_local.py:103:28
+    |
+101 |                 print(f"ERROR : {e}")
+102 |                 continue
+103 |         current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^
+104 |         backup_config["last_backup_time"] = current_datetime
+105 |         with open(Path(local_backup_dir) / "backup_config.json", "w", encoding="utf-8") as f:
+    |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+BLE001 Do not catch blind exception: `Exception`
+  --> shellarc_devkit/project_init_cli.py:33:12
+   |
+31 |                 )
+32 |         return ""
+33 |     except Exception as e:
+   |            ^^^^^^^^^
+34 |         return e
+   |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+  --> shellarc_devkit/project_init_cli.py:70:14
+   |
+68 |             print("Process abolished")
+69 |             return
+70 |         with open(spreadsheet_map_path, "r", encoding="utf-8") as f:
+   |              ^^^^
+71 |             spreadsheet_map = json.load(f)
+   |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+  --> shellarc_devkit/project_init_cli.py:78:10
+   |
+76 |         return
+77 |     
+78 |     with open(proj_setting_path, "r", encoding="utf-8") as f:
+   |          ^^^^
+79 |         proj_settings = json.load(f)
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> shellarc_devkit/project_init_cli.py:97:12
+   |
+95 |             project_settings=proj_settings
+96 |             )
+97 |     except Exception as e:
+   |            ^^^^^^^^^
+98 |         print(f"Make project repository failed due to : {e}")
+99 |         print("Process abolished")
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> shellarc_devkit/project_init_cli.py:107:12
+    |
+105 |         spreadsheet = spreadsheet_instance.spreadsheet_obj(page_idx=0)
+106 |         print("Spreadsheet (GCP) access successful")
+107 |     except Exception as e:
+    |            ^^^^^^^^^
+108 |         print(f"Spreadsheet (GCP) access failed due to : {e}")
+109 |         print("Process abolished")
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> src/shellarc_core/auth/access_database.py:40:16
+   |
+38 |                 firebase_admin.initialize_app(cred)
+39 |             self._database = firestore.client()
+40 |         except Exception as e:
+   |                ^^^^^^^^^
+41 |             self._database = None
+42 |             raise SA_AuthError(
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> src/shellarc_core/auth/access_r2.py:33:16
+   |
+31 |                 region_name="auto"
+32 |             )
+33 |         except Exception as e:
+   |                ^^^^^^^^^
+34 |             self._s3_client = None
+35 |             raise SA_AuthError(
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> src/shellarc_core/auth/access_spread_sheet.py:54:16
+   |
+52 |             gc_auth = gspread.authorize(creds)
+53 |             self.masterspreadsheet = gc_auth.open_by_key(SPREADSHEET_KEY)
+54 |         except Exception as e:
+   |                ^^^^^^^^^
+55 |             self._spreadsheet = None
+56 |             raise SA_AuthError(
+   |
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:60:18
+   |
+58 |         log_length (int | None): The maximum number of log records to return. If None, return all log records that match the other fil…
+59 |     """
+60 |     commit_type: SA_CommitType | str | None = None
+   |                  ^^^^^^^^^^^^^^^^^^^
+61 |     cut_num: int | None = None
+62 |     component: str | None = None
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:60:18
+   |
+58 |         log_length (int | None): The maximum number of log records to return. If None, return all log records that match the other fil…
+59 |     """
+60 |     commit_type: SA_CommitType | str | None = None
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 |     cut_num: int | None = None
+62 |     component: str | None = None
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:61:14
+   |
+59 |     """
+60 |     commit_type: SA_CommitType | str | None = None
+61 |     cut_num: int | None = None
+   |              ^^^^^^^^^^
+62 |     component: str | None = None
+63 |     log_length: int | None = None
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:62:16
+   |
+60 |     commit_type: SA_CommitType | str | None = None
+61 |     cut_num: int | None = None
+62 |     component: str | None = None
+   |                ^^^^^^^^^^
+63 |     log_length: int | None = None
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:63:17
+   |
+61 |     cut_num: int | None = None
+62 |     component: str | None = None
+63 |     log_length: int | None = None
+   |                 ^^^^^^^^^^
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_git.py:71:38
+   |
+70 |     def __init__(self,
+71 |                  git_repo_local_dir: str | None=None):
+   |                                      ^^^^^^^^^^
+72 |         cfg_io = Cfg_IO()
+73 |         self.git_repo_local_dir = Path(cfg_io.get_cfg_setting(Cfg_item.GIT_LREPO)) \
+   |
+help: Add `from __future__ import annotations`
+
+RUF059 Unpacked variable `stdout` is never used
+   --> src/shellarc_core/cloudio/io_git.py:165:13
+    |
+163 |         for git_command in git_commands:
+164 |             git_proc = await self._git_command(*git_command)
+165 |             stdout, stderr = await git_proc.communicate()
+    |             ^^^^^^
+166 |             if git_proc.returncode != 0:
+167 |                 print(stderr.decode('utf-8'))
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:191:14
+    |
+189 |             "common" : {c : [c_info["format"]] for c, c_info in proj_settings["components"].items()}
+190 |         }
+191 |         with open(self.git_repo_local_dir / "project_main.json", "w", encoding="utf-8") as f:
+    |              ^^^^
+192 |             json.dump(proj_main_dict, f, ensure_ascii=False, indent=3)
+193 |         for c in range(1, int(proj_settings["cut_num"]) + 1):
+    |
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_git.py:210:42
+    |
+209 |     async def get_component_info(self,
+210 |                                  branch: ShellArcGitBranch | str,
+    |                                          ^^^^^^^^^^^^^^^^^^^^^^^
+211 |                                  cut_num: int,
+212 |                                  component: str,
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_git.py:213:45
+    |
+211 | …                              cut_num: int,
+212 | …                              component: str,
+213 | …                              commit_id: str | None=None
+    |                                           ^^^^^^^^^^
+214 | …                              ) -> dict[str, str]:
+215 | …     """Get the component information for the specified cut number and component name from the git repository, based on the specifie…
+    |
+help: Add `from __future__ import annotations`
+
+RUF059 Unpacked variable `stderr` is never used
+   --> src/shellarc_core/cloudio/io_git.py:232:21
+    |
+230 |             commit_id = commit_id if commit_id is not None else branch
+231 |             git_proc = await self._git_command(GitCommands.SHOW, f"{commit_id}:stage/cut{cut_num}/{component}.json")
+232 |             stdout, stderr = await git_proc.communicate()
+    |                     ^^^^^^
+233 |             if git_proc.returncode == 0:
+234 |                 requested_info_str = stdout.decode("utf-8")
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_git.py:254:35
+    |
+252 |     async def get_log(self,
+253 |                       output_format: list[int],
+254 |                       log_filter: SA_GitLogFilter | None=None,
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^
+255 |                       limit_scope: str | None=None,
+256 |                       branch: ShellArcGitBranch | str=ShellArcGitBranch.PENDING
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_git.py:255:36
+    |
+253 |                       output_format: list[int],
+254 |                       log_filter: SA_GitLogFilter | None=None,
+255 |                       limit_scope: str | None=None,
+    |                                    ^^^^^^^^^^
+256 |                       branch: ShellArcGitBranch | str=ShellArcGitBranch.PENDING
+257 |                       ) -> dict[str, str]:
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_git.py:256:31
+    |
+254 |                       log_filter: SA_GitLogFilter | None=None,
+255 |                       limit_scope: str | None=None,
+256 |                       branch: ShellArcGitBranch | str=ShellArcGitBranch.PENDING
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^
+257 |                       ) -> dict[str, str]:
+258 |         """Get the git log records from the specified branch in the git repository, 
+    |
+help: Add `from __future__ import annotations`
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:342:18
+    |
+340 |                 "repointer" : repoint_target_cut
+341 |             }
+342 |             with open(self.git_repo_local_dir / f"stage/cut{be_repointed_cut}/{component}.json", "w", encoding="utf-8") as f:
+    |                  ^^^^
+343 |                 json.dump(current_component_info, f, ensure_ascii=False, indent=3)
+344 |             git_commands = [
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:349:18
+    |
+347 |             ]
+348 |             await self._continuous_git_command(git_commands=git_commands)
+349 |             with open(self.git_repo_local_dir / f"stage/cut{be_repointed_cut}/.sa_pending_{component}", "w") as f:
+    |                  ^^^^
+350 |                 f.write("")
+    |
+
+RUF013 PEP 484 prohibits implicit `Optional`
+   --> src/shellarc_core/cloudio/io_git.py:356:38
+    |
+354 |                           absorb_target_cut: int,
+355 |                           component: str,
+356 |                           commit_id: str=None,
+    |                                      ^^^
+357 |                           branch: ShellArcGitBranch=ShellArcGitBranch.PENDING
+358 |                           ) -> None:
+    |
+help: Convert to `Optional[T]`
+
+RUF059 Unpacked variable `stderr` is never used
+   --> src/shellarc_core/cloudio/io_git.py:364:21
+    |
+362 |             commit_id = commit_id if commit_id is not None else branch
+363 |             git_proc = await self._git_command(GitCommands.SHOW, f"{commit_id}:stage/cut{absorb_target_cut}/{component}.json")
+364 |             stdout, stderr = await git_proc.communicate()
+    |                     ^^^^^^
+365 |             if git_proc.returncode == 0:
+366 |                 requested_info_str = stdout.decode("utf-8")
+    |
+help: Prefix it with an underscore or any other dummy variable pattern
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:373:14
+    |
+371 |             requested_info = {}
+372 |         await self._continuous_git_command([[GitCommands.CHECKOUT, ShellArcGitBranch.PENDING]])
+373 |         with open(self.git_repo_local_dir / f"stage/cut{absorbing_cut}/{component}.json", "w", encoding="utf-8") as f:
+    |              ^^^^
+374 |             json.dump(requested_info, f, ensure_ascii=False, indent=3)
+375 |         git_commands = [
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:380:14
+    |
+378 |         ]
+379 |         await self._continuous_git_command(git_commands=git_commands)
+380 |         with open(self.git_repo_local_dir / f"stage/cut{absorbing_cut}/.sa_pending_{component}", "w") as f:
+    |              ^^^^
+381 |             f.write("")
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> src/shellarc_core/cloudio/io_git.py:438:20
+    |
+436 |             try:
+437 |                 await self._continuous_git_command(git_commands=git_commands)
+438 |             except Exception:
+    |                    ^^^^^^^^^
+439 |                 with open(self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}", "w") as f:
+440 |                     f.write("")
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:439:22
+    |
+437 |                 await self._continuous_git_command(git_commands=git_commands)
+438 |             except Exception:
+439 |                 with open(self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}", "w") as f:
+    |                      ^^^^
+440 |                     f.write("")
+441 |                 raise SA_LocalIOError(
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:479:18
+    |
+477 |                 "fileindex" : file_index_name
+478 |             }
+479 |             with open(self.git_repo_local_dir / f"stage/cut{cut_num}/{component}.json", "w", encoding="utf-8") as f:
+    |                  ^^^^
+480 |                 json.dump(current_component_info, f, ensure_ascii=False, indent=3)
+481 |             git_commands = [
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/cloudio/io_git.py:486:18
+    |
+484 |             ]
+485 |             await self._continuous_git_command(git_commands=git_commands)
+486 |             with open(self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}", "w") as f:
+    |                  ^^^^
+487 |                 f.write("")
+488 |             return file_index_name
+    |
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_notion.py:63:46
+   |
+62 |     def get_image_file(self,
+63 |                        download_destination: str | Path,
+   |                                              ^^^^^^^^^^
+64 |                        attr_name: str="画像"
+65 |                        ) -> None:
+   |
+help: Add `from __future__ import annotations`
+
+E722 Do not use bare `except`
+   --> src/shellarc_core/cloudio/io_notion.py:115:9
+    |
+113 |                 properties={attr_name: {"files": img_info}}
+114 |             )
+115 |         except:
+    |         ^^^^^^
+116 |             raise SA_CommunicationError(
+117 |                 error_log="Request failed when uploadng image url to Notion",
+    |
+
+PLC0414 Import alias does not rename original package
+  --> src/shellarc_core/cloudio/io_r2.py:10:38
+   |
+ 9 | from shellarc_core.auth.access_r2 import Cloudflare_R2_service_Access as A_R2
+10 | from shellarc_core.cfg.cfg_io import Cfg_IO as Cfg_IO
+   |                                      ^^^^^^^^^^^^^^^^
+11 | from shellarc_core.cfg.cfg_io import Cfg_item
+12 | from shellarc_core.exception.structure_error import (
+   |
+help: Remove import alias
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_r2.py:21:31
+   |
+19 | class R2_IO:
+20 |     def __init__(self, 
+21 |                  bucket_name: str | None=None
+   |                               ^^^^^^^^^^
+22 |                  ):
+23 |         a_r2 = A_R2()
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_r2.py:90:36
+   |
+88 |     def get_paths_with_prefix(self,
+89 |                               file_prefix: str
+90 |                               ) -> list[str] | None:
+   |                                    ^^^^^^^^^^^^^^^^
+91 |         response = self.s3_client.list_objects_v2(
+92 |             Bucket=self.bucket_name,
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:102:37
+    |
+100 |     @overload
+101 |     def upload_file(self, 
+102 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^
+103 |                     file_path: str | Path,
+104 |                     url_prefix: str
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:102:37
+    |
+100 |     @overload
+101 |     def upload_file(self, 
+102 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^^^^^^^^
+103 |                     file_path: str | Path,
+104 |                     url_prefix: str
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:103:32
+    |
+101 |     def upload_file(self, 
+102 |                     uploading_file: bytes | str | Path,
+103 |                     file_path: str | Path,
+    |                                ^^^^^^^^^^
+104 |                     url_prefix: str
+105 |                     ) -> str: ...
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:109:37
+    |
+107 |     @overload
+108 |     def upload_file(self, 
+109 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^
+110 |                     file_path: str | Path,
+111 |                     url_prefix: None
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:109:37
+    |
+107 |     @overload
+108 |     def upload_file(self, 
+109 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^^^^^^^^
+110 |                     file_path: str | Path,
+111 |                     url_prefix: None
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:110:32
+    |
+108 |     def upload_file(self, 
+109 |                     uploading_file: bytes | str | Path,
+110 |                     file_path: str | Path,
+    |                                ^^^^^^^^^^
+111 |                     url_prefix: None
+112 |                     ) -> None: ...
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:116:37
+    |
+115 |     def upload_file(self,
+116 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^
+117 |                     file_path: str | Path,
+118 |                     url_prefix: str | None=None
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:116:37
+    |
+115 |     def upload_file(self,
+116 |                     uploading_file: bytes | str | Path,
+    |                                     ^^^^^^^^^^^^^^^^^^
+117 |                     file_path: str | Path,
+118 |                     url_prefix: str | None=None
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:117:32
+    |
+115 |     def upload_file(self,
+116 |                     uploading_file: bytes | str | Path,
+117 |                     file_path: str | Path,
+    |                                ^^^^^^^^^^
+118 |                     url_prefix: str | None=None
+119 |                     ) -> str | None:
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:118:33
+    |
+116 |                     uploading_file: bytes | str | Path,
+117 |                     file_path: str | Path,
+118 |                     url_prefix: str | None=None
+    |                                 ^^^^^^^^^^
+119 |                     ) -> str | None:
+120 |         """Upload a file to the R2 storage by either directly uploading the file from a local path 
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/cloudio/io_r2.py:119:26
+    |
+117 |                     file_path: str | Path,
+118 |                     url_prefix: str | None=None
+119 |                     ) -> str | None:
+    |                          ^^^^^^^^^^
+120 |         """Upload a file to the R2 storage by either directly uploading the file from a local path 
+121 |         or by writing the file content from bytes to a temporary file and then uploading it.
+    |
+help: Add `from __future__ import annotations`
+
+BLE001 Do not catch blind exception: `Exception`
+   --> src/shellarc_core/cloudio/io_r2.py:150:16
+    |
+148 |                 file_path
+149 |             )
+150 |         except Exception as e:
+    |                ^^^^^^^^^
+151 |             raise SA_CommunicationError(
+152 |                 error_log=f"Communication error with R2 when uploading [{e}]",
+    |
+
+BLE001 Do not catch blind exception: `Exception`
+   --> src/shellarc_core/cloudio/io_r2.py:183:16
+    |
+181 |             )
+182 |             asyncio.sleep(0.2)
+183 |         except Exception as e:
+    |                ^^^^^^^^^
+184 |             raise SA_CommunicationError(
+185 |                 error_log=f"Communication error with R2 when downloading [{e}]",
+    |
+
+PLC0414 Import alias does not rename original package
+ --> src/shellarc_core/cloudio/io_spreadsheet.py:5:38
+  |
+4 | from shellarc_core.auth.access_spread_sheet import AccessSpreadSheet as A_GCP
+5 | from shellarc_core.cfg.cfg_io import Cfg_IO as Cfg_IO
+  |                                      ^^^^^^^^^^^^^^^^
+6 | from shellarc_core.cfg.cfg_io import Cfg_item
+7 | from shellarc_core.cfg.spreadsheet_map_io import SpreadsheetMap_IO as SMap_IO
+  |
+help: Remove import alias
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/cloudio/io_spreadsheet.py:22:23
+   |
+20 | …              cut_num: int,
+21 | …              page_idx: int=0
+22 | …              ) -> str | None:
+   |                     ^^^^^^^^^^
+23 | …     """Get the specified information from the Google Spreadsheet based on the provided information type, cut number, and page index.
+   |
+help: Add `from __future__ import annotations`
+
+PLR0206 Cannot have defined parameters for properties
+   --> src/shellarc_core/cloudio/io_spreadsheet.py:108:9
+    |
+107 |     @property
+108 |     def spreadsheet_cache(self,
+    |         ^^^^^^^^^^^^^^^^^
+109 |                           page_idx: int=0
+110 |                           ) -> list:
+    |
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> src/shellarc_core/exception/structure_error.py:35:15
+   |
+33 |                  is_fatal: bool
+34 |                  ):
+35 |         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+   |               ^^^^^^^^^^^^^^
+36 |         error_log = f"{now} : {error_type.value} - {error_code.name}({error_code.value}) - {error_log}"
+37 |         if is_fatal:
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:10:32
+   |
+ 8 |                  error_log: str,
+ 9 |                  error_type: SA_ExceptionType,
+10 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+11 |                  ):
+12 |         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+   |
+help: Add `from __future__ import annotations`
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> src/shellarc_core/exception/user_exception.py:12:15
+   |
+10 |                  frontend_msg: str | None=None
+11 |                  ):
+12 |         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+   |               ^^^^^^^^^^^^^^
+13 |         error_log = f"{now} : {error_type.value} - {error_log}"
+14 |         super().__init__(error_log)
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:20:32
+   |
+18 |     def __init__(self, 
+19 |                  error_log: str, 
+20 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+21 |                  ):
+22 |         super().__init__(
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:31:32
+   |
+29 |     def __init__(self, 
+30 |                  error_log: str,
+31 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+32 |                  ):
+33 |         super().__init__(
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:42:32
+   |
+40 |     def __init__(self, 
+41 |                  error_log: str,
+42 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+43 |                  ):
+44 |         super().__init__(
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:53:32
+   |
+51 |     def __init__(self, 
+52 |                  error_log,
+53 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+54 |                  ):
+55 |         super().__init__(
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/exception/user_exception.py:64:32
+   |
+62 |     def __init__(self, 
+63 |                  error_log,
+64 |                  frontend_msg: str | None=None
+   |                                ^^^^^^^^^^
+65 |                  ):
+66 |         super().__init__(
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/process/query.py:104:41
+    |
+102 |                                    cut_num: int,
+103 |                                    page_idx: int=0
+104 |                                    ) -> str | None:
+    |                                         ^^^^^^^^^^
+105 |         gcp_io = GCP_IO()
+106 |         rtn = gcp_io.get_info(
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/process/query.py:115:33
+    |
+113 |     async def get_history(cut_num: int,
+114 |                     component: str,
+115 |                     max_length: int | None=None
+    |                                 ^^^^^^^^^^
+116 |                     ) -> dict[str, str]:
+117 |         """Get the commit history for the specified cut number and component by retrieving the log information from the Git repositor…
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/process/query.py:143:59
+    |
+142 |     @staticmethod
+143 |     async def get_pending_status(is_raw: bool = False) -> str | list[tuple[int, str]]:
+    |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+144 |         git_io = Git_IO()
+145 |         pending_status = await git_io.get_pending_status()
+    |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+   --> src/shellarc_core/process/query.py:163:41
+    |
+161 |     async def get_approve_history(cut_num: int,
+162 |                             component: str,
+163 |                             max_length: int | None=None
+    |                                         ^^^^^^^^^^
+164 |                             ) -> dict[str, str]:
+165 |         """Get the approval commit history for the specified cut number and component by retrieving the log information from the Git …
+    |
+help: Add `from __future__ import annotations`
+
+E722 Do not use bare `except`
+  --> src/shellarc_core/process/requesting.py:86:13
+   |
+84 |             try:
+85 |                 target_file_s3path = self.r2_io.get_path_with_ext(path_without_ext=target_file_s3path_prefix)
+86 |             except:
+   |             ^^^^^^
+87 |                 print("***FALL BACK in requesting.py")
+88 |                 target_file_s3path = self.r2_io.get_path_with_ext(path_without_ext=target_file_s3path_prefix[:-2])
+   |
+
+TRY002 Create your own exception
+  --> src/shellarc_core/process/uploader.py:55:19
+   |
+53 |             filename, fileobj= file.popitem()
+54 |         else:
+55 |             raise Exception
+   |                   ^^^^^^^^^
+56 |         submission_format = Path(filename).suffix.lstrip(".")
+   |
+
+TRY203 Remove exception handler; error is immediately re-raised
+  --> src/shellarc_core/process/uploader.py:77:9
+   |
+75 |                   file_path=f"{collection_name}/stage/{file_index_name}.{submission_format}"
+76 |               )
+77 | /         except Exception:
+78 | |             raise
+   | |_________________^
+79 |           finally:
+80 |               if Path(filename).exists():
+   |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/process/uploader.py:191:14
+    |
+189 |         allowed_formats_url_jsonstr = json.dumps(allowed_formats_url)
+190 |         html_template_path = Path(__file__).resolve().parent / "uploader_from_url.html.template"
+191 |         with open(html_template_path, "r", encoding="utf-8") as f:
+    |              ^^^^
+192 |             html_template = f.read()
+193 |         html_page_code = html_template.replace(
+    |
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+   --> src/shellarc_core/process/uploader.py:199:14
+    |
+197 |         temp_dir = tempfile.mkdtemp()
+198 |         html_path = Path(temp_dir) / f"cut{self.cut_num}_uploader.html"
+199 |         with open(html_path, 'w', encoding='utf-8') as f:
+    |              ^^^^
+200 |             f.write(html_page_code)
+201 |         return (str(html_path), temp_dir)
+    |
+
+F841 Local variable `cmd_domain` is assigned to but never used
+   --> src/shellarc_core/sapyc/sapyc_interpreter.py:134:13
+    |
+132 |             command_breakdown = cmd.split("<")
+133 |             command_type_breakdown = command_breakdown[0].split(";") 
+134 |             cmd_domain = command_type_breakdown[0]
+    |             ^^^^^^^^^^
+135 |             cmd_space = command_type_breakdown[1]
+136 |             cmd_name = command_type_breakdown[2]
+    |
+help: Remove assignment to unused variable `cmd_domain`
+
+F841 Local variable `cmd_space` is assigned to but never used
+   --> src/shellarc_core/sapyc/sapyc_interpreter.py:135:13
+    |
+133 |             command_type_breakdown = command_breakdown[0].split(";") 
+134 |             cmd_domain = command_type_breakdown[0]
+135 |             cmd_space = command_type_breakdown[1]
+    |             ^^^^^^^^^
+136 |             cmd_name = command_type_breakdown[2]
+137 |             command_content_ls = command_breakdown[1].split(";")
+    |
+help: Remove assignment to unused variable `cmd_space`
+
+E722 Do not use bare `except`
+   --> src/shellarc_core/sapyc/sapyc_interpreter.py:138:9
+    |
+136 |             cmd_name = command_type_breakdown[2]
+137 |             command_content_ls = command_breakdown[1].split(";")
+138 |         except:
+    |         ^^^^^^
+139 |             raise SA_SapycSyntaxError(
+140 |                 error_log="sapyc syntax error",
+    |
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/scheduler/main_timer.py:8:50
+   |
+ 8 | async def shellarc_maintimer(schedule_file_path: Path | str,
+   |                                                  ^^^^^^^^^^
+ 9 |                              task_callable: Callable):
+10 |     schedule_file_path = Path(schedule_file_path)
+   |
+help: Add `from __future__ import annotations`
+
+ASYNC230 Async functions should not open files with blocking methods like `open`
+  --> src/shellarc_core/scheduler/main_timer.py:11:10
+   |
+ 9 |                              task_callable: Callable):
+10 |     schedule_file_path = Path(schedule_file_path)
+11 |     with open(schedule_file_path, "r", encoding="utf-8") as f:
+   |          ^^^^
+12 |         latest_schedule = json.load(f)
+13 |     sorted_schedule_key = sorted(latest_schedule)
+   |
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> src/shellarc_core/scheduler/main_timer.py:15:32
+   |
+13 |     sorted_schedule_key = sorted(latest_schedule)
+14 |     sorted_schedule = {k: latest_schedule[k] for k in sorted_schedule_key}
+15 |     start_task_time_datetime = datetime.datetime.now()
+   |                                ^^^^^^^^^^^^^^^^^^^^^^^
+16 |     try:
+17 |         for timemark, tasks in sorted_schedule.items():
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+DTZ007 Naive datetime constructed using `datetime.datetime.strptime()` without %z
+  --> src/shellarc_core/scheduler/main_timer.py:18:33
+   |
+16 |     try:
+17 |         for timemark, tasks in sorted_schedule.items():
+18 |             timemark_datetime = datetime.datetime.strptime(timemark, "%y%m%d%H%M")
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |             time_until_next_task = (timemark_datetime - start_task_time_datetime).total_seconds() 
+20 |             if time_until_next_task <= 0:
+   |
+help: Call `.replace(tzinfo=<timezone>)` or `.astimezone()` to convert to an aware datetime
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> src/shellarc_core/scheduler/main_timer.py:26:40
+   |
+24 |             for task in tasks:
+25 |                 await task_callable(*task)
+26 |             start_task_time_datetime = datetime.datetime.now()
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^
+27 |     except asyncio.CancelledError:
+28 |         pass
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/scheduler/manager.py:15:38
+   |
+13 |     def __init__(self,
+14 |                  task_callable: Callable,
+15 |                  schedule_file_path: Path | str="default",
+   |                                      ^^^^^^^^^^
+16 |                  ) -> None:
+17 |         if schedule_file_path == "default":
+   |
+help: Add `from __future__ import annotations`
+
+FA102 Missing `from __future__ import annotations`, but uses PEP 604 union
+  --> src/shellarc_core/scheduler/manager.py:33:46
+   |
+32 |     def _get_current_schedule(self,
+33 |                               task_timemark: str | int
+   |                                              ^^^^^^^^^
+34 |                               ) -> list:
+35 |         try:
+   |
+help: Add `from __future__ import annotations`
+
+TRY203 Remove exception handler; error is immediately re-raised
+  --> src/shellarc_core/scheduler/manager.py:37:9
+   |
+35 |           try:
+36 |               task_timemark = int(task_timemark)
+37 | /         except:
+38 | |             raise
+   | |_________________^
+39 |           current_schedule = self.schedule.get(task_timemark, [])
+40 |           return current_schedule
+   |
+
+DTZ007 Naive datetime constructed using `datetime.datetime.strptime()` without %z
+  --> src/shellarc_core/scheduler/manager.py:63:33
+   |
+61 |         datetime_str = str(task_datetime.strftime("%y%m%d%H%M"))
+62 |         for current_timemarks in list(self.schedule.keys()):
+63 |             schedule_datetime = datetime.datetime.strptime(current_timemarks, "%y%m%d%H%M")
+   |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+64 |             if (schedule_datetime - datetime.datetime.now()).total_seconds() <= 0:
+65 |                 del self.schedule[current_timemarks]
+   |
+help: Call `.replace(tzinfo=<timezone>)` or `.astimezone()` to convert to an aware datetime
+
+DTZ005 `datetime.datetime.now()` called without a `tz` argument
+  --> src/shellarc_core/scheduler/manager.py:64:37
+   |
+62 |         for current_timemarks in list(self.schedule.keys()):
+63 |             schedule_datetime = datetime.datetime.strptime(current_timemarks, "%y%m%d%H%M")
+64 |             if (schedule_datetime - datetime.datetime.now()).total_seconds() <= 0:
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^
+65 |                 del self.schedule[current_timemarks]
+66 |         current_scheduled = self.schedule.get(datetime_str, [])
+   |
+help: Pass a `datetime.timezone` object to the `tz` parameter
+
+PLE0704 Bare `raise` statement is not inside an exception handler
+  --> src/shellarc_core/scheduler/manager.py:79:13
+   |
+77 |         current_scheduled = self._get_current_schedule(task_timemark=task_timemark)
+78 |         if len(current_scheduled) <= index:
+79 |             raise
+   |             ^^^^^
+80 |         current_scheduled.pop(index)
+81 |         self.schedule[task_timemark] = current_scheduled
+   |
+
+SIM115 Use a context manager for opening files
+  --> src/shellarc_core/utils/file_operation.py:35:24
+   |
+33 |                        required_format: list[str]
+34 |                        ) -> str:
+35 |         tempzip_path = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 |         tempzip_path_name = tempzip_path.name
+37 |         try:
+   |
+
+BLE001 Do not catch blind exception: `Exception`
+  --> src/shellarc_core/utils/file_operation.py:47:16
+   |
+45 |                         )
+46 |                     zf.writestr(name, byte_data)
+47 |         except Exception:
+   |                ^^^^^^^^^
+48 |             if Path(tempzip_path_name).exists():
+49 |                 os.unlink(tempzip_path_name)
+   |
+
+SIM118 Use `key in dict` instead of `key in dict.keys()`
+  --> src/shellarc_core/utils/linker_parser.py:33:13
+   |
+31 |     def find_children(self):
+32 |         children_set = set()
+33 |         for child in self.linker_doc["backward_ref"].keys():
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+34 |             children_set.add(int(child))
+35 |         return children_set
+   |
+help: Remove `.keys()`
+
+Found 146 errors.
+No fixes available (57 hidden fixes can be enabled with the `--unsafe-fixes` option).
