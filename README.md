@@ -2,9 +2,9 @@
 
 ### *日本語版はこちら → [README_jpn.md](./README_jpn.md)*
 
-Anime and video production is full of small headaches — "where's that file?", "who approved this again?", "oops, forgot to update the spreadsheet…". `ShellArc` takes care of all of that for you, automatically.
+Anime and video production is full of small headaches - "where's that file?", "who approved this again?", "oops, forgot to update the spreadsheet…". `ShellArc` takes care of all of that for you, automatically.
 
-Plug it into whatever front end you like — a Discord bot, a Slack bot, a web dashboard, a CLI tool — and let `ShellArc` handle everything happening behind the scenes.
+Plug it into whatever front end you like - a Discord bot, a Slack bot, a web dashboard, a CLI tool - and let `ShellArc` handle everything happening behind the scenes.
 
 ---
 
@@ -17,10 +17,10 @@ Plug it into whatever front end you like — a Discord bot, a Slack bot, a web d
   When a director approves or rejects something, the progress spreadsheet's status text and cell colors update automatically. Nobody has to manually edit a tracking sheet ever again.
 
 - **🖼️Storyboards, handled too**
-  Upload and manage storyboard images without touching the Notion API directly — the library takes care of URLs and progress updates for you.
+  Upload and manage storyboard images without touching the Notion API directly - the library takes care of URLs and progress updates for you.
 
 - **🔄Reuse assets across cuts without duplicating them**
-  Want to use the same background in two different cuts? Reference it, or make a full copy — either way it's one function call, and it flows through the same review process as a normal submission.
+  Want to use the same background in two different cuts? Reference it, or make a full copy - either way it's one function call, and it flows through the same review process as a normal submission.
 
 - **📦Big files just work**
   Small files come back as ready-to-use local paths; larger ones automatically switch to signed download URLs. No need to hold huge files in memory on the bot or app side.
@@ -42,18 +42,18 @@ Plug it into whatever front end you like — a Discord bot, a Slack bot, a web d
   Every error is sorted into either "something the user needs to fix" (with a message you can show as-is) or "something actually broken in the system" (meant for whoever runs the pipeline). No guessing which one you're looking at.
 
 - **🚀A ready-to-run setup, out of the box**
-  You don't have to write a single line of code to get started — a full Discord bot suite (submission, approval, history, and more) comes ready to use. Or build your own front end on top of the same library if you'd rather.
+  You don't have to write a single line of code to get started - a full Discord bot suite (submission, approval, history, and more) comes ready to use. Or build your own front end on top of the same library if you'd rather.
 
 ---
 
 ## 🚀 Getting started
 
-Setup instructions live in [DOCS/HOW_TO_START.md](./DOCS/HOW_TO_START.md) — start there.
+Setup instructions live in [DOCS/HOW_TO_START.md](./DOCS/HOW_TO_START.md) : start there.
 
 If you want to go deeper into internal design or the full API, check these out too:
 
-- 🏛️[ARCHITECTURE.md](./DOCS/ARCHITECTURE.md) — internal design, data model, processing flow
-- 📖[shellarc_core_api_guide.md](./shellarc_core_api_guide.md) — full API reference
+- 🏛️[ARCHITECTURE.md](./DOCS/ARCHITECTURE.md) : internal design, data model, processing flow
+- 📖[shellarc_core_api_guide.md](./shellarc_core_api_guide.md) : full API reference
 
 ---
 

@@ -52,8 +52,8 @@ Discordボット・Slackボット・Webダッシュボード・CLIなど、好�
 
 より詳しい内部設計やAPI仕様が必要な場合は、以下もあわせてどうぞ。
 
-- 🏛️[ARCHITECTURE_jpn.md](./DOCS_jpn/ARCHITECTURE_jpn.md) — 内部設計・データモデル・処理フロー
-- 📖[shellarc_core_api_guide.md](./shellarc_core_api_guide.md) — 完全なAPI仕様書
+- 🏛️[ARCHITECTURE_jpn.md](./DOCS_jpn/ARCHITECTURE_jpn.md) : 内部設計・データモデル・処理フロー
+- 📖[shellarc_core_api_guide.md](./shellarc_core_api_guide.md) : 完全なAPI仕様書
 
 ---
 

@@ -15,3 +15,4 @@ docker-compose.yml
 **/venv/**
 .vscode/**
 ruff_log_report.txt
+**/shellarc_native/build/**

@@ -49,7 +49,7 @@ cp docker-compose_yml.template docker-compose.yml
 
 `docker-compose.yml` 内で、以下の2種類のプレースホルダーを編集します。
 
-**a. Gitのアイデンティティ — `###` のプレースホルダー（`bot`サービスのみ）**
+**a. Gitのアイデンティティ - `###` のプレースホルダー（`bot`サービスのみ）**
 
 すべての提出・承認はGitコミットとして記録されます。Gitがコミットを作成するにはauthor/committerのアイデンティティが必要です。これはコミットメッセージ内に格納される `submitter_name`（提出者名）や `reviewer_name`（レビュアー名）とは別物です。ボットのプロセス自体を表す固定のアイデンティティを設定してください。
 
@@ -62,7 +62,7 @@ environment:
   - GIT_COMMITTER_EMAIL=shellarc-bot@yourproject.local
 ```
 
-**b. 永続化ボリューム — `〜_in_code:〜_in_server` のプレースホルダー**
+**b. 永続化ボリューム - `〜_in_code:〜_in_server` のプレースホルダー**
 
 これらはそれぞれ `<ホスト側のパスまたは名前付きボリューム>:<コンテナ側のパス>` のペアです。左側はデータが実際に存在する場所（コンテナを再ビルドしてもデータが消えないようにする）、右側はコンテナ側が期待するパスです。
 
@@ -123,7 +123,7 @@ docker compose up -d --build
 
 ---
 
-## 🛠️ shellarc_devkit — 補助ツール群
+## 🛠️ shellarc_devkit - 補助ツール群
 
 Discordフロントエンドとは別に、`shellarc_devkit` にはプロジェクトのセットアップ・保守を助けるいくつかの単体スクリプトが含まれています。いずれもDiscordボットの稼働状態に依存せず利用できます。
 
@@ -153,9 +153,9 @@ Discordフロントエンドとは別に、`shellarc_devkit` にはプロジェ�
 
 ## 自分でフロントエンドを作る場合
 
-Discordを使いたくない場合、上記のクイックスタートは同じライブラリの上に作られたフロントエンドの一例に過ぎません。Slackボット・Webダッシュボード・CLIなど独自のフロントエンドを作る場合は、プロジェクト設定・スプレッドシートのマッピング・各サービスの認証情報をまとめたプロジェクトコンテキストディレクトリの用意と、初回のみのGitリポジトリ初期化が必要です——この初期化は、上記の `project_init_cli.py` を使えば対話式で進められます。それが済めば、日常的な利用は `operations` 配下の各クラスだけで完結します。
+Discordを使いたくない場合、上記のクイックスタートは同じライブラリの上に作られたフロントエンドの一例に過ぎません。Slackボット・Webダッシュボード・CLIなど独自のフロントエンドを作る場合は、プロジェクト設定・スプレッドシートのマッピング・各サービスの認証情報をまとめたプロジェクトコンテキストディレクトリの用意と、初回のみのGitリポジトリ初期化が必要です--この初期化は、上記の `project_init_cli.py` を使えば対話式で進められます。それが済めば、日常的な利用は `operations` 配下の各クラスだけで完結します。
 
 具体的な設定ファイルの形式・全APIの詳細仕様（引数・返り値・送出例外）については、設計ドキュメントおよびAPI仕様書を参照してください。
 
-- [ARCHITECTURE_jpn.md](./ARCHITECTURE_jpn.md) — 内部設計・データモデル・処理フロー
-- [shellarc_core_api_guide.md](../shellarc_core_api_guide.md) — 完全なAPI仕様書
+- [ARCHITECTURE_jpn.md](./ARCHITECTURE_jpn.md) - 内部設計・データモデル・処理フロー
+- [shellarc_core_api_guide.md](../shellarc_core_api_guide.md) - 完全なAPI仕様書

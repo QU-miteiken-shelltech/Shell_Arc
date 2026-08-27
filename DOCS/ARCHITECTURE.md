@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — `shellarc_core` Internal Design Document
+# ARCHITECTURE.md - `shellarc_core` Internal Design Document
 
 > This document explains the internal architecture, layer structure, data model, and key workflows of `shellarc_core`. For usage instructions (installation, quick start), see [README.md](../README.md).
 
@@ -6,7 +6,7 @@
 
 ## Table of Contents
 
-- [ARCHITECTURE.md — `shellarc_core` Internal Design Document](#architecturemd--shellarc_core-internal-design-document)
+- [ARCHITECTURE.md - `shellarc_core` Internal Design Document](#architecturemd--shellarc_core-internal-design-document)
   - [Table of Contents](#table-of-contents)
   - [1. Design Philosophy](#1-design-philosophy)
   - [2. Layered Architecture](#2-layered-architecture)
@@ -34,7 +34,7 @@
 
 The design centers on three main points:
 
-- **Git as the single source of truth**: A cut's submission history, approval state, and version history are all represented through Git commit history and branch structure. Spreadsheet and Notion are "display layers for humans" — secondary stores that merely reflect Git's state.
+- **Git as the single source of truth**: A cut's submission history, approval state, and version history are all represented through Git commit history and branch structure. Spreadsheet and Notion are "display layers for humans" - secondary stores that merely reflect Git's state.
 - **Separation of layers**: "Reading configuration (cfg)", "authenticating with external services (auth)", "actual I/O with external services (cloudio)", and "business logic (operations)" are clearly separated, so upper layers don't need to know implementation details of lower layers (e.g., how an API client is constructed).
 - **Two-way split of exceptions**: Errors caused by "user actions" and errors caused by "system/configuration/external service issues" are separated at the type level, allowing the calling application to handle each differently (see below).
 
@@ -110,7 +110,7 @@ The design centers on three main points:
 | Notion | Management of layout images (storyboards) | `Notion_IO` |
 | Firebase Firestore | General-purpose database (e.g. credential management) | `AccessDB` (only documented at the `auth` layer; no corresponding `cloudio` class is documented) |
 
-**Important design consequence**: Storage is fully separated by responsibility — material files live in R2, submission/approval "state" lives in Git, and human-facing progress display lives in Spreadsheet. During a single submission (`upload_file`), writes are made in order to these three: Git → R2 → Spreadsheet.
+**Important design consequence**: Storage is fully separated by responsibility - material files live in R2, submission/approval "state" lives in Git, and human-facing progress display lives in Spreadsheet. During a single submission (`upload_file`), writes are made in order to these three: Git → R2 → Spreadsheet.
 
 ---
 
@@ -145,7 +145,7 @@ $SHELLARC_PROJECT_CTX/
 - **`project_main.json`**: The `common` key defines the default component composition for all cuts. If a `cut{N}` key exists, it overrides `common` for that cut only.
 - **Component JSON (normal submission)**: Takes the form `{"creator": "submitter name", "fileindex": "cut1_modeling_abc123_20240101120000"}`. `fileindex` uniquely identifies the file in R2.
 - **Component JSON (repoint)**: Takes the form `{"repointer": 3}`. This cut's data **references** the data of the specified cut number (`3` in this example) rather than copying it. `get_component_info()` detects this key and automatically resolves the reference recursively.
-- **`.sa_pending_{component}`**: An empty file. Its presence indicates that the component is awaiting review — a "flag file" outside Git's normal tracking, checked via the output of `git status --porcelain`.
+- **`.sa_pending_{component}`**: An empty file. Its presence indicates that the component is awaiting review - a "flag file" outside Git's normal tracking, checked via the output of `git status --porcelain`.
 
 Two branches always exist:
 
@@ -164,7 +164,7 @@ Two branches always exist:
 - `pend_data` (approval / rejection)
 - `repoint_data` (repointing a reference)
 
-On the other hand, **`absorb_data` (copying data by value) does not acquire the lock**. This asymmetry is explicitly documented in the source material — if you call `absorb_data` concurrently with other write operations, you should consider adding your own exclusion control at the call site.
+On the other hand, **`absorb_data` (copying data by value) does not acquire the lock**. This asymmetry is explicitly documented in the source material - if you call `absorb_data` concurrently with other write operations, you should consider adding your own exclusion control at the call site.
 
 This locking exists because the local Git working directory (working tree) is singular. Running multiple submission/approval operations concurrently in an async environment can cause `git checkout` conflicts, which is why this exclusion control is required.
 
@@ -298,7 +298,7 @@ Every commit is recorded in a fixed `*`-delimited format, which `get_log()` pars
 
 ## 11. Guidelines for Extension / Implementation
 
-When building a new application on top of `shellarc_core`, the recommended order of understanding/implementation is as follows (following the structure of the source document):
+When building a new application on top of `shellarc_core`, the recommended order of understanding/implementation is as follows :
 
 1. Prepare the three files under `$SHELLARC_PROJECT_CTX` (`project_settings.json`, `spreadsheet_map.json`, `.env`).
 2. Initialize the Git repository for a new project with `Git_IO.make_proj_repo()` (one-time only).

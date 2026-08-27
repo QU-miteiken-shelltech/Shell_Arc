@@ -267,7 +267,7 @@ Notion_token=secret_...
 
 ## 4. 例外システム
 
-### 4-1. `exceptions.py` — `SA_ExceptionType`
+### 4-1. `exceptions.py` - `SA_ExceptionType`
 
 全例外の分類を表す `Enum`。直接使用することは少なく、各例外クラスの内部で参照される。
 
@@ -285,7 +285,7 @@ Notion_token=secret_...
 | `LOCAL_IO_ERROR` | サーバーローカルのファイルIOエラー |
 | `INT_SYNTAX_EREOR` | 内部システムの構文エラー |
 
-### 4-2. `user_exception.py` — ユーザー起因の例外
+### 4-2. `user_exception.py` - ユーザー起因の例外
 
 これらの例外は **ユーザーの操作が原因** で発生する。`frontend_msg` フィールドにユーザーへ表示するメッセージが入っており、アプリはこれをそのままUIに返すことを想定している。
 
@@ -342,7 +342,7 @@ SA_EditingRejection(error_log: str, frontend_msg: str | None = None)
 SA_SapycSyntaxError(error_log: str, frontend_msg: str | None = None)
 ```
 
-### 4-3. `structure_error.py` — システム起因の例外
+### 4-3. `structure_error.py` - システム起因の例外
 
 これらの例外は **設定ミス・サービス障害など、システム側の問題** で発生する。`frontend_msg` は常に `"技術班にご連絡ください : {error_code.name}"` となる。
 
@@ -431,7 +431,7 @@ JSONの階層を可変長引数でたどって値を取得する。
 |---|---|---|
 | `*args` | `Cfg_item \| str` (可変長) | JSONのキーパス。`Cfg_item` を渡すとそのvalueに変換される |
 
-**返り値** : `Any` — 指定されたパスのJSON値。キーが存在しない場合は `None`。
+**返り値** : `Any` - 指定されたパスのJSON値。キーが存在しない場合は `None`。
 
 **例：**
 
@@ -478,7 +478,7 @@ SpreadsheetMap_IO()
 | `item` | `str` | アイテム名（例: `"modeling_PIC"`） |
 | `page_idx` | `int` | スプレッドシートのページインデックス（デフォルト: `0`）|
 
-**返り値** : `tuple[int, int]` — `(row_idx, col_idx)` の形式。いずれも1-based。
+**返り値** : `tuple[int, int]` - `(row_idx, col_idx)` の形式。いずれも1-based。
 
 **送出例外：**
 - `SA_ProjStructError(SA_4102)` : `vert_offset` または列インデックスが未設定
@@ -493,7 +493,7 @@ SpreadsheetMap_IO()
 |---|---|---|
 | `page_idx` | `int` | ページインデックス（デフォルト: `0`）|
 
-**返り値** : `int` — 垂直オフセット値。`row = cut_num + vert_offset` でスプレッドシートの行番号を計算できる。
+**返り値** : `int` - 垂直オフセット値。`row = cut_num + vert_offset` でスプレッドシートの行番号を計算できる。
 
 ---
 
@@ -501,7 +501,7 @@ SpreadsheetMap_IO()
 
 認証レイヤーの各クラスは、`.env` から認証情報を読み込み、サービスクライアントを生成する。通常、上位のIOクラスが内部で使用するため、直接呼び出す機会は少ない。
 
-### 6-1. `access_r2.py` — `Cloudflare_R2_service_Access`
+### 6-1. `access_r2.py` - `Cloudflare_R2_service_Access`
 
 ```python
 Cloudflare_R2_service_Access()
@@ -521,7 +521,7 @@ Cloudflare_R2_service_Access()
 
 ---
 
-### 6-2. `access_spread_sheet.py` — `AccessSpreadSheet`
+### 6-2. `access_spread_sheet.py` - `AccessSpreadSheet`
 
 ```python
 AccessSpreadSheet(spreadsheet_key: str)
@@ -543,7 +543,7 @@ AccessSpreadSheet(spreadsheet_key: str)
 |---|---|---|
 | `page_idx` | `int` | ワークシートのインデックス（0-based）|
 
-**返り値** : `gspread.Worksheet` — gspreadのワークシートオブジェクト
+**返り値** : `gspread.Worksheet` - gspreadのワークシートオブジェクト
 
 **送出例外：**
 - `SA_AuthError(SA_9001)` : `.env` ファイルが存在しない
@@ -551,7 +551,7 @@ AccessSpreadSheet(spreadsheet_key: str)
 
 ---
 
-### 6-3. `access_database.py` — `AccessDB`
+### 6-3. `access_database.py` - `AccessDB`
 
 ```python
 AccessDB()
@@ -571,7 +571,7 @@ Firestore クライアントインスタンスを返す。
 
 ---
 
-### 6-4. `access_notion.py` — `Notion_Access`
+### 6-4. `access_notion.py` - `Notion_Access`
 
 ```python
 Notion_Access()
@@ -589,7 +589,7 @@ Notion クライアントインスタンスを返す。
 
 ## 7. クラウドIOレイヤー (cloudio)
 
-### 7-1. `io_spreadsheet.py` — `GCP_IO`
+### 7-1. `io_spreadsheet.py` - `GCP_IO`
 
 Google Spreadsheetへの読み書き・セル色変更を担当するクラス。内部で `AccessSpreadSheet` と `SpreadsheetMap_IO` を使用する。
 
@@ -611,7 +611,7 @@ GCP_IO()
 | `cut_num` | `int` | カット番号 |
 | `page_idx` | `int` | ページインデックス（デフォルト: `0`）|
 
-**返り値** : `str | None` — セルの値。空セルは `None`。
+**返り値** : `str | None` - セルの値。空セルは `None`。
 
 ---
 
@@ -653,11 +653,11 @@ GCP_IO()
 |---|---|---|
 | `page_idx` | `int` | ページインデックス（デフォルト: `0`）※現在の実装ではプロパティのため引数渡し不可 |
 
-**返り値** : `list[list]` — 全行・全列の値をネストしたリスト。インデックスは0-based。
+**返り値** : `list[list]` - 全行・全列の値をネストしたリスト。インデックスは0-based。
 
 ---
 
-### 7-2. `io_git.py` — `Git_IO` と関連クラス
+### 7-2. `io_git.py` - `Git_IO` と関連クラス
 
 Gitリポジトリを操作し、カットのバージョン管理・承認フローを実現するクラス。**クラス変数 `_git_lock = asyncio.Lock()`** によって、書き込み系メソッド (`update_data`, `pend_data`, `repoint_data`) はクラス全体で排他制御されており、非同期環境での同時実行が安全に行われる。`absorb_data` はロックを取得しない点に注意。
 
@@ -745,7 +745,7 @@ R2アップロード先のファイルインデックス名を生成する。
 | `component` | `str` | コンポーネント名 |
 | `creator_name` | `str` | 提出者名 |
 
-**返り値** : `str` — `cut{N}_{component}_{creator_id}_{timemark}` 形式の文字列
+**返り値** : `str` - `cut{N}_{component}_{creator_id}_{timemark}` 形式の文字列
 
 **生成ルール：**
 - `component` 内の `_` はすべて `-` に置換される（例: `some_comp` → `some-comp`）
@@ -795,7 +795,7 @@ R2アップロード先のファイルインデックス名を生成する。
 |---|---|---|
 | `cut_num` | `int` | カット番号 |
 
-**返り値** : `list[str]` — コンポーネント名のリスト（例: `["modeling", "texturing"]`）
+**返り値** : `list[str]` - コンポーネント名のリスト（例: `["modeling", "texturing"]`）
 
 **送出例外：**
 - `SA_ProjStructError(SA_6001)` : `project_main.json` に `common` キーが存在しない
@@ -850,7 +850,7 @@ Gitリポジトリから指定ブランチ・カット・コンポーネント�
 | `component` | `str` | コンポーネント名 |
 | `commit_id` | `str \| None` | 特定のコミットIDを指定する場合。`None` はブランチ名をそのまま `git show` に渡す（= ブランチの最新）（デフォルト: `None`）|
 
-**返り値** : `dict[str, str]` — コンポーネントJSONの内容。コンポーネントJSONファイルが存在しない、または `git show` が失敗した場合は空の辞書 `{}`。
+**返り値** : `dict[str, str]` - コンポーネントJSONの内容。コンポーネントJSONファイルが存在しない、または `git show` が失敗した場合は空の辞書 `{}`。
 
 通常の返り値のキー：
 - `"creator"` (str) : 提出者名
@@ -886,7 +886,7 @@ Gitログを取得し、フィルタリングと整形を行う。
 | 5 | `timemark` | タイムスタンプ（JST, `YYYYMMDDHHMMSS`）|
 | 6 | `file_index_name` | SUBMITは実際のインデックス名。APPROVE/DECLINEは `'na'`。REPOINT/ABSORPTIONは `"{元カット}->{先カット}"` 形式 |
 
-**返り値** : `dict[str, str]` — `{ショートコミットハッシュ: "フィールド1 フィールド2 ..."}` の形式。フィールドはスペース区切り。新しいコミットが先頭に来る順序。
+**返り値** : `dict[str, str]` - `{ショートコミットハッシュ: "フィールド1 フィールド2 ..."}` の形式。フィールドはスペース区切り。新しいコミットが先頭に来る順序。
 
 **使用例：**
 
@@ -935,7 +935,7 @@ hist2 = await git_io.get_log(
 | `creator_name` | `str` | 提出者名 |
 | `message` | `str` | コミットメッセージ。空の場合は `"No message"` になる（デフォルト: `""`）|
 
-**返り値** : `str` — 生成された `file_index_name`。R2アップロードパスの構築に使用する。  
+**返り値** : `str` - 生成された `file_index_name`。R2アップロードパスの構築に使用する。  
 形式: `cut{N}_{component(アンダースコアはハイフン変換済み)}_{creator_id(6文字hex)}_{YYYYMMDDHHMMSS}`
 
 ---
@@ -1039,7 +1039,7 @@ hist2 = await git_io.get_log(
 
 ---
 
-### 7-3. `io_r2.py` — `R2_IO`
+### 7-3. `io_r2.py` - `R2_IO`
 
 Cloudflare R2（S3互換）へのファイル操作を担当するクラス。
 
@@ -1061,7 +1061,7 @@ S3オブジェクトのサイズをMB単位で取得する。
 |---|---|---|
 | `target_s3_file` | `str` | S3内のファイルパス（キー）|
 
-**返り値** : `int` — ファイルサイズ（MB単位、切り捨て）
+**返り値** : `int` - ファイルサイズ（MB単位、切り捨て）
 
 ---
 
@@ -1076,7 +1076,7 @@ S3オブジェクトへの一時アクセスURLを発行する。
 | `http_method` | `str` | HTTPメソッド（例: `"GET"`, `"PUT"`）|
 | `time_limit` | `int` | URL有効期限（秒）（デフォルト: `180`）|
 
-**返り値** : `str` — 署名付きURL文字列
+**返り値** : `str` - 署名付きURL文字列
 
 ---
 
@@ -1088,7 +1088,7 @@ S3オブジェクトへの一時アクセスURLを発行する。
 |---|---|---|
 | `path_without_ext` | `str` | 拡張子を含まないS3パス（プレフィックス）|
 
-**返り値** : `str` — 拡張子を含む完全なS3パス
+**返り値** : `str` - 拡張子を含む完全なS3パス
 
 ---
 
@@ -1102,7 +1102,7 @@ S3オブジェクトへの一時アクセスURLを発行する。
 | `file_path` | `str \| Path` | R2上の保存先パス |
 | `url_prefix` | `str \| None` | 公開URLのプレフィックス（例: `"https://pub-xxx.r2.dev"`）。`None` の場合は `None` を返す |
 
-**返り値** : `str | None` — `url_prefix` が指定された場合は `"{url_prefix}/{file_path}"` 形式の公開URL。それ以外は `None`。
+**返り値** : `str | None` - `url_prefix` が指定された場合は `"{url_prefix}/{file_path}"` 形式の公開URL。それ以外は `None`。
 
 **バイト列を渡した場合** : 一時ファイルに書き出してアップロード後、自動で削除する。
 
@@ -1129,7 +1129,7 @@ R2からファイルをローカルにダウンロードする。
 
 ---
 
-### 7-4. `io_notion.py` — `Notion_IO`
+### 7-4. `io_notion.py` - `Notion_IO`
 
 Notionデータベースの画像プロパティを操作するクラス。絵コンテ画像の取得・更新に使用する。
 
@@ -1181,7 +1181,7 @@ NotionデータベースのレコードにExternal画像URLをセットする。
 
 ## 8. ユーティリティ (utils)
 
-### 8-1. `file_operation.py` — `FileOperation`
+### 8-1. `file_operation.py` - `FileOperation`
 
 ローカルファイル操作のユーティリティ静的メソッド集。
 
@@ -1195,7 +1195,7 @@ NotionデータベースのレコードにExternal画像URLをセットする。
 | `take` | `int` | テイク番号 |
 | `component` | `str` | コンポーネント名 |
 
-**返り値** : `str` — 生成されたファイル名文字列。各セクションは `_` で結合される。
+**返り値** : `str` - 生成されたファイル名文字列。各セクションは `_` で結合される。
 
 `project_settings.json` の命名規則：
 - `-cut` → `cut{cut_num}` に展開
@@ -1215,7 +1215,7 @@ NotionデータベースのレコードにExternal画像URLをセットする。
 | `files` | `dict[str, bytes]` | `{ファイル名: バイト列}` の辞書。ファイル名は `.png` 拡張子を持つ必要がある |
 | `required_format` | `list[str]` | 許可する拡張子リスト（現在は検証のみに使用）|
 
-**返り値** : `str` — 生成されたZIP一時ファイルの絶対パス。使用後は `os.unlink()` で削除すること。
+**返り値** : `str` - 生成されたZIP一時ファイルの絶対パス。使用後は `os.unlink()` で削除すること。
 
 **注意：** 圧縮対象は **PNG形式のみ**。他の拡張子が含まれると `SA_InvalidUserQuery` が送出される。
 
@@ -1229,7 +1229,7 @@ NotionデータベースのレコードにExternal画像URLをセットする。
 
 このレイヤーのクラスは `shellarc_core` の各IOクラスを組み合わせて、アプリケーションのユースケースを実装する。新しいアプリを構築する際の参考実装として読むこと。
 
-### 9-1. `uploader.py` — `ShellArc_Upload`
+### 9-1. `uploader.py` - `ShellArc_Upload`
 
 素材ファイルのアップロード処理を担当する。
 
@@ -1285,7 +1285,7 @@ R2への署名付きアップロードURLを埋め込んだHTMLページを生�
 | `submitter_name` | `str` | 提出者名 |
 | `message` | `str` | コミットメッセージ |
 
-**返り値** : `tuple[str, str]` — `(html_file_path, temp_dir_path)`。HTMLファイルのパスと一時ディレクトリのパス。使用後は一時ディレクトリごと削除すること。
+**返り値** : `tuple[str, str]` - `(html_file_path, temp_dir_path)`。HTMLファイルのパスと一時ディレクトリのパス。使用後は一時ディレクトリごと削除すること。
 
 ---
 
@@ -1295,7 +1295,7 @@ R2への署名付きアップロードURLを埋め込んだHTMLページを生�
 
 ---
 
-### 9-2. `requesting.py` — `ShellArc_Request`
+### 9-2. `requesting.py` - `ShellArc_Request`
 
 素材ファイルのダウンロード処理を担当する。
 
@@ -1318,13 +1318,13 @@ ShellArc_Request(cut_num: int, requesting_component: str)
 |---|---|---|
 | `requesting_take` | `str` | 取得するテイクの指定。`"0"` = 最新確定版(mainブランチ)、`"-1"` = 作業中(pendingブランチの最新)、その他の文字列 = 特定のコミットID |
 
-**返り値** : `tuple[str, str, str]` — `(path_or_url, filename_with_ext, type_indicator)`
+**返り値** : `tuple[str, str, str]` - `(path_or_url, filename_with_ext, type_indicator)`
 
 | インデックス | 内容 |
 |---|---|
 | 0 | 署名付きURL または ローカル一時ファイルパス |
 | 1 | ファイル名（拡張子付き）（例: `"cut1_modeling_abc123_20240101.blend"`）|
-| 2 | `"url"` または `"path"` — インデックス0の種別を示す |
+| 2 | `"url"` または `"path"` - インデックス0の種別を示す |
 
 **送出例外：**
 - `SA_DataNotExist` : 指定テイクのデータが存在しない
@@ -1333,7 +1333,7 @@ ShellArc_Request(cut_num: int, requesting_component: str)
 
 ---
 
-### 9-3. `reviewing.py` — `ShellArc_Review`
+### 9-3. `reviewing.py` - `ShellArc_Review`
 
 レビュー（承認・却下）処理を担当する。
 
@@ -1375,7 +1375,7 @@ ShellArc_Review(cut_num: int, reviewing_component: str)
 
 ---
 
-### 9-4. `register.py` — `ShellArc_Register`
+### 9-4. `register.py` - `ShellArc_Register`
 
 コンポーネントへの担当者登録を担当する。
 
@@ -1407,7 +1407,7 @@ ShellArc_Register()
 
 ---
 
-### 9-5. `storyboard.py` — `ShellArc_Storyboard`
+### 9-5. `storyboard.py` - `ShellArc_Storyboard`
 
 絵コンテ（レイアウト）画像の取得・アップロードを担当する。
 
@@ -1425,7 +1425,7 @@ ShellArc_Storyboard(cut_num: int)
 
 NotionからPNG画像をダウンロードし、一時ファイルパスを返す。
 
-**返り値** : `str` — ダウンロードした画像の一時ファイル絶対パス（`{tempdir}/cut{N}_layout.png` 形式）
+**返り値** : `str` - ダウンロードした画像の一時ファイル絶対パス（`{tempdir}/cut{N}_layout.png` 形式）
 
 **送出例外：**
 - `SA_LocalIOError(SA_8000)` : 一時ファイルが生成されていない
@@ -1449,7 +1449,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 
 ---
 
-### 9-6. `query.py` — `ShellArc_Query`
+### 9-6. `query.py` - `ShellArc_Query`
 
 情報の照会に特化した静的メソッド集。
 
@@ -1468,7 +1468,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 | `output_key` | `str` | 返り値辞書のキーとして使うフィールド。`"index_info_type"` または `"target_info_type"`（デフォルト: `"index_info_type"`）|
 | `page_idx` | `int` | ページインデックス（デフォルト: `0`）|
 
-**返り値** : `dict` — `output_key` の設定により、インデックスアイテム名またはターゲットアイテム名をキーとした辞書
+**返り値** : `dict` - `output_key` の設定により、インデックスアイテム名またはターゲットアイテム名をキーとした辞書
 
 **送出例外：**
 - `SA_InternalSyntaxError(SA_7000)` : `search_range` が2要素でない、または開始 > 終了、または2リストの長さが一致しない
@@ -1483,7 +1483,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 |---|---|---|
 | `cut_num` | `int` | カット番号 |
 
-**返り値** : `list[str]` — コンポーネント名のリスト
+**返り値** : `list[str]` - コンポーネント名のリスト
 
 ---
 
@@ -1497,7 +1497,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 | `component` | `str` | コンポーネント名 |
 | `max_length` | `int \| None` | 最大取得件数。`None` は全件（デフォルト: `None`）|
 
-**返り値** : `dict[str, str]` — `{コミットハッシュ: "コミットメッセージ タイムスタンプ ファイルインデックス名"}` の形式（`output_format=[5, 3, 4]` = timemark, creator_name, commit_message）
+**返り値** : `dict[str, str]` - `{コミットハッシュ: "コミットメッセージ タイムスタンプ ファイルインデックス名"}` の形式（`output_format=[5, 3, 4]` = timemark, creator_name, commit_message）
 
 ---
 
@@ -1511,7 +1511,7 @@ NotionからPNG画像をダウンロードし、一時ファイルパスを返�
 | `component` | `str` | コンポーネント名 |
 | `max_length` | `int \| None` | 最大取得件数。`None` は全件（デフォルト: `None`）|
 
-**返り値** : `dict[str, str]` — `get_history()` と同じ形式
+**返り値** : `dict[str, str]` - `get_history()` と同じ形式
 
 ---
 

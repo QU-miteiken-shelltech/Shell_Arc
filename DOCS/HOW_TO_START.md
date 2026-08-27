@@ -8,7 +8,7 @@ This guide walks you through setting up and running `shellarc_core`. For an over
 
 ## 🚀 Quick start: no code required, up and running as a Discord server
 
-ShellArc ships with a full Discord bot suite as its standard front end. Everything described in the overview — submissions, reviews, progress tracking — is already implemented as Discord commands and buttons. All you need to do is configure and deploy; you don't need to write any application code.
+ShellArc ships with a full Discord bot suite as its standard front end. Everything described in the overview - submissions, reviews, progress tracking - is already implemented as Discord commands and buttons. All you need to do is configure and deploy; you don't need to write any application code.
 
 | docker-compose service | Dockerfile used | Discord commands added |
 |---|---|---|
@@ -49,9 +49,9 @@ cp docker-compose_yml.template docker-compose.yml
 
 Inside `docker-compose.yml`, edit these two kinds of placeholders:
 
-**a. Git identity — the `###` placeholders (`bot` service only)**
+**a. Git identity - the `###` placeholders (`bot` service only)**
 
-Every submission and approval is recorded as a Git commit. Git needs an author/committer identity to create a commit. This is separate from the `submitter_name` and `reviewer_name` stored in the commit message — set a fixed identity representing the bot process itself.
+Every submission and approval is recorded as a Git commit. Git needs an author/committer identity to create a commit. This is separate from the `submitter_name` and `reviewer_name` stored in the commit message - set a fixed identity representing the bot process itself.
 
 ```yaml
 environment:
@@ -62,7 +62,7 @@ environment:
   - GIT_COMMITTER_EMAIL=shellarc-bot@yourproject.local
 ```
 
-**b. Persistent volumes — the `~_in_code:~_in_server` placeholders**
+**b. Persistent volumes - the `~_in_code:~_in_server` placeholders**
 
 Each of these is a `<host path or named volume>:<container path>` pair. The left side is where the data actually lives (so it survives container rebuilds); the right side is the path the container expects.
 
@@ -119,23 +119,23 @@ This builds and starts the `bot`, `itemi_action`, and `ai_chat` containers. All 
 ..history modeling 5    # last 5 submissions for "modeling"
 ```
 
-That's it — the whole submit → review → track cycle works without writing a single line of Python.
+That's it - the whole submit → review → track cycle works without writing a single line of Python.
 
 ---
 
-## 🛠️ shellarc_devkit — supporting tools
+## 🛠️ shellarc_devkit - supporting tools
 
 Separate from the Discord front end, `shellarc_devkit` includes a few standalone scripts to help set up and maintain a project. None of them depend on the Discord bots being up.
 
 | Script | What it does |
 |---|---|
-| `project_init_cli.py` | An interactive wizard for setting up a new project. It initializes the Git repository (`Git_IO.make_proj_repo`), checks connectivity to your spreadsheet, and — if you want — writes a header row and cut-number column into a new spreadsheet automatically. |
+| `project_init_cli.py` | An interactive wizard for setting up a new project. It initializes the Git repository (`Git_IO.make_proj_repo`), checks connectivity to your spreadsheet, and - if you want - writes a header row and cut-number column into a new spreadsheet automatically. |
 | `cloud_access_check.py` | Checks connectivity to Firebase, Cloudflare R2, and Google Spreadsheet all at once. Handy before a deploy, or as a first triage step when part of the pipeline suddenly stops responding. |
 | `backup_on_local.py` + `init_settings.sh` | A backup batch that team members run on their own (or a shared) machine to pull newly submitted cut assets from R2 into a local folder. It's an independent, personal safety net separate from the main pipeline. |
 
 ### Setting up the local backup batch
 
-This isn't run centrally — it's meant to be distributed to each team member individually.
+This isn't run centrally - it's meant to be distributed to each team member individually.
 
 1. Put `backup_on_local.py`, `init_settings.sh`, `requirements.txt`, and a `.env` (containing R2 credentials) together in one folder (e.g. `~/shellarc_backup/`).
 2. Run the setup script once.
@@ -153,9 +153,9 @@ This isn't run centrally — it's meant to be distributed to each team member in
 
 ## Building your own front end
 
-If you don't want to use Discord, the quick start above is just one example front end built on the same library. To build your own — a Slack bot, a web dashboard, a CLI, whatever — you'll need a project context directory (project settings, spreadsheet mapping, credentials for each service) and a one-time Git repository initialization, which you can do interactively with `project_init_cli.py` above. Once that's done, day-to-day usage is just the classes under `operations`.
+If you don't want to use Discord, the quick start above is just one example front end built on the same library. To build your own - a Slack bot, a web dashboard, a CLI, whatever - you'll need a project context directory (project settings, spreadsheet mapping, credentials for each service) and a one-time Git repository initialization, which you can do interactively with `project_init_cli.py` above. Once that's done, day-to-day usage is just the classes under `operations`.
 
 For the exact configuration file formats and full API details (arguments, return values, exceptions raised), see the design docs and API reference.
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — internal design, data model, processing flow
-- [shellarc_core_api_guide.md](../shellarc_core_api_guide.md) — full API reference
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - internal design, data model, processing flow
+- [shellarc_core_api_guide.md](../shellarc_core_api_guide.md) - full API reference

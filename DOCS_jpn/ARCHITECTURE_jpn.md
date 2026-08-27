@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — `shellarc_core` 内部設計ドキュメント
+# ARCHITECTURE.md - `shellarc_core` 内部設計ドキュメント
 
 > このドキュメントは `shellarc_core` の内部アーキテクチャ、レイヤー構造、データモデル、主要フローを説明します。利用方法（インストール・クイックスタート）は [README_jpn.md](../README_jpn.md) を参照してください。
 
@@ -6,7 +6,7 @@
 
 ## 目次
 
-- [ARCHITECTURE.md — `shellarc_core` 内部設計ドキュメント](#architecturemd--shellarc_core-内部設計ドキュメント)
+- [ARCHITECTURE.md - `shellarc_core` 内部設計ドキュメント](#architecturemd--shellarc_core-内部設計ドキュメント)
   - [目次](#目次)
   - [1. 設計思想](#1-設計思想)
   - [2. レイヤードアーキテクチャ](#2-レイヤードアーキテクチャ)
@@ -297,7 +297,7 @@ ShellArc_Request.download_material(requesting_take)
 
 ## 11. 拡張・実装時の指針
 
-新しいアプリケーションを `shellarc_core` 上に実装する場合、以下の順序で理解・実装することを推奨します（元ドキュメントの構成に準拠）。
+新しいアプリケーションを `shellarc_core` 上に実装する場合、以下の順序で理解・実装することを推奨します。
 
 1. `$SHELLARC_PROJECT_CTX` 配下の3ファイル（`project_settings.json`, `spreadsheet_map.json`, `.env`）を用意する。
 2. `Git_IO.make_proj_repo()` で新規プロジェクトのGitリポジトリを初期化する（初回のみ）。
