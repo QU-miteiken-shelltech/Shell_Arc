@@ -23,5 +23,5 @@ with open(generated_key_file, "wb") as f:
 print(f"Encrypted token file : {encrypted_token_file}")
 print(f"Generated key file : {generated_key_file}")
 print("------YOUR SECRET KEY <NEVER EXPOSE THE KEY TO ANY UNTRUSTED THIRD PARTIES>------")
-print(f"KEY : {key.decode("utf-8")}")
+print(f"KEY : {key.decode('utf-8')}")
 print("------------")

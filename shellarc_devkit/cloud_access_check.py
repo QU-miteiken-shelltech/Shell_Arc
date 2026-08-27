@@ -50,7 +50,7 @@ def access_check():
         gcp_access_failed_action()
     
     check_completed_action()
-    print(f"Access check finished ({datetime.datetime.now().strftime("%Y%m%d%H%M%S")})")
+    print(f"Access check finished ({datetime.datetime.now().strftime('%Y%m%d%H%M%S')})")
     print("--------------------")
     print()
 

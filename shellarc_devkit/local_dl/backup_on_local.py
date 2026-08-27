@@ -100,7 +100,7 @@ def backup_on_local() -> None:
             except Exception as e:
                 print(f"ERROR : {e}")
                 continue
-        current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        current_datetime = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
         backup_config["last_backup_time"] = current_datetime
         with open(Path(local_backup_dir) / "backup_config.json", "w", encoding="utf-8") as f:
             json.dump(backup_config, f, ensure_ascii=False, indent=2)
