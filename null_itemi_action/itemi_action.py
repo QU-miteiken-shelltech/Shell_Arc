@@ -1,11 +1,11 @@
 import os
-import re
 import json
 import asyncio
 import datetime
 import traceback
 from pathlib import Path
 
+import regex
 import requests
 from dotenv import load_dotenv
 import discord
@@ -53,7 +53,7 @@ async def on_command_error(ctx, error):
         return
 
 def process_cut_num(cut_cluster):
-    match = re.search(cut_extraction_regex, cut_cluster)
+    match = regex.search(cut_extraction_regex, cut_cluster)
     if match:
         return str(match.group(1))
     return None
@@ -123,7 +123,6 @@ async def daiben(ctx):
 async def dl_lo(message: discord.Message,
                 cut_num: int
                 ) -> None:
-    print("reached dl_lo")
     try:
         sa_storyboard = ShellArc_Storyboard(cut_num=cut_num)
         downloaded_lo_path = await sa_storyboard.download_storyboard()
@@ -155,7 +154,6 @@ async def dl_lo(message: discord.Message,
         if download_lo_dir.exists():
             try: os.rmdir(download_lo_dir)
             except: pass
-        print("reached dl_lo bottom")
         
 
 
