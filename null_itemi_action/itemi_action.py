@@ -123,6 +123,7 @@ async def daiben(ctx):
 async def dl_lo(message: discord.Message,
                 cut_num: int
                 ) -> None:
+    print("reached dl_lo")
     try:
         sa_storyboard = ShellArc_Storyboard(cut_num=cut_num)
         downloaded_lo_path = await sa_storyboard.download_storyboard()
@@ -154,6 +155,8 @@ async def dl_lo(message: discord.Message,
         if download_lo_dir.exists():
             try: os.rmdir(download_lo_dir)
             except: pass
+        print("reached dl_lo bottom")
+        
 
 
 async def up_lo(message: discord.Message,
