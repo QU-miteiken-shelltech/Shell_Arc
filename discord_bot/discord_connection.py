@@ -521,7 +521,7 @@ async def on_register_action(interaction: discord.Interaction,
                              ):
     registering_component_en = component_name_j2e.get(registering_component, registering_component)
     try:
-        shellarc_register = ShellArc_Register()
+        shellarc_register = await asyncio.to_thread(ShellArc_Register)
         await shellarc_register.register_work(
             registering_person=registering_person,
             registering_component=registering_component_en,
