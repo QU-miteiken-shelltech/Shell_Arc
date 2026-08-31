@@ -24,9 +24,7 @@ if IS_PRODUCTION:
 else:
     from test_shellarc_core.mockio.mock_git_io import Mock_Git_IO as Git_IO
     from test_shellarc_core.mockio.mock_r2_io import Mock_R2_IO as R2_IO
-    from test_shellarc_core.mockio.mock_spreadsheet_io import (
-        Mock_Spreadsheet_IO as GCP_IO,
-    )
+    from test_shellarc_core.mockio.mock_spreadsheet_io import Mock_Spreadsheet_IO as GCP_IO
     print("MOCK")
     print("****************")
 
