@@ -1,27 +1,3 @@
-"""
-エミュレータのエントリポイント。
-
-社内の初期化スクリプトが行っている手順:
-    git_io = Git_IO(git_repo_local_dir=git_repo_local_dir)
-    await git_io.make_proj_repo(proj_settings=project_settings)
-に完全準拠する形で、疑似Gitリポジトリを生成する
-(ShellArcEmulatorBackend.create() がこの手順をそのまま踏襲している)。
-
-proj_settings の形式は、同スクリプトが読み込む project_settings.json と同じ:
-    {
-      "cut_num": 5,
-      "components": {
-        "bg": {"format": "png"},
-        "character": {"format": "png"}
-      }
-    }
-
---proj-settings でファイルパスを指定できる(未指定時は組み込みのデフォルトを使用)。
-
-- どこにも削除操作(shutil.rmtree等)は実装していない。
-- アプリ終了時、疑似リポジトリのディレクトリパスをprintするのみ。
-"""
-
 import argparse
 import asyncio
 import json

@@ -1,16 +1,3 @@
-"""
-PySide6によるDiscord風テストエミュレータUI(実ビジネスロジック使用版)。
-
-前回からの変更点(重要):
-- 自作の簡易ロジックをやめ、ShellArc_Upload / ShellArc_Review / ShellArc_Query /
-  SAPYC_Interpreter を「そのまま」呼び出す emu_backend.ShellArcEmulatorBackend を使用。
-- これらは async メソッドなので、ボタン押下のたびに asyncio.run() で同期的に実行する
-  (Mock IOのみのローカル処理なので、都度ブロッキングしても実用上問題ない想定)。
-- Mock_R2_IO(前回作成分)はメモリ内保存のみで、tmpディレクトリへのファイル書き出しは
-  行っていない。Gitの疑似リポジトリ(Mock_Git_IO)のみ、tmpディレクトリに実際に
-  state.jsonを書き出す。この非対称性は意図的な妥協点(詳しい説明はREADME参照)。
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -18,23 +5,12 @@ import re
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QApplication,
-    QComboBox,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QListWidget,
-    QMainWindow,
-    QMessageBox,
-    QPlainTextEdit,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QTabWidget,
-    QTextEdit,
-    QVBoxLayout,
-    QWidget,
+    QApplication, QComboBox, QFrame,
+    QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QMainWindow, QMessageBox,
+    QPlainTextEdit, QPushButton, QTableWidget,
+    QTableWidgetItem, QTabWidget, QTextEdit,
+    QVBoxLayout, QWidget
 )
 from test_shellarc_core.emulator.emu_backend import ShellArcEmulatorBackend
 from test_shellarc_core.utils.emu_state import FakeAttachment, FakeMessage
@@ -55,6 +31,8 @@ class MainWindow(QMainWindow):
         self.backend = backend
         self.messages_by_channel: dict[str, list[FakeMessage]] = {c: [] for c in FAKE_CHANNELS}
         self.pending_attachments: list[FakeAttachment] = []
+
+        self.fake_channels = []
 
         self.setWindowTitle("ShellArc Discord Emulator (Mock専用 / 実APIには一切接続しません)")
         self.resize(1150, 680)
@@ -79,33 +57,20 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(panel)
         layout.addWidget(QLabel("チャンネル"))
         self.channel_list = QListWidget()
-        self.channel_list.addItems(FAKE_CHANNELS)
+        self.channel_list.addItems(self.fake_channels)
         self.channel_list.currentTextChanged.connect(self._on_channel_changed)
         layout.addWidget(self.channel_list)
+        self.add_channel_input = QLineEdit()
+        layout.addWidget(self.add_channel_input)
+        add_channel_btn = QPushButton("追加")
+        add_channel_btn.clicked.connect(self.add_channel)
+        layout.addWidget(add_channel_btn)
         self.channel_list.setCurrentRow(0)
 
         layout.addWidget(QLabel("あなたの表示名"))
         self.author_input = QLineEdit("TestUser")
         layout.addWidget(self.author_input)
 
-        layout.addWidget(QLabel("クイックコマンド"))
-        for label, handler in [
-            ("..testarc", self._on_cmd_testarc),
-            ("..myid", self._on_cmd_myid),
-            ("..status", self._on_cmd_status),
-            ("..sync", self._on_cmd_sync),
-        ]:
-            btn = QPushButton(label)
-            btn.clicked.connect(handler)
-            layout.addWidget(btn)
-
-        layout.addWidget(QLabel("SAPYCコマンド"))
-        self.sapyc_input = QLineEdit()
-        self.sapyc_input.setPlaceholderText("例: get cut1 bg status")
-        layout.addWidget(self.sapyc_input)
-        sapyc_btn = QPushButton("..sapyc 実行")
-        sapyc_btn.clicked.connect(self._on_cmd_sapyc)
-        layout.addWidget(sapyc_btn)
 
         layout.addStretch(1)
         return panel
@@ -228,6 +193,13 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # イベントハンドラ
     # ------------------------------------------------------------------
+
+    def add_channel(self) -> None:
+        new_channel = self.add_channel_input.text()
+        new_channel = self.add_channel_input.setText("")
+        self.fake_channels.append(new_channel)
+        self.channel_list.clear()
+        self.channel_list.addItems(self.fake_channels)
 
     def _on_channel_changed(self, _channel: str) -> None:
         cut_num = self._extract_cut_num(self._current_channel())

@@ -1,35 +1,3 @@
-"""
-discord_connection.py が実際に使っているビジネスロジッククラスを、
-簡易な自作ロジックに置き換えず「そのまま」importして使うバックエンド。
-
-前提(ユーザーからの指示に基づく):
-- shellarc_core.process.uploader.ShellArc_Upload
-- shellarc_core.process.reviewing.ShellArc_Review
-- shellarc_core.process.query.ShellArc_Query
-- shellarc_core.sapyc.sapyc_interpreter.SAPYC_Interpreter
-  は「すでに仮想化されたもの」であり、中身を知らなくてもそのまま使ってよい。
-  これらは r2_io / git_io / gcp_io を DI で受け取る設計になっているため、
-  ここに Mock_R2_IO / Mock_Git_IO / Mock_Spreadsheet_IO を渡す限り、
-  実際のR2 / Git / Google Spreadsheet APIには一切触れない。
-- Mock_Git_IO は本番の Git_IO と全く同じロジック(実際の `git` コマンドを
-  subprocessで実行する実装)。「一時ディレクトリを渡すだけ」という指示に基づき、
-  git_repo_dir(tempfile.mkdtemp()で作成)を渡している点だけが本番との違い。
-
-呼び出しシグネチャについての注意:
-- discord_connection.py 内の呼び出し例から推測して呼んでいる。
-  実際のシグネチャと異なる場合、実行時に TypeError 等が発生しうるが、
-  その場合は GUI 側でエラーメッセージとして表示されるようにしている
-  (アプリごと落ちないようにハンドリング済み)。
-
-初期化フローについて:
-- 社内の初期化スクリプト(inilialize_project.py相当)にある make_proj_repo() 関数
-      async def make_proj_repo(git_repo_local_dir, project_settings):
-          git_io = Git_IO(git_repo_local_dir=git_repo_local_dir)
-          await git_io.make_proj_repo(proj_settings=project_settings)
-  と同じ手順を ShellArcEmulatorBackend.create() で踏襲している。
-  Mockのコンストラクタで直接状態を注入するのではなく、必ず make_proj_repo() を
-  await して初期化する。
-"""
 
 from __future__ import annotations
 
@@ -55,7 +23,6 @@ class ShellArcEmulatorBackend:
         self.r2_io = Mock_R2_IO(bucket_name="mock-bucket")
         self.gcp_io = Mock_Spreadsheet_IO()
 
-        # discord_connection.py の setup_shellarc_io と同じ組み立て方
         self.shellarc_query = ShellArc_Query(gcp_io=self.gcp_io, git_io=self.git_io)
         self.sapyc_interpreter = SAPYC_Interpreter(git_io=self.git_io, gcp_io=self.gcp_io)
 
@@ -63,16 +30,6 @@ class ShellArcEmulatorBackend:
 
     @classmethod
     async def create(cls, git_repo_dir: Path, proj_settings: dict) -> ShellArcEmulatorBackend:
-        """
-        社内の初期化スクリプトにある make_proj_repo() 関数と同じ手順で疑似リポジトリを
-        生成してからバックエンドを返す:
-
-            git_io = Git_IO(git_repo_local_dir=git_repo_local_dir)
-            await git_io.make_proj_repo(proj_settings=project_settings)
-
-        proj_settings は同スクリプトが読み込む project_settings.json と同じ形式:
-            {"cut_num": int, "components": {"bg": {"format": "png"}, ...}}
-        """
         self = cls(git_repo_dir=git_repo_dir)
         self._log(f"[init] make_proj_repo(proj_settings={proj_settings})")
         await self.git_io.make_proj_repo(proj_settings=proj_settings)
