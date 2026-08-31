@@ -1,16 +1,3 @@
-"""
-R2_IO の Mock 実装。
-
-設計判断:
-- boto3 / S3 には一切アクセスしない。`self._store` という dict (key -> bytes) を
-  仮想的なバケットとして扱う。
-- `upload_file` に str/Path が渡された場合、実際にローカルディスクから読み込む
-  （テストコードが用意した一時ファイルの中身を検証したいケースを想定）。
-  bytesが渡された場合はそのまま格納する。
-- 例外系は実クラスと同じ `shellarc_core.exception` のクラスを使い、
-  呼び出し側のエラーハンドリングコードをそのままテストできるようにしている。
-"""
-
 from pathlib import Path
 from typing import Union
 
@@ -23,7 +10,7 @@ from shellarc_core.exception.structure_error import (
 
 class Mock_R2_IO:
     def __init__(self, bucket_name: str | None = None):
-        self.bucket_name = bucket_name or "mock-bucket"
+        self.bucket_name = bucket_name if bucket_name else "mock-bucket"
         self._store: dict[str, bytes] = {}
         self.uploaded_calls: list[str] = []  # テストでアップロード回数/対象を検証するための記録
 
@@ -62,12 +49,25 @@ class Mock_R2_IO:
         matches = [k for k in self._store if k.startswith(file_prefix)]
         return matches if matches else None
 
-    def upload_file(
-        self,
-        uploading_file: Union[bytes, str, Path],
-        file_path: Union[str, Path],
-        url_prefix: str | None = None,
-    ) -> str | None:
+    @overload
+    def upload_file(self, 
+                    uploading_file: bytes | str | Path,
+                    file_path: str | Path,
+                    url_prefix: str
+                    ) -> str: ...
+    
+    @overload
+    def upload_file(self, 
+                    uploading_file: bytes | str | Path,
+                    file_path: str | Path,
+                    url_prefix: None
+                    ) -> None: ...
+
+    def upload_file(self,
+                    uploading_file: bytes | str | Path,
+                    file_path: str | Path,
+                    url_prefix: str | None=None
+                    ) -> str | None:
         if isinstance(file_path, Path):
             file_path = str(file_path)
         if uploading_file is None:
