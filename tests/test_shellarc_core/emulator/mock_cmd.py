@@ -37,6 +37,7 @@ class MockMessage:
 @dataclass
 class MockReturn:
     content: str
+    file: bytes | None = None
 
 class MockCommands:
     def __init__(self, 
@@ -111,7 +112,7 @@ class MockCommands:
         )
 
 
-    async def upbig(self, message: MockMessage):
+    async def upbig(self, message: MockMessage, component: str):
         if self.channel_name_divider not in message.channel:
             return
 
@@ -123,61 +124,63 @@ class MockCommands:
         )
 
 
-    async def appr(ctx):
-        message = ctx.message
-        if message.author.bot:
+    async def appr(self, message: MockMessage, component: str, is_approve: bool):
+        if self.channel_name_divider not in message.channel:
             return
-        if channel_name_divider not in message.channel.name:
-            return
-        view = ShellArcDropdownView(
-            sa_action=ShellArcActions.APPR,
-            message=message
+        
+        return await self.on_reviewing_action(
+            message=message,
+            reviewing_cut=self.parse_channel_name(channel_name=message.channel),
+            reviewing_component=component,
+            reviewing_person=message.author,
+            is_approve=is_approve
         )
-        await ctx.send(view=view)
 
 
-    async def dl(ctx):
-        message = ctx.message
-        if message.author.bot:
+    async def dl(self, message: MockMessage, component: str):
+        if self.channel_name_divider not in message.channel:
             return
-        if channel_name_divider not in message.channel.name:
-            return
-        view = ShellArcDropdownView(
-            sa_action=ShellArcActions.DL,
-            message=message
+        msg_split = message.content.split(" ")
+        take = str(msg_split[1]) if len(msg_split) > 1 else "0"
+        return await self.on_download_action(
+            message=message,
+            requesting_cut=self.parse_channel_name(channel_name=message.channel),
+            requesting_component=component,
+            requesting_take=take
         )
-        await ctx.send(view=view)
 
-
-    async def check(ctx):
-        message = ctx.message
-        if message.author.bot:
+    async def check(self, message: MockMessage, component: str):
+        if self.channel_name_divider not in message.channel:
             return
-        if channel_name_divider not in message.channel.name:
-            return
-        view = ShellArcDropdownView(
-            sa_action=ShellArcActions.CAPPR,
-            message=message
+        return await self.on_download_action(
+            message=message,
+            requesting_cut=self.parse_channel_name(channel_name=message.channel),
+            requesting_component=component,
+            requesting_take="-1"
         )
-        await ctx.send(view=view)
 
 
-    async def reg(ctx):
-        message = ctx.message
-        if message.author.bot:
-            return
-        view = ShellArcDropdownView(
-            sa_action=ShellArcActions.REG,
-            message=message
+    async def reg(self, message: MockMessage, component: str):
+        is_dconly = len(message.content.split(" ")) > 1 and message.content.split(" ")[1] == "o"
+        if is_dconly:
+            return await self.on_register_dconly_action(
+                message=message,
+                registering_cut=self.parse_channel_name(channel_name=message.channel),
+                registering_component=component
+            )
+        is_force = len(message.content.split(" ")) > 1 and message.content.split(" ")[1] == "f"
+        processing_person = str(message.content.split(" ")[2]) if len(message.content.split(" ")) > 2 else message.author
+        return await self.on_register_action(
+            message=message,
+            registering_cut=self.parse_channel_name(channel_name=message.channel),
+            registering_component=component,
+            registering_person=processing_person,
+            force=is_force
         )
-        await ctx.send(view=view)
 
 
-    async def history(ctx):
-        message = ctx.message
-        if message.author.bot:
-            return
-        channel_name = str(message.channel.name.lower())
+    async def history(self, message: MockMessage):
+        channel_name = str(message.channel.lower())
         message_command = message.content.split(" ")
         if len(message_command) < 2:
             await message.channel.send("作業工程を指定してください")
@@ -389,24 +392,21 @@ class MockCommands:
             confirm_msg += f" @{keyframe_qc}"
         return MockReturn(content=confirm_msg)
 
-
-
-    @shell_arc_bot.event
-    async def on_reviewing_action(interaction: discord.Interaction, 
-                                message: discord.Message,
-                                reviewing_cut, 
-                                reviewing_component, 
-                                reviewing_person,
-                                is_approve
-                                ):
-        reviewing_component_en = component_name_j2e.get(reviewing_component, reviewing_component)
+    async def on_reviewing_action(self,
+                                  message: MockMessage,
+                                  reviewing_cut,
+                                  reviewing_component,
+                                  reviewing_person,
+                                  is_approve
+                                  ):
+        reviewing_component_en = self.component_name_j2e.get(reviewing_component, reviewing_component)
         git_message = message.content.split(" ")[1] if len(message.content.split(" ")) > 1 else ""
         try:
             shellarc_review = ShellArc_Review(
                 cut_num=int(reviewing_cut),
                 reviewing_component=reviewing_component_en,
-                git_io=shell_arc_bot.git_io,
-                gcp_io=shell_arc_bot.gcp_io
+                git_io=self.git_io,
+                gcp_io=self.gcp_io
             )
             await shellarc_review.pending_action(
                 reviewer_name=reviewing_person,
@@ -414,37 +414,34 @@ class MockCommands:
                 message=git_message
             )
             if is_approve:
-                await interaction.edit_original_response(content=f"カット{reviewing_cut} {reviewing_component} が確定されました", view=None)
+                return MockMessage(content=f"カット{reviewing_cut} {reviewing_component} が確定されました")
             else:
-                await interaction.edit_original_response(content=f"カット{reviewing_cut} {reviewing_component} がアーカイブされました", view=None)
+                return MockMessage(content=f"カット{reviewing_cut} {reviewing_component} がアーカイブされました")
         except ShellArcException as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except ShellArcError as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except Exception as e:
-            await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
             tb = traceback.format_exc()
             error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
             print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
-            return
+            return MockMessage(content=f"技術班にご連絡ください !  EXCEPTION : {e}")
             
         
-    @shell_arc_bot.event
-    async def on_download_action(interaction: discord.Interaction,
-                                requesting_cut,
-                                requesting_component,
-                                requesting_take
-                                ):
+    async def on_download_action(self,
+                                 message: MockMessage,
+                                 requesting_cut,
+                                 requesting_component,
+                                 requesting_take
+                                 ):
         downloaded_path = ""
-        requesting_component_en = component_name_j2e.get(requesting_component, requesting_component)
+        requesting_component_en = self.component_name_j2e.get(requesting_component, requesting_component)
         try:
             shellarc_request = ShellArc_Request(
                 cut_num=int(requesting_cut),
                 requesting_component=requesting_component_en,
-                r2_io=shell_arc_bot.r2_io,
-                git_io=shell_arc_bot.git_io
+                r2_io=self.r2_io,
+                git_io=self.git_io
             )
             downloaded_material = await shellarc_request.download_material(requesting_take=requesting_take)
             downloaded_path = downloaded_material[0]
@@ -459,42 +456,35 @@ class MockCommands:
                     )
                 if requesting_take == "0": take_name = "最新テイク"
                 if requesting_take == "-1": take_name = "作業中テイク"
-                await interaction.edit_original_response(content=f"カット{requesting_cut} {take_name} {requesting_component} を取得中", view=None)
-                await interaction.channel.send(
-                    f"カット{requesting_cut} {take_name} {requesting_component} が取得されました",
-                    file=discord.File(downloaded_path)
-                    )
+                return MockReturn(
+                    content=f"カット{requesting_cut} {take_name} {requesting_component} が取得されました",
+                    file=open(downloaded_path)
+                )
             elif downloaded_method == "url":
-                await interaction.edit_original_response(content=f"カット{requesting_cut} {take_name} {requesting_component} のファイルが大きすぎるため、URLでお渡しします", view=None)
-                await interaction.channel.send(f"URL : {downloaded_path}\n180秒以内でダウンロードしてください")
+                return MockReturn(content=f"URL : {downloaded_path}\n180秒以内でダウンロードしてください")
         except ShellArcException as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except ShellArcError as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except Exception as e:
-            await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
             tb = traceback.format_exc()
             error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
             print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
-            return
+            return MockMessage(content=f"技術班にご連絡ください !  EXCEPTION : {e}")
         finally:
             if Path(downloaded_path).exists():
                 os.unlink(downloaded_path)
 
-        
-    @shell_arc_bot.event
-    async def on_register_action(interaction: discord.Interaction,
-                                message: discord.Message,
-                                registering_cut,
-                                registering_component,
-                                registering_person,
-                                force
-                                ):
-        registering_component_en = component_name_j2e.get(registering_component, registering_component)
+    async def on_register_action(self,
+                                 message: MockMessage,
+                                 registering_cut,
+                                 registering_component,
+                                 registering_person,
+                                 force
+                                 ):
+        registering_component_en = self.component_name_j2e.get(registering_component, registering_component)
         try:
-            shellarc_register = ShellArc_Register(gcp_io=shell_arc_bot.gcp_io)
+            shellarc_register = ShellArc_Register(gcp_io=self.gcp_io)
             await shellarc_register.register_work(
                 registering_person=registering_person,
                 registering_component=registering_component_en,
@@ -502,63 +492,47 @@ class MockCommands:
                 force=force
             )
         except ShellArcException as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except ShellArcError as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except Exception as e:
-            await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
             tb = traceback.format_exc()
             error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
             print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
-            return
+            return MockMessage(content=f"技術班にご連絡ください !  EXCEPTION : {e}")
+        return MockMessage(content=f"{registering_person}をカット{registering_cut} {registering_component}に登録しました")
 
-        if "*" not in message.content:
-            current_channel_name = interaction.channel.name.split(channel_name_divider)
-            if len(current_channel_name) > 1:
-                current_channel_name[1] = registering_person
-            else:
-                current_channel_name.append(registering_person)
-            new_channel_name = channel_name_divider.join(current_channel_name)
-            await interaction.channel.edit(name=new_channel_name)
-        await interaction.edit_original_response(content=f"{registering_person}をカット{registering_cut} {registering_component}に登録しました", view=None)
-        #await interaction.channel.send(f"..remind {deadline} あしたカット{registering_cut}の締切だよ {message.author.id}")
 
-    async def on_register_dconly_action(interaction: discord.Interaction,
-                                        message: discord.Message,
+    async def on_register_dconly_action(self,
+                                        message: MockMessage,
                                         registering_cut,
                                         registering_component
                                         ):
         try:
-            registering_component_en = component_name_j2e.get(registering_component, registering_component)
+            registering_component_en = self.component_name_j2e.get(registering_component, registering_component)
             get_info_type_name = f"{registering_component_en}_PIC"
-            component_pic = await shell_arc_bot.shellarc_query.get_spreadsheet_info(
+            component_pic = await self.shellarc_query.get_spreadsheet_info(
                 info_type=get_info_type_name,
                 cut_num=registering_cut
             )
         except ShellArcException as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except ShellArcError as e:
-            await interaction.edit_original_response(content=e.frontend_msg, view=None)
-            return
+            return MockMessage(content=e.frontend_msg)
         except Exception as e:
-            await interaction.edit_original_response(content=f"技術班にご連絡ください !  EXCEPTION : {e}", view=None)
             tb = traceback.format_exc()
             error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
             print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
-            return
-        current_channel_name = interaction.channel.name.split(channel_name_divider)
+            return MockMessage(content=f"技術班にご連絡ください !  EXCEPTION : {e}")
+        current_channel_name = message.channel.split(self.channel_name_divider)
         if len(current_channel_name) > 1:
             current_channel_name[1] = component_pic
         else:
             current_channel_name.append(component_pic)
-        new_channel_name = channel_name_divider.join(current_channel_name)
+        new_channel_name = self.channel_name_divider.join(current_channel_name)
 
         if component_pic:
-            await interaction.channel.edit(name=new_channel_name)
-            await interaction.edit_original_response(content="スイッチできました", view=None)
+            return MockMessage(content=new_channel_name)
         else:
-            await interaction.edit_original_response(content="担当データが見つかりませんでした", view=None)
+            return MockMessage(content="担当データが見つかりませんでした")
 
