@@ -91,7 +91,7 @@ class ShellArc_Request:
             target_file_s3path = f"{self.cfg_io.get_cfg_setting(Cfg_item.COLL_NAME)}/stage/{name_with_ext}"
         temp_dir = tempfile.mkdtemp()
         target_file_size = self.r2_io.get_s3obj_size(target_s3_file=target_file_s3path)
-        if target_file_size > 9:
+        if target_file_size > 19:
             presigned_url = self.r2_io.issue_presigned_url(
                 target_s3_file=target_file_s3path,
                 url_client_method="get_object",
