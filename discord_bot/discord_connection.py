@@ -507,7 +507,7 @@ async def on_download_action(interaction: discord.Interaction,
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
         return
     finally:
-        if Path(downloaded_path).exists():
+        if downloaded_path and Path(downloaded_path).exists():
             os.unlink(downloaded_path)
 
     
