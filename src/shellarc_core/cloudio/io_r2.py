@@ -178,7 +178,7 @@ class R2_IO:
                 to_download_file,
                 f"{download_destination}/{file_naming}"
             )
-            asyncio.sleep(0.2)
+            # await asyncio.sleep(0.2)
         except Exception as e:
             raise SA_CommunicationError(
                 error_log=f"Communication error with R2 when downloading [{e}]",
