@@ -496,6 +496,7 @@ class Git_IO:
         """Synchronize the local git repository with the remote repository by pushing the latest commits from both the main and pending branches to the remote origin.
         """
         git_commands = [
+            [GitCommands.CHECKOUT, ShellArcGitBranch.MAIN],
             [GitCommands.PUSH, "origin", ShellArcGitBranch.MAIN],
             [GitCommands.CHECKOUT, ShellArcGitBranch.PENDING],
             [GitCommands.PUSH, "origin", ShellArcGitBranch.PENDING]
