@@ -767,8 +767,10 @@ async def sync(ctx):
     message = ctx.message
     if message.author.bot:
         return
+    print("SYNC")
     try:
         await ShellArc_Upload.sync_vps_with_remote()
+        print("SYNCED")
         await message.channel.send("同期しました")
     except ShellArcException as e:
         await message.channel.send(content=e.frontend_msg, view=None)
