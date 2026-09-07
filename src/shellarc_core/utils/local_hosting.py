@@ -27,7 +27,7 @@ def host_ngrok(html_content: str,
             error_code=SA_ErrorCode.SA_9001
         )
     load_dotenv(dotenv_path)
-    ngrok.set_authtoken(os.environ.get("Ngrok_authtoken"))
+    ngrok.set_auth_token(os.environ.get("Ngrok_authtoken"))
     global _is_hosting
     print("CKPT4")
 
