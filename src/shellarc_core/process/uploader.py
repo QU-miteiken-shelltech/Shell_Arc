@@ -7,6 +7,7 @@ from shellarc_core.cloudio.io_r2 import R2_IO
 from shellarc_core.cloudio.io_git import Git_IO
 from shellarc_core.cloudio.io_spreadsheet import GCP_IO
 from shellarc_core.utils.file_operation import FileOperation
+from shellarc_core.utils import local_hosting
 from shellarc_core.cfg.cfg_io import Cfg_IO, Cfg_item
 
 from shellarc_core.exception.user_exception import SA_InvalidUserQuery
@@ -142,10 +143,10 @@ class ShellArc_Upload:
 
         return presigned_url
     
-    async def get_upload_page(self,
-                              submitter_name: str,
-                              message: str
-                              ) -> tuple[str]:
+    async def _generate_html_code(self,
+                                  submitter_name: str,
+                                  message: str
+                                  ) -> str:
         """Get the file path of the generated HTML upload page for uploading a file to the R2 storage,
         which includes a presigned URL for uploading the file, and update the corresponding information in the Google Spreadsheet to reflect the new submission.
 
@@ -194,11 +195,35 @@ class ShellArc_Upload:
             "__S3_PRESIGNED_JS_URLMAP_CONST__", 
             allowed_formats_url_jsonstr
             )
+        return html_page_code
+
+    async def get_upload_page(self,
+                              submitter_name: str,
+                              message: str
+                              ) -> tuple[str]:
+        html_page_code = await self._generate_html_code(
+            submitter_name=submitter_name,
+            message=message
+        )
         temp_dir = tempfile.mkdtemp()
         html_path = Path(temp_dir) / f"cut{self.cut_num}_uploader.html"
         with open(html_path, 'w', encoding='utf-8') as f:
             f.write(html_page_code)
         return (str(html_path), temp_dir)
+
+    async def get_upload_page_2(self,
+                                submitter_name: str,
+                                message: str
+                                ) -> str:
+        html_page_code = await self._generate_html_code(
+            submitter_name=submitter_name,
+            message=message
+        )
+        public_url = local_hosting.host_ngrok(
+            html_content=html_page_code
+        )
+        return public_url
+
 
 
     @staticmethod

@@ -22,7 +22,8 @@ dependencies = [
     "requests",
     "gspread-formatting",
     "notion_client",
-    "regex"
+    "regex",
+    "pyngrok"
 ]
 requires-python = ">=3.9"
 authors = [

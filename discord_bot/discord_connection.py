@@ -378,13 +378,22 @@ async def on_push_action(interaction: discord.Interaction,
                 message=git_message
             )
         else:
-            upload_page_path, temp_dir = await shellarc_upload.get_upload_page(
-                submitter_name=submitting_person,
-                message=git_message
-            )
-            await interaction.channel.send(
-                f"180秒以内、このからファイルをアップロードしてください",
-                file=discord.File(upload_page_path)
+            if "iupbig" not in msg_splitted[0]:
+                upload_page_path, temp_dir = await shellarc_upload.get_upload_page(
+                    submitter_name=submitting_person,
+                    message=git_message
+                )
+                await interaction.channel.send(
+                    f"180秒以内、このからファイルをアップロードしてください",
+                    file=discord.File(upload_page_path)
+                    )
+            else:
+                public_url = await shellarc_upload.get_upload_page_2(
+                    submitter_name=submitting_person,
+                    message=git_message
+                )
+                await interaction.channel.send(
+                    f"以下のリンクから5分以内でアップロードしてください : {public_url}"
                 )
     except ShellArcException as e:
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
@@ -612,6 +621,20 @@ async def up(ctx):
 
 @shell_arc_bot.command()
 async def upbig(ctx):
+    message = ctx.message
+    if message.author.bot:
+        return
+    if channel_name_divider not in message.channel.name:
+        return
+
+    view = ShellArcDropdownView(
+        sa_action=ShellArcActions.UP,
+        message=message
+    )
+    await ctx.send(view=view)
+
+@shell_arc_bot.command()
+async def iupbig(ctx):
     message = ctx.message
     if message.author.bot:
         return
