@@ -14,10 +14,10 @@ from shellarc_core.exception.structure_error import SA_AuthError, SA_ErrorCode
 _is_hosting = False
 _hosting_lock = threading.Lock()
 
-
 def host_ngrok(html_content: str, 
                duration_minutes=5
                ) -> str:
+    print("CKPT3")
     load_dotenv(verbose=True)
     project_ctx_dir = Path(os.environ.get("SHELLARC_PROJECT_CTX", None))
     dotenv_path = project_ctx_dir / ".env"
@@ -29,6 +29,7 @@ def host_ngrok(html_content: str,
     load_dotenv(dotenv_path)
     ngrok.set_authtoken(os.environ.get("Ngrok_authtoken"))
     global _is_hosting
+    print("CKPT4")
 
     with _hosting_lock:
         if _is_hosting:
@@ -54,6 +55,8 @@ def host_ngrok(html_content: str,
         def log_message(self, format, *args):
             pass
 
+    print("CKPT5")
+
     server = http.server.HTTPServer(("127.0.0.1", port), HTMLHandler)
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
@@ -61,6 +64,7 @@ def host_ngrok(html_content: str,
 
     tunnel = ngrok.connect(port)
     public_url = tunnel.public_url
+    print("CKPT6")
 
     def auto_shutdown():
         global _is_hosting

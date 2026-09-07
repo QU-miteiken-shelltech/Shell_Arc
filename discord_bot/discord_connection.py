@@ -388,10 +388,12 @@ async def on_push_action(interaction: discord.Interaction,
                     file=discord.File(upload_page_path)
                     )
             else:
+                print("CKPT1")
                 public_url = await shellarc_upload.get_upload_page_2(
                     submitter_name=submitting_person,
                     message=git_message
                 )
+                print("CKPT2")
                 await interaction.channel.send(
                     f"以下のリンクから5分以内でアップロードしてください : {public_url}"
                 )
