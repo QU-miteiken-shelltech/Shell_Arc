@@ -2,6 +2,7 @@
 **/site_packages/**
 .env
 project_ctx/**
+project_ctx_main/**
 !project_ctx/.gitkeep
 **/.env
 **/.DS_Store
