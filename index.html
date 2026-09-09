@@ -534,7 +534,6 @@
             <a href="#frequent">よく使うコマンド</a>
             <a href="#all-commands">全コマンド一覧</a>
             <a href="#sapyc">SAPYC 解説</a>
-            <a href="#dev">開発者向け補足</a>
             <a href="#errcode">エラーコード</a>
         </div>
     </nav>
@@ -1072,36 +1071,7 @@
             </div>
         </section>
 
-        <!-- ===== 開発者向け補足 ===== -->
         <section class="docs-section" id="dev">
-            <h2>開発者向け補足</h2>
-            <p style="font-size:0.92rem;">
-                このセクションはコードを触る開発者向けの注記です。通常の利用者は読み飛ばして問題ありません。
-            </p>
-            <div class="note-box">
-                <strong>SAPYC コマンドの実装状況：</strong><br>
-                現在 <code>interpret_sapyc()</code> のディスパッチには
-                <code>record</code> / <code>repoint</code> / <code>rebase</code> / <code>absorb</code> /
-                <code>history</code> / <code>spreadsheet</code> が登録されており、いずれも
-                <code>..sapyc</code> から実行できます。<br>
-                新しいコマンドを追加する場合は、対応するクラスメソッドを実装したうえで
-                <code>interpret_sapyc()</code> 内の <code>if cmd_name == ...</code> 分岐への登録が必要です。
-            </div>
-
-            <div class="note-box">
-                <strong>..appr の権限チェックについて：</strong><br>
-                ドキュメント上は「作画監督等用」としていますが、現状のボット実装（<code>bot.py</code>）では
-                <code>appr</code> コマンド自体に <code>authority_check()</code> によるロール確認処理は入っていません
-                （<code>makech</code> や <code>onoff</code> のような管理者コマンドとは異なり、コード上は誰でも実行可能です）。
-                Discordのチャンネル権限側で閲覧・投稿を制限している場合はそちらで実質的に制御されていますが、
-                コードレベルでの権限制御を追加したい場合は <code>authority_check()</code> の呼び出しを検討してください。
-            </div>
-
-            <div class="note-box">
-                <strong>疎通確認用コマンド：</strong><br>
-                <code>..testarc</code> は「MyReply」という固定文言を返すだけの、ボットが正常に起動しているかを確認するための
-                内部テスト用コマンドです。通常の制作フローでは使用しないため、利用者向けの一覧には掲載していません。
-            </div>
 
             <h2 style="margin-top:35px;" id="errcode">エラーコード早見表</h2>
             <p style="font-size:0.92rem; margin-bottom:6px;">
