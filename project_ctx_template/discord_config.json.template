@@ -1,0 +1,29 @@
+{
+    "total_cut_count" : 250,
+    "webhook_bot_name" : "xxxxxx",
+    "notice_message_cut_extraction_regex": "cut(\\d+)?",
+    "shellarc_bot_id" : "xxxxxx",
+    "itemi_action_dir" : "xxxxxx",
+    "channel_name_divider" : "_",
+    "bot_command" : "**",
+    "component_reference" : {
+        "keyframe" : "原画（人）",
+        "animation" : "動画（人）",
+        "coloring" : "着彩(人）",
+        "bg1" : "背景1",
+        "bg2" : "背景2",
+        "objkeyframe" : "原画（物）",
+        "objanimation" : "動画（物）",
+        "objcoloring" : "着彩(物）", 
+        "compo1" : "撮影1",
+        "compo2" : "撮影2"
+    },
+    "admin_roles" : {
+        "keyframe_qc" : ["作画監督", "制作進行"],
+        "admin_cmd" : ["コマンド権限"]
+    },
+    "center_channel_names" : {
+        "notice_center" : "xxxxxx",
+        "schedule_query_center" : "xxxxxx"
+    }
+}

@@ -1,0 +1,129 @@
+{
+    "project_name" : "xxxxxx",
+    "bucket_name" : "xxxxxx",
+    "collection_name" : "xxxxxxx",
+    "spreadsheet_key" : "xxxxxx",
+    "notion_dbid" : "xxxxxxx",
+    "git_repo_local" : "xxxxxx",
+    "local_backup_dir" : "xxxxxx",
+    "storybaord_url" : "xxxxxx",
+    "cut_num" : 250,
+
+    "parts" : {
+        "A" : [1, 5],
+        "B" : [5, 90]
+    },
+
+    "components" : {
+        "layout" : {
+            "process" : "layout",
+            "diaplay" : "レイアウト",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "lo",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "keyframe" : {
+            "process" : "keyframe",
+            "diaplay" : "原画（人）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "keyframe",
+            "format" : "png|clip",
+            "mime" : "img/png"
+        },
+        "animation" : {
+            "process" : "animation",
+            "diaplay" : "動画（人）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "animation",
+            "format" : "zip",
+            "mime" : "application/zip"
+        },
+        "coloring" : {
+            "process" : "coloring",
+            "diaplay" : "着彩（人）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "coloring",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "objkeyframe" : {
+            "process" : "objkeyframe",
+            "diaplay" : "原画（物）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "objkeyframe",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "objanimation" : {
+            "process" : "objanimation",
+            "diaplay" : "動画（物）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "objanimation",
+            "format" : "zip",
+            "mime" : "application/zip"
+        },
+        "objcoloring" : {
+            "process" : "objcoloring",
+            "diaplay" : "着彩（物）",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "objcoloring",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "bg1" : {
+            "process" : "bg1",
+            "diaplay" : "背景1",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "bg1",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "bg2" : {
+            "process" : "bg2",
+            "diaplay" : "背景2",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "bg2",
+            "format" : "png",
+            "mime" : "img/png"
+        },
+        "compo1" : {
+            "process" : "compo1",
+            "diaplay" : "撮影1",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "compo1",
+            "format" : "mov",
+            "mime" : "video/mov"
+        },
+        "compo2" : {
+            "process" : "compo2",
+            "diaplay" : "撮影2",
+            "naming_section" : 3,
+            "name_component_1" : "-cut",
+            "name_component_2" : "-take",
+            "name_component_3" : "compo2",
+            "format" : "mov",
+            "mime" : "video/mov"
+        }
+    }
+}

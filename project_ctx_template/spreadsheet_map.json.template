@@ -1,0 +1,33 @@
+{
+    "vert_offset_0" : 5,
+    "vert_offset_1" : 5,
+    "header": 3,
+
+    "items_0" : {
+        "cut_num" : 7,
+        "difficulty" : 8,
+        "layout_PIC" : 10,
+        "layout_deadline" : 13,
+        "layout_progress" : 14,
+        "keyframe_PIC" : 16,
+        "keyframe_progress" : 17,
+        "animation_PIC" : 18,
+        "animation_progress" : 19,
+        "coloring_PIC" : 20,
+        "coloring_progress" : 21,
+        "objkeyframe_PIC" : 25,
+        "objkeyframe_progress" : 26,
+        "objanimation_PIC" : 27,
+        "objanimation_progress" : 28,
+        "objcoloring_PIC" : 29,
+        "objcoloring_progress" : 30,
+        "bg1_PIC" : 34,
+        "bg1_progress" : 35,
+        "bg2_PIC" : 36,
+        "bg2_progress" : 37,
+        "compo1_PIC" : 42,
+        "compo1_progress" : 43,
+        "compo2_PIC" : 44,
+        "compo2_progress" : 45
+    }
+}
