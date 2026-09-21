@@ -260,7 +260,20 @@ class ShellArcDropdown(discord.ui.Select):
                     )
                     return
                 is_force = len(self.message.content.split(" ")) > 1 and self.message.content.split(" ")[1] == "f"
-                processing_person = str(self.message.content.split(" ")[2]) if len(self.message.content.split(" ")) > 2 else processing_person
+                if len(self.message.content.split(" ")) > 2:
+                    processing_person = str(self.message.content.split(" ")[2])
+                    regex_search = re.search(r"<@&([0-9]+)>", processing_person)
+                    if regex_search is None:
+                        processing_person = processing_person
+                    else:
+                        mentioned_member_id = int(regex_search.group(1))
+                        try:
+                            mentioned_member = interaction.guild.get_member(mentioned_member_id)
+                            processing_person = mentioned_member.display_name
+                        except:
+                            processing_person = processing_person
+                else:
+                    processing_person = processing_person
                 shell_arc_bot.dispatch(
                     ShellArcEvents.REG_Event.value,
                     interaction,
