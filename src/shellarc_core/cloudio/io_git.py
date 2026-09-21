@@ -401,7 +401,8 @@ class Git_IO:
                     error_code=SA_ErrorCode.SA_8002
                 )
             status_str = stdout.decode("utf-8").strip()
-            if f".sa_pending_{component}" not in status_str:
+            pending_file = self.git_repo_local_dir / f"stage/cut{cut_num}/.sa_pending_{component}"
+            if f".sa_pending_{component}" not in status_str and not pending_file.exists():
                 raise SA_InvalidRequestObj(
                     error_log=f"c{cut_num} {component} pending attempted by {processing_person} but not exist",
                     frontend_msg="承認待ちの提出はありません"
