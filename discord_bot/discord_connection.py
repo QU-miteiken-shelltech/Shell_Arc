@@ -432,6 +432,13 @@ async def on_push_action(interaction: discord.Interaction,
             print("Unable to delete tempdir")
     
     confirm_msg = f"カット{submitting_cut} {submitting_component} が提出されました"
+
+    ### TECH DEBT ###
+    if "着彩" in submitting_component:
+        coloring_mentioning_role = discord.utils.get(message.guild.roles, name="色彩設計")
+        confirm_msg += f" {coloring_mentioning_role.mention}"
+    ### TECH DEBT ###
+    
     for keyframe_qc in admin_roles.get("keyframe_qc", []):
         mentioning_role = discord.utils.get(message.guild.roles, name=keyframe_qc)
         if mentioning_role is not None:
