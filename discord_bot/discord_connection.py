@@ -262,7 +262,7 @@ class ShellArcDropdown(discord.ui.Select):
                 is_force = len(self.message.content.split(" ")) > 1 and self.message.content.split(" ")[1] == "f"
                 if len(self.message.content.split(" ")) > 2:
                     processing_person = str(self.message.content.split(" ")[2])
-                    regex_search = re.search(r"<@&([0-9]+)>", processing_person)
+                    regex_search = re.search(r"<@&?([0-9]+)>", processing_person)
                     if regex_search is None:
                         processing_person = processing_person
                     else:
