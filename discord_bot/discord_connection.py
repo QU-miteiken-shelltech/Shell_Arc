@@ -267,6 +267,7 @@ class ShellArcDropdown(discord.ui.Select):
                         processing_person = processing_person
                     else:
                         mentioned_member_id = int(regex_search.group(1))
+                        print(f"** id : {mentioned_member_id}")
                         try:
                             mentioned_member = interaction.guild.get_member(mentioned_member_id)
                             processing_person = mentioned_member.display_name
@@ -274,6 +275,7 @@ class ShellArcDropdown(discord.ui.Select):
                             processing_person = processing_person
                 else:
                     processing_person = processing_person
+                print(f"** {processing_person}")
                 shell_arc_bot.dispatch(
                     ShellArcEvents.REG_Event.value,
                     interaction,
