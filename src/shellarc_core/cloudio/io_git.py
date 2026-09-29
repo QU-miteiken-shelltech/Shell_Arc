@@ -373,6 +373,7 @@ class Git_IO:
                 requested_info = {}
         else:
             requested_info = {}
+        print(f"req : {requested_info}")
         await self._continuous_git_command([[GitCommands.CHECKOUT, ShellArcGitBranch.PENDING]])
         with open(self.git_repo_local_dir / f"stage/cut{absorbing_cut}/{component}.json", "w", encoding="utf-8") as f:
             json.dump(requested_info, f, ensure_ascii=False, indent=3)
@@ -380,6 +381,7 @@ class Git_IO:
             [GitCommands.ADD, f"stage/cut{absorbing_cut}/{component}.json"],
             [GitCommands.COMMIT, "-m", f"{SA_CommitType.ABSORPTION} * {absorbing_cut} * {component} * ABSORB * {absorb_target_cut}->{absorbing_cut} * {self._get_timemark} * 'na'"]
         ]
+        print(git_commands)
         await self._continuous_git_command(git_commands=git_commands)
         with open(self.git_repo_local_dir / f"stage/cut{absorbing_cut}/.sa_pending_{component}", "w") as f:
             f.write("")
