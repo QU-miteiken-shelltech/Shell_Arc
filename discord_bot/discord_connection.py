@@ -801,8 +801,8 @@ async def ask(ctx):
     if not query_result:
         await message.reply(output_msg + "\n担当作業がありません")
         return
-    for k, v in query_result.items():
-        output_msg += f"\nカット{v} {component_name_e2j[k.split('_')[0]]}"
+    for q in query_result:
+        output_msg += f"\nカット{q[0]} {component_name_e2j[q[1].split('_')[0]]}"
     await message.reply(output_msg)
 
 

@@ -14,7 +14,7 @@ class ShellArc_Query:
                                              search_range: list[int],
                                              output_key: str="index_info_type",
                                              page_idx: int=0
-                                             ) -> dict:
+                                             ) -> list[tuple[str, str]]:
         """Efficiently retrieve specific information from the Google Spreadsheet by searching for a target index value 
         within a specified range and returning the corresponding information based on the provided index and target information types.
 
@@ -51,7 +51,7 @@ class ShellArc_Query:
             )
         
         current_spreadsheet_cache = gcp_io.spreadsheet_cache
-        rtn = {}
+        rtn = []
         cycle = len(index_info_types)
         for i in range(0, cycle):
             index_info_type = index_info_types[i]
@@ -74,9 +74,9 @@ class ShellArc_Query:
                 index_value = searching_row[index_col-1]
                 if index_value == target_index_value:
                     if output_key == "index_info_type":
-                        rtn[index_info_type] = str(target_value)
+                        rtn.append((index_info_type, str(target_value)))
                     else:
-                        rtn[target_info_type] = str(target_value)
+                        rtn.append((target_info_type, str(target_value)))
         
         return rtn
     
