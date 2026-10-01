@@ -66,10 +66,10 @@ class ShellArc_Query:
                 item=target_info_type,
                 page_idx=page_idx
             )[1]
-            print(current_spreadsheet_cache)
             for row_num in range(search_range[0] + vert_offset - 1, search_range[1] + vert_offset):
+                if row_num >= len(current_spreadsheet_cache):
+                    break
                 searching_row = current_spreadsheet_cache[row_num]
-                print(f"rnn : {row_num}")
                 target_value = searching_row[target_col-1]
                 index_value = searching_row[index_col-1]
                 if index_value == target_index_value:

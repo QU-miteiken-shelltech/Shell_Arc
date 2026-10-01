@@ -773,13 +773,20 @@ async def history(ctx):
 
 @shell_arc_bot.command()
 async def ask(ctx):
-    message = ctx.message
+    message:discord.Message = ctx.message
     if message.author.bot:
         return
     if message.channel.id != int(shellarc_center["schedule_query_center"]):
         return
     try:
         asking_person = str(message.content.split(" ")[1])
+        regex_search = re.search(r"<@&?([0-9]+)>", asking_person)
+        if regex_search is None:
+            asking_person = asking_person
+        else:
+            asking_member_id = int(regex_search.group(1))
+            mentioned_member = message.guild.get_member(asking_member_id)
+            asking_person = str(mentioned_member.display_name)
     except:
         asking_person = str(message.author.display_name)
     await message.reply("検索中...\n10秒ほどお待ちいただく場合があります")
