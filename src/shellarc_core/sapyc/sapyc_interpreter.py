@@ -35,7 +35,7 @@ class SAPYC_Interpreter:
         """
         be_repointed_cut = int(args[0])
         repoint_target_cut = int(args[1])
-        component = int(args[2])
+        component = str(args[2])
         git_io = Git_IO()
         await git_io.repoint_data(
             be_repointed_cut=be_repointed_cut,
