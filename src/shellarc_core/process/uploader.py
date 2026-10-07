@@ -57,7 +57,7 @@ class ShellArc_Upload:
         submission_format = Path(filename).suffix.lstrip(".")
 
         try:
-            if submission_format not in required_format:
+            if submission_format.lower() not in required_format:
                 raise SA_InvalidUserQuery(
                     error_log=f"file with invalid extension format uploaded by {submitter_name}",
                     frontend_msg=f"{'または'.join(required_format)}形式でご提出ください"
