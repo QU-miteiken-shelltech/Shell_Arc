@@ -947,15 +947,18 @@ async def creditus(ctx):
     print(log_list)
     credit_dict = {}
     for log in log_list:
-        splitted_log = log.split("*")
-        contributor = splitted_log[3].strip()
-        if contributor == "ABSORB" or contributor == "REPOINT":
-            contributor
-        work = splitted_log[2].strip()
-        current_contributors = credit_dict.get(work, [])
-        if contributor not in current_contributors:
-            current_contributors.append(contributor)
-        credit_dict[work] = current_contributors
+        try:
+            splitted_log = log.split("*")
+            contributor = splitted_log[3].strip()
+            if contributor == "ABSORB" or contributor == "REPOINT":
+                contributor
+            work = splitted_log[2].strip()
+            current_contributors = credit_dict.get(work, [])
+            if contributor not in current_contributors:
+                current_contributors.append(contributor)
+            credit_dict[work] = current_contributors
+        except:
+            continue
     msg = ""
     for k, v in credit_dict.items():
         msg += f"{component_name_e2j.get(k, k)} - {' / '.join(v)} \n"
