@@ -310,6 +310,17 @@ class Git_IO:
                 break
         return rtn
 
+    async def get_all_logs(self) -> list:
+        git_log_proc = await self._git_command(GitCommands.LOG, ShellArcGitBranch.PENDING, f"--format=%s")
+        stdout, stderr = await git_log_proc.communicate()
+        if git_log_proc.returncode != 0:
+            raise SA_LocalIOError(
+                error_log=f"A git command error : {stderr.decode('utf-8')}",
+                error_code=SA_ErrorCode.SA_8002
+            )
+        log_list = stdout.decode("utf-8").split("\n")
+        return log_list
+
 
     async def get_pending_status(self) -> str:
         await self._continuous_git_command([[GitCommands.CHECKOUT, ShellArcGitBranch.PENDING]])

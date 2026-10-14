@@ -73,6 +73,17 @@ shell_arc_bot = commands.Bot(
 def process_cut_num(cut_cluster):
     match = regex.search(cut_extraction_regex, cut_cluster)
     if match:
+        ### TECH DEBT ###
+        # try:
+        #     c = int(str(match.group(1)))
+        #     if c >= 22:
+        #         c += 1
+        #     else:
+        #         c = c
+        # except:
+        #     print("process cutnum error")
+        # ### TECH DEBT ###
+        # return str(c)
         return str(match.group(1))
     return None
 
@@ -359,6 +370,7 @@ async def on_push_action(interaction: discord.Interaction,
     msg_splitted = message.content.split(" ")
     submitting_component_en = component_name_j2e.get(submitting_component, submitting_component)
     git_message = ""
+    
     if len(msg_splitted) > 1:
         if not msg_splitted[1].endswith("*"):
             git_message = msg_splitted[1]
@@ -925,6 +937,28 @@ async def status(ctx):
     for s in pending_status:
         rtn_msg += f"カット{s[0]} - {component_name_e2j.get(s[1], s[1])}\n"
     await message.channel.send(rtn_msg)
+
+@shell_arc_bot.command()
+async def creditus(ctx):
+    message: discord.Message = ctx.message
+    if message.author.bot: 
+        return
+    log_list = await ShellArc_Query.get_all_logs()
+    credit_dict = {}
+    for log in log_list:
+        splitted_log = log.split("*")
+        contributor = splitted_log[3].strip()
+        if contributor == "ABSORB" or contributor == "REPOINT":
+            contributor
+        work = splitted_log[2].strip()
+        current_contributors = credit_dict.get(work, [])
+        if contributor not in current_contributors:
+            current_contributors.append(contributor)
+        credit_dict[work] = current_contributors
+    msg = ""
+    for k, v in credit_dict.items():
+        msg += f"{component_name_e2j.get(k, k)} - {' / '.join(v)} \n"
+    await message.channel.send(msg)
 
 
 @shell_arc_bot.command()

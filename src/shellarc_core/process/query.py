@@ -184,4 +184,9 @@ class ShellArc_Query:
         )
         return hist_dict
 
+    async def get_all_logs(self):
+        git_io = Git_IO()
+        logs_list = await git_io.get_all_logs()
+        return logs_list
+
     
