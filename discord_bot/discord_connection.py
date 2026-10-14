@@ -944,6 +944,7 @@ async def creditus(ctx):
     if message.author.bot: 
         return
     log_list = await ShellArc_Query.get_all_logs()
+    print(log_list)
     credit_dict = {}
     for log in log_list:
         splitted_log = log.split("*")
