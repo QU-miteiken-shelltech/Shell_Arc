@@ -530,8 +530,11 @@ async def on_reviewing_action(interaction: discord.Interaction,
                             file=discord.File(downloaded_path, filename=downloaded_filename)
                         )
                     elif downloaded_method == "url":
+                        rtn = f"{channel_link}\nカット{reviewing_cut}チャンネルで..dlコマンドでダウンロードURLを取得してください"
+                        if ext not in [".clip", ".zip"]:
+                            rtn += f"\n* 拡張子は{ext}です"
                         await target_channel.send(
-                            content=f"{channel_link}\nカット{reviewing_cut}チャンネルで..dlコマンドでダウンロードURLを取得してください"
+                            content=rtn
                         )
         except Exception as e:
             print(f"Error in automatic coloring download on review: {e}")
