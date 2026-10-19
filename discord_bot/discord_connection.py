@@ -505,7 +505,7 @@ async def on_reviewing_action(interaction: discord.Interaction,
         return
 
 ###CHANGE START ###
-    if reviewing_component in ["coloring", "着彩（人）", "objcoloring", "着彩（物）"] or reviewing_component_en in ["coloring", "objcoloring"]:
+    if reviewing_component in ["objanimation", "動画（人）", "animation", "動画（物）"] or reviewing_component_en in ["animation", "objanimation"]:
         downloaded_path = ""
         try:
             shellarc_request = ShellArc_Request(
