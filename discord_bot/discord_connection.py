@@ -503,6 +503,45 @@ async def on_reviewing_action(interaction: discord.Interaction,
         error_moment = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'JST'))
         print(f"!!UNEXPECTED : {error_moment.strftime('%Y%m%d%H%M%S')} -- {tb}")
         return
+
+###CHANGE START ###
+    if reviewing_component in ["coloring", "着彩（人）", "objcoloring", "着彩（物）"] or reviewing_component_en in ["coloring", "objcoloring"]:
+        downloaded_path = ""
+        try:
+            shellarc_request = ShellArc_Request(
+                cut_num=int(reviewing_cut),
+                requesting_component=reviewing_component_en
+            )
+            downloaded_material = await shellarc_request.download_material(requesting_take="0")
+            downloaded_path = downloaded_material[0]
+            downloaded_filename = downloaded_material[1]
+            downloaded_method = downloaded_material[2]
+
+            if downloaded_path:
+                ext = Path(downloaded_filename).suffix.lower() if downloaded_filename else Path(downloaded_path).suffix.lower()
+                target_channel_id = 1561427820822134825 if ext == ".clip" else 1561428427028832386
+                target_channel = message.guild.get_channel(target_channel_id) if message.guild else shell_arc_bot.get_channel(target_channel_id)
+
+                if target_channel:
+                    channel_link = message.channel.jump_url if hasattr(message.channel, "jump_url") else f"https://discord.com/channels/{message.guild.id}/{message.channel.id}"
+                    if downloaded_method == "path" and Path(downloaded_path).exists():
+                        await target_channel.send(
+                            content=f"{channel_link}",
+                            file=discord.File(downloaded_path, filename=downloaded_filename)
+                        )
+                    elif downloaded_method == "url":
+                        await target_channel.send(
+                            content=f"{channel_link}\nダウンロードURL: {downloaded_path}"
+                        )
+        except Exception as e:
+            print(f"Error in automatic coloring download on review: {e}")
+        finally:
+            if downloaded_path and Path(downloaded_path).exists():
+                try:
+                    os.unlink(downloaded_path)
+                except:
+                    pass
+    ### CHANGE END ###
         
     
 @shell_arc_bot.event
