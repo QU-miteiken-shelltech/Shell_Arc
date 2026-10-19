@@ -531,7 +531,7 @@ async def on_reviewing_action(interaction: discord.Interaction,
                         )
                     elif downloaded_method == "url":
                         await target_channel.send(
-                            content=f"{channel_link}\nダウンロードURL: {downloaded_path}"
+                            content=f"{channel_link}\nカット{reviewing_cut}チャンネルで..dlコマンドでダウンロードURLを取得してください"
                         )
         except Exception as e:
             print(f"Error in automatic coloring download on review: {e}")
