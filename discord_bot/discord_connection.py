@@ -489,8 +489,20 @@ async def on_reviewing_action(interaction: discord.Interaction,
         )
         if is_approve:
             await interaction.edit_original_response(content=f"カット{reviewing_cut} {reviewing_component} が確定されました", view=None)
+            if reviewing_component_en in ["animation", "objanimation"]:
+                emoji = "✅"
+            elif reviewing_component_en in ["coloring", "objcoloring"]:
+                emoji = "🖌️"
+            elif reviewing_component_en in ["bg1", "bg2"]:
+                emoji = "🎨"
+            elif reviewing_component_en in ["compo1", "compo2"]:
+                emoji = "🎉"
+            else: return
+            current_channel_name = interaction.channel.name
+            await interaction.channel.edit(name=f"{emoji}{current_channel_name}")
         else:
             await interaction.edit_original_response(content=f"カット{reviewing_cut} {reviewing_component} がアーカイブされました", view=None)
+            return
     except ShellArcException as e:
         await interaction.edit_original_response(content=e.frontend_msg, view=None)
         return
