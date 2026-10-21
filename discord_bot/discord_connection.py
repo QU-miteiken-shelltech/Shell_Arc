@@ -499,6 +499,8 @@ async def on_reviewing_action(interaction: discord.Interaction,
                 emoji = "🎉"
             else: return
             current_channel_name = interaction.channel.name
+            if emoji in current_channel_name: 
+                return
             await interaction.channel.edit(name=f"{emoji}{current_channel_name}")
         else:
             await interaction.edit_original_response(content=f"カット{reviewing_cut} {reviewing_component} がアーカイブされました", view=None)
@@ -647,8 +649,6 @@ async def on_register_action(interaction: discord.Interaction,
         else:
             current_channel_name.append(registering_person)
         new_channel_name = channel_name_divider.join(current_channel_name)
-        if registering_component_en in ["coloring", "objcoloring"]:
-            new_channel_name = f"🖌️{new_channel_name}"
         await interaction.channel.edit(name=new_channel_name)
     await interaction.edit_original_response(content=f"{registering_person}をカット{registering_cut} {registering_component}に登録しました", view=None)
     #await interaction.channel.send(f"..remind {deadline} あしたカット{registering_cut}の締切だよ {message.author.id}")

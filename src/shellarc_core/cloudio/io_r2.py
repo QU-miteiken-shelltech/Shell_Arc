@@ -14,6 +14,7 @@ from shellarc_core.cfg.cfg_io import Cfg_item
 from shellarc_core.exception.structure_error import (
     SA_ProjStructError, SA_CommunicationError, SA_ErrorCode
 )
+from shellarc_core.exception.user_exception import SA_InvalidRequestObj
 
 class R2_IO:
     def __init__(self, 
@@ -180,9 +181,9 @@ class R2_IO:
             )
             # await asyncio.sleep(0.2)
         except Exception as e:
-            raise SA_CommunicationError(
-                error_log=f"Communication error with R2 when downloading [{e}]",
-                error_code=SA_ErrorCode.SA_8001
+            raise SA_InvalidRequestObj(
+                error_log=f"Downloading error : {e}",
+                frontend_msg="ファイルはアップロードされていません"
             )
 
     
