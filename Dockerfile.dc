@@ -10,7 +10,8 @@ RUN apt-get update && \
 
 COPY . .
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
 
 CMD ["python3", "discord_bot/discord_connection.py"]
 
