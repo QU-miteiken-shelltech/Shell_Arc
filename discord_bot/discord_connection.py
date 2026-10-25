@@ -11,6 +11,7 @@ import datetime
 import hashlib
 from enum import Enum
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import regex
 import discord
@@ -352,7 +353,7 @@ async def send_submission_log(message: discord.Message,
                               submitting_person: str
                               ) -> None:
     submission_log_channel = discord.utils.get(message.guild.channels, id=int(shellarc_center["notice_center"])) #**********
-    submission_datetime = datetime.datetime.now()
+    submission_datetime = datetime.datetime.now(ZoneInfo("Asia/Tokyo"))
     submission_datetime_str = datetime.datetime.strftime(submission_datetime, "%d/%m/%Y, %H:%M:%S")
     await submission_log_channel.send(
         f"{submission_datetime_str}\n"\
