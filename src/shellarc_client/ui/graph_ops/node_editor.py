@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QLineF
 
 from shellarc_msk.mskdn.msk_nodes import MSKDN_Node, MSKDN_Port, MSKDN_Wire
-from shellarc_client.ui.graph_ops.property_editors import NodePropertyEditor
+from shellarc_client.ui.graph_ops.property_editors import NodePropertyEditor, WirePropertyEditor
 
 class MSKDN_PortWidget(MSKDN_Port, QGraphicsEllipseItem):
     R = 6
@@ -73,15 +73,8 @@ class MSKDN_NodeWidget(MSKDN_Node, QGraphicsRectItem):
  
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            NodePropertyEditor().exec()
+            NodePropertyEditor(node_widget=self).exec()
         super().mouseDoubleClickEvent(event)
-
-    def print_info(self):
-        """クリックされたノードの情報を標準出力に print する。"""
-        pos = self.scenePos()
-        print(f"[Node clicked] title={getattr(self, 'title', None)!r} pos=({pos.x():.1f}, {pos.y():.1f})")
-        print("  inputs :", [getattr(p, 'name', None) for p in self.inputs])
-        print("  outputs:", [getattr(p, 'name', None) for p in self.outputs])
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
@@ -105,7 +98,7 @@ class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            print(self.parentItem().wire_expression)
+            WirePropertyEditor(wire_widget=self.parentItem()).exec()
         event.accept()
 
 
