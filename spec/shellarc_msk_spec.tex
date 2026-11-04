@@ -1,0 +1,769 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools,stmaryrd}
+\usepackage{enumitem}
+\usepackage{booktabs,array,longtable}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=NavyBlue,citecolor=NavyBlue,urlcolor=NavyBlue]{hyperref}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\allowdisplaybreaks
+
+%% ---------------------------------------------------------------- theorems
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{operation}[definition]{Operation}
+\newtheorem{example}[definition]{Example}
+\theoremstyle{plain}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{corollary}[definition]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+
+%% ---------------------------------------------------------------- macros
+% tag for an open decision (collected in Section 7)
+\newcommand{\od}[1]{\textsf{\textbf{\textcolor{BrickRed}{[OD-#1]}}}}
+% sorts
+\newcommand{\Val}{\mathcal{V}}
+\newcommand{\Typ}{\mathcal{T}}
+\newcommand{\Dat}{\mathcal{D}}
+\newcommand{\Adr}{\mathbb{A}}
+\newcommand{\Idn}{\mathbb{I}}
+\newcommand{\Prp}{\mathcal{P}}
+\newcommand{\Fld}{\mathcal{F}}
+\newcommand{\Pth}{\mathsf{Path}}
+\newcommand{\Prog}{\mathsf{Prog}}
+\newcommand{\Nod}{\mathsf{Node}}
+\newcommand{\Cnt}{\mathsf{Cnt}}
+\newcommand{\Def}{\mathsf{Def}}
+\newcommand{\Stt}{\mathsf{State}}
+% constants
+\newcommand{\nul}{\mathbf{0}}
+\newcommand{\nil}{\mathsf{nil}}
+\newcommand{\Err}{\mathsf{Err}}
+\newcommand{\ok}{\mathsf{ok}}
+\newcommand{\tRef}{\rho}
+\newcommand{\tExp}{\varepsilon}
+% functions and relations
+\newcommand{\pfun}{\rightharpoonup}
+\newcommand{\pfin}{\rightharpoonup_{\mathrm{fin}}}
+\newcommand{\dom}{\operatorname{dom}}
+\newcommand{\rng}{\operatorname{rng}}
+\newcommand{\graph}{\operatorname{graph}}
+\newcommand{\rd}{\mathsf{rd}}
+\newcommand{\eff}{\mathsf{eff}}
+\newcommand{\fld}{\mathsf{fld}}
+\newcommand{\cnt}{\mathsf{cnt}}
+\newcommand{\ovr}{\mathsf{ovr}}
+\newcommand{\refs}{\mathsf{refs}}
+\newcommand{\Match}{\mathsf{Match}}
+\newcommand{\Acc}{\mathsf{Acc}}
+\newcommand{\Intern}{\mathsf{Intern}}
+\newcommand{\Cand}{\mathsf{Cand}}
+\newcommand{\sel}{\mathsf{sel}}
+\newcommand{\Fire}{\mathsf{Fire}}
+\newcommand{\Enter}{\mathsf{Enter}}
+\newcommand{\Leave}{\mathsf{Leave}}
+\newcommand{\tr}[2]{\xrightarrow{\;#1\,/\,#2\;}}
+\newcommand{\datum}[2]{\langle #1\!:\!#2\rangle}
+\newcommand{\Pfin}{\mathcal{P}_{\mathrm{fin}}}
+
+\title{\textbf{A Formal Specification of the\\ \emph{Multimedia System Kernel} Data Structure}\\[4pt]
+\large Absolute existence, operations, and the interface to contextual existence}
+\author{Specification draft v0.1}
+\date{4 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We specify a data store for content production in which every piece of information
+(a cut number, an assignee, an asset, a state) is held as a node of a content-addressed graph.
+Presentation structures such as progress tables, dependency graphs and workload views are not stored:
+they are \emph{contextual} existences derived from a small core of \emph{absolute} existences.
+The specification fixes the absolute layer completely (Access, Field, Node, Container and six operations)
+and fixes only the \emph{interface} of the contextual layer (evaluation of Abstract Edges and graph nodes,
+and the firing conditions of Directional Edge runtimes).
+We prove that every operation preserves well-formedness and derive the properties on which the contextual layer relies.
+Points on which the source material is silent are \emph{not} decided silently:
+they are tagged \od{n} in the text and collected, with their provisional treatment, in Section~\ref{sec:register}.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%% =====================================================================
+\section{Introduction, scope and conventions}
+\label{sec:intro}
+
+\subsection{Purpose}
+Production data (``cut number: 1'', ``assignee: Yamada'', ``asset: model'', ``state: in progress'')
+is stored as nodes. The same stored data can be arranged as a progress table
+(cut $\to$ asset, assignee, state), as a dependency graph (cut $\to$ asset$_1$ $\to$ asset$_2$),
+or as a workload view (assignee $\to$ asset $\to$ state), without storing any of these arrangements.
+The specification separates what is stored (\emph{absolute existence}: Field, Node, Container, Access)
+from what is derived from it (\emph{contextual existence}: Edge, Table, Graph).
+
+\subsection{Scope}
+\textbf{In scope.} (i) The state space of the absolute layer and its well-formedness conditions;
+(ii) the operations \textsf{defField}, \textsf{addDef}, \textsf{dropDef}, \textsf{write}, \textsf{update}, \textsf{retarget};
+(iii) read-only primitives (\emph{read}, \emph{referrers}, \emph{match}) that are sufficient to implement the contextual layer;
+(iv) the evaluation of Abstract Edges and graph nodes with subnodes, and the firing condition of Directional Edge runtimes;
+(v) metatheory.
+
+\textbf{Out of scope (implementation-defined).}
+(a) Edge servers, replication and merging;
+(b) physical storage, indexing, caching and garbage collection of unreferenced addresses;
+(c) the virtual file system (VFS) layer, including the policy by which files change (\od{7});
+(d) path-style access of the form \texttt{graph:path};
+(e) access control;
+(f) the language, scheduling and termination of edge runtimes;
+(g) rendering of tables and graphs, and the storage format of contextual definitions (\od{8}, \od{9}).
+
+\subsection{Conventions}
+For sets $X,Y$, $X\pfin Y$ is the set of finite partial functions. For $f:X\pfin Y$:
+$\dom f$ and $\rng f$ are its domain and range, and $\graph f=\{(x,f(x)) : x\in\dom f\}$;
+we identify $f$ with $\graph f$ when convenient.
+The \emph{override} $f\oplus g$ is the partial function with domain $\dom f\cup\dom g$ that equals $g(x)$ on $\dom g$ and $f(x)$ elsewhere;
+$f[x\mapsto y]:=f\oplus\{x\mapsto y\}$.
+$\Pfin(X)$ denotes the finite subsets of $X$. $\bot$ denotes ``undefined''.
+Pairs written $\datum{v}{\tau}$ are data (value $v$ of type $\tau$).
+
+Statements typeset as Definition, Assumption and Operation are normative.
+Remarks and Examples are informative. Theorems are consequences of the normative text.
+
+\subsection{Provenance of the design}
+The decisions fixed by the specification's author are listed in Table~\ref{tab:fixed};
+choices that the source material left open are listed in Table~\ref{tab:open} and tagged \od{n} where they are used.
+
+%% =====================================================================
+\section{Basic domains and parameters}
+\label{sec:domains}
+
+\begin{definition}[Universes]\label{def:universes}
+Fix non-empty sets $\Val$ (values), $\Typ$ (types), $\Prp$ (property names), $\Fld$ (field names),
+$\Pth\subseteq\Val$ (relative file paths, interpreted relative to the VFS directory \texttt{/data}) and
+$\Prog\subseteq\Val$ (expression programs in some implementation language).
+$\Typ$ contains two distinct reserved types: $\tRef$ (\emph{Reference}) and $\tExp$ (\emph{Expression}).
+Data are pairs $\Dat:=\Val\times\Typ$ with projections $d.\mathsf{value}$ and $d.\mathsf{type}$.
+A datum $d$ is \emph{admissible} if $d.\mathsf{type}=\tRef\Rightarrow d.\mathsf{value}\in\Pth$ and
+$d.\mathsf{type}=\tExp\Rightarrow d.\mathsf{value}\in\Prog$. Let $\Dat^{\mathrm{ok}}\subseteq\Dat$ be the admissible data.
+\end{definition}
+
+\begin{definition}[Addresses and identifiers]\label{def:addr}
+$\Adr:=\{0,1\}^{128}$ is the set of addresses (written as 32 hexadecimal digits).
+The \emph{null address} is $\nul:=0^{128}$ (\texttt{0x00\dots0}); $\Adr^{+}:=\Adr\setminus\{\nul\}$.
+$\Idn:=\{0,1\}^{128}$ is the set of container identifiers.
+$\Adr$ and $\Idn$ are distinct sorts: no operation compares an element of one with an element of the other.
+\end{definition}
+
+\begin{definition}[Address function]\label{def:hash}
+A total function $h:\Dat\to\Adr$ is fixed for the lifetime of a store and is identical on all replicas.
+The source proposal instantiates $h$ as a 128-bit digest (MD5) of a canonical encoding of the pair $(\mathsf{value},\mathsf{type})$ \od{10}.
+\end{definition}
+
+\begin{remark}
+Collision-freedom of $h$ is \emph{not} assumed (it cannot hold on an infinite domain).
+Instead, the operations below fail (result $\Err$) whenever an address would be assigned to two different data (Definition~\ref{def:intern}),
+so well-formedness (WF1) holds unconditionally.
+\end{remark}
+
+\begin{definition}[File environment]\label{def:fs}
+A \emph{file environment} is a partial function $\mathsf{fs}:\Pth\pfun\mathsf{Bytes}$ managed by the VFS.
+It is \emph{not} part of the store state (Definition~\ref{def:state}) and is not constrained by this specification (\od{7}).
+\end{definition}
+
+%% =====================================================================
+\section{Absolute existence: the state space}
+\label{sec:state}
+
+Absolute existences are \emph{Access}, \emph{Field}, \emph{Node} and \emph{Container}.
+They are pure data and carry no directional meaning.
+
+\subsection{Components}
+
+\begin{definition}[Access]\label{def:access}
+An \emph{Access map} is a finite partial function $\Acc:\Adr^{+}\pfin\Dat$.
+$\Acc(a)=d$ means that the datum $d$ (value and type) is stored at address $a$.
+The address $\nul$ is never in $\dom\Acc$; it denotes \emph{null}.
+\end{definition}
+
+\begin{definition}[Field]\label{def:field}
+A \emph{field definition} is a finite partial function $\delta\in\Def:=\Prp\pfin\Typ$;
+the pairs $(p,\tau)\in\graph\delta$ are the elements $\mathsf{def}(x)_i=(\mathsf{property},\mathsf{type})$ of the source.
+A \emph{Field map} is $\Phi:\Fld\pfin\Def$. We write $\mathsf{def}(x):=\Phi(x)$.
+Reading a field definition as a partial function means that a property has at most one type within a field \od{5}.
+\end{definition}
+
+\begin{definition}[Node, content]\label{def:node}
+A \emph{node} is a pair $(p,a)\in\Nod:=\Prp\times\Adr$ (a property and an address).
+A \emph{content} is a finite partial function $c\in\Cnt:=\Prp\pfin\Adr$, with node set $\graph c$.
+Reading a content as a partial function means that a container holds at most one node per property \od{5}.
+\end{definition}
+
+\begin{definition}[Container]\label{def:container}
+A \emph{Container map} is $\Gamma:\Idn\pfin\Fld\times\Cnt$.
+For $n\in\dom\Gamma$ with $\Gamma(n)=(x,c)$ we write $\fld(n):=x$ (the field the container belongs to) and $\cnt(n):=c$.
+Container identifiers are arbitrary, unique, and unrelated to content (in implementations: random).
+\end{definition}
+
+\begin{definition}[State]\label{def:state}
+A \emph{state} is a triple $s=(\Phi,\Acc,\Gamma)$; its components are written $s.\Phi$, $s.\Acc$, $s.\Gamma$,
+and the accessors $\fld_s,\cnt_s$ refer to $s.\Gamma$. The \emph{empty state} is $s_\emptyset=(\emptyset,\emptyset,\emptyset)$.
+The state contains no log, version or history component (see Remark~\ref{rem:nohistory}).
+Let $\Stt$ be the set of states.
+\end{definition}
+
+\subsection{Read-only primitives}
+
+\begin{definition}[Read]\label{def:read}
+For a state $s$, $n\in\Idn$ and $p\in\Prp$:
+\[
+\rd_s(n,p):=
+\begin{cases}
+\cnt_s(n)(p) & \text{if } n\in\dom s.\Gamma \text{ and } p\in\dom\cnt_s(n),\\
+\nul & \text{otherwise.}
+\end{cases}
+\]
+$\rd_s$ is total. In particular a property that is defined by the field but absent from the container reads as null,
+as does any property absent from the container.
+The \emph{datum read} is $\mathsf{dat}_s(n,p):=s.\Acc(\rd_s(n,p))$ if $\rd_s(n,p)\neq\nul$ and $\nil$ otherwise.
+\end{definition}
+
+\begin{definition}[Effective content]\label{def:eff}
+$\eff_s(n):=\{(p,a)\in\graph\cnt_s(n) : a\neq\nul\}$ for $n\in\dom s.\Gamma$, and $\eff_s(n):=\emptyset$ otherwise.
+For a content $c$ we write $\eff(c):=\{(p,a)\in\graph c : a\neq\nul\}$.
+Thus a node with the null address is indistinguishable from an absent node \od{2}.
+\end{definition}
+
+\begin{lemma}\label{lem:eff}
+For all $s,n,p$ and $a\neq\nul$: $\rd_s(n,p)=a \iff (p,a)\in\eff_s(n)$. Consequently
+$\rd_s(n,p)=\nul \iff$ there is no $a$ with $(p,a)\in\eff_s(n)$.
+\end{lemma}
+\begin{proof}
+Immediate from Definitions~\ref{def:read} and~\ref{def:eff}.
+\end{proof}
+
+\begin{definition}[Overrides]\label{def:overrides}
+For $n\in\dom s.\Gamma$: $\ovr_s(n):=\dom\cnt_s(n)\setminus\dom\Phi(\fld_s(n))$,
+the properties that the container carries but its field does not define (per-container exceptions).
+\end{definition}
+
+\begin{definition}[Referrers]\label{def:refs}
+For $a\in\Adr$:
+\[
+\refs_s(a):=\{(n,p) : n\in\dom s.\Gamma,\ p\in\dom\cnt_s(n),\ \cnt_s(n)(p)=a\}.
+\]
+\end{definition}
+
+\begin{definition}[Match]\label{def:match}
+For a finite set of nodes $K\subseteq\Nod$:
+$\Match_s(K):=\{n\in\dom s.\Gamma : \forall (p,b)\in K.\ \rd_s(n,p)=b\}$.
+\end{definition}
+
+\begin{lemma}\label{lem:match}
+(i) $\Match_s(\emptyset)=\dom s.\Gamma$.
+(ii) $K\subseteq K'\Rightarrow\Match_s(K')\subseteq\Match_s(K)$.
+(iii) If $K\subseteq\Prp\times\Adr^{+}$ then $n\in\Match_s(K)\iff K\subseteq\eff_s(n)$.
+\end{lemma}
+\begin{proof}
+(i) and (ii) are immediate from the universal quantifier in Definition~\ref{def:match};
+(iii) follows from Lemma~\ref{lem:eff}.
+\end{proof}
+
+\begin{definition}[Reference resolution]\label{def:resolve}
+Given a file environment $\mathsf{fs}$ and $a\in\dom\Acc$ with $\Acc(a)=\datum{\pi}{\tRef}$:
+$\mathsf{resolve}_{\mathsf{fs}}(a):=\mathsf{fs}(\pi)$ if $\pi\in\dom\mathsf{fs}$, and $\bot$ otherwise.
+In the latter case the reference is said to have \emph{null linkage}: the datum $\datum{\pi}{\tRef}$ and
+every node pointing to it persist unchanged.
+\end{definition}
+
+\subsection{Well-formedness}
+
+\begin{definition}[Well-formed state]\label{def:wf}
+A state $s=(\Phi,\Acc,\Gamma)$ is \emph{well-formed}, written $\mathrm{WF}(s)$, iff:
+\begin{description}[leftmargin=1.2cm,labelwidth=1cm,font=\bfseries]
+\item[WF1] \emph{(address integrity)} $\forall a\in\dom\Acc.\ h(\Acc(a))=a$.
+\item[WF2] \emph{(admissible data)} $\forall a\in\dom\Acc.\ \Acc(a)\in\Dat^{\mathrm{ok}}$.
+\item[WF3] \emph{(closure)} $\forall n\in\dom\Gamma,\ p\in\dom\cnt(n).\ \cnt(n)(p)\in\dom\Acc\cup\{\nul\}$.
+\item[WF4] \emph{(field existence)} $\forall n\in\dom\Gamma.\ \fld(n)\in\dom\Phi$.
+\item[WF5] \emph{(field coverage)} $\forall n\in\dom\Gamma.\ \dom\Phi(\fld(n))\subseteq\dom\cnt(n)$, i.e.\ the properties of a field are included in the properties of each of its containers; the surplus is $\ovr(n)$ \od{3}.
+\item[WF6] \emph{(type conformance)} $\forall n\in\dom\Gamma,\ p\in\dom\Phi(\fld(n))$: if $a:=\cnt(n)(p)\neq\nul$ then $\Acc(a).\mathsf{type}=\Phi(\fld(n))(p)$ \od{4}.
+\end{description}
+\end{definition}
+
+\begin{lemma}
+$\mathrm{WF}(s_\emptyset)$.
+\end{lemma}
+\begin{proof}
+All six conditions are universally quantified over empty sets.
+\end{proof}
+
+%% =====================================================================
+\section{Operations}
+\label{sec:ops}
+
+\subsection{Transition format}
+An operation instance $\mathit{op}$ relates a state $s$ to a state $s'$ and a result $r$,
+written $s\tr{\mathit{op}}{r}s'$. On failure $r=\Err$ and $s'=s$ (failed operations have no effect).
+The relation is non-deterministic in two respects only: the choice of a fresh container identifier,
+and the candidate selection function $\sel$ of \textsf{write} (\od{1}).
+A step $s\to s'$ is \emph{successful} if $s\tr{\mathit{op}}{r}s'$ for some $\mathit{op}$ and some $r\neq\Err$.
+The input alphabet of data is $U:=\Dat\cup\{\nil\}$, where $\nil$ stands for ``set to null''.
+A \emph{write input} is $W:\Prp\pfin U$.
+
+\subsection{Interning}
+
+\begin{definition}[Interning]\label{def:intern}
+Let $\Acc$ be an Access map and $W$ a write input. Put $D_W:=\{W(p) : p\in\dom W,\ W(p)\neq\nil\}$.
+$\Intern(\Acc,W)=\Err$ iff at least one of the following holds:
+\begin{enumerate}[label=(\roman*),leftmargin=*]
+\item some $d\in D_W$ is not admissible ($d\notin\Dat^{\mathrm{ok}}$);
+\item some $d\in D_W$ has $h(d)=\nul$;
+\item some $d\in D_W$ has $h(d)\in\dom\Acc$ and $\Acc(h(d))\neq d$ (collision with a stored datum);
+\item some $d\neq d'$ in $D_W$ have $h(d)=h(d')$ (collision within the input).
+\end{enumerate}
+Otherwise $\Intern(\Acc,W)=(\Acc',\widehat W)$ with
+\[
+\Acc':=\Acc\oplus\{h(d)\mapsto d : d\in D_W\},\qquad
+\widehat W(p):=\begin{cases}\nul & W(p)=\nil\\ h(W(p)) & \text{otherwise}\end{cases}\quad(p\in\dom W).
+\]
+For a single datum $d$ we write $\Intern(\Acc,d)$ for $\Intern(\Acc,\{p_0\mapsto d\})$ with a fixed dummy property $p_0$, and use the pair $(\Acc',h(d))$.
+\end{definition}
+
+\begin{lemma}\label{lem:intern}
+Suppose $\Intern(\Acc,W)=(\Acc',\widehat W)$. Then
+(a) $\graph\Acc\subseteq\graph\Acc'$ (nothing is removed or changed);
+(b) if $\Acc$ satisfies WF1 and WF2 then so does $\Acc'$;
+(c) $\rng\widehat W\subseteq\dom\Acc'\cup\{\nul\}$ and $\Acc'(\widehat W(p))=W(p)$ whenever $W(p)\in\Dat$;
+(d) the result does not depend on any ordering of $W$.
+\end{lemma}
+\begin{proof}
+(a) By (iii) every $d\in D_W$ with $h(d)\in\dom\Acc$ satisfies $\Acc(h(d))=d$, so $\oplus$ only adds entries or rewrites an entry by itself.
+(b) New entries $h(d)\mapsto d$ satisfy $h(\Acc'(h(d)))=h(d)$ and $d\in\Dat^{\mathrm{ok}}$ by (i); old entries are unchanged by (a).
+Moreover $h(d)\neq\nul$ by (ii), so $\nul\notin\dom\Acc'$. (c) By construction and (iv) the map $d\mapsto h(d)$ is injective on $D_W$.
+(d) $\Acc'$ and $\widehat W$ are defined by set comprehensions.
+\end{proof}
+
+\begin{definition}[Conformance]
+For a field definition $\delta$ and input $W$: $\mathsf{Conf}_\delta(W)$ iff for every $p\in\dom\delta\cap\dom W$,
+$W(p)=\nil$ or $W(p).\mathsf{type}=\delta(p)$. Properties outside $\dom\delta$ (overrides) are unconstrained \od{4}.
+\end{definition}
+
+\subsection{Field operations}
+
+\begin{operation}[\textsf{defField}$(x,\delta)$]\label{op:deffield}
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $x\in\Fld\setminus\dom s.\Phi$ and $\delta\in\Def$.
+\item[Effect] $s'=(s.\Phi\oplus\{x\mapsto\delta\},\ s.\Acc,\ s.\Gamma)$; $r=\ok$.
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+\end{operation}
+
+\begin{operation}[\textsf{addDef}$(x,p,\tau)$]\label{op:adddef}
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $x\in\dom s.\Phi$, $p\notin\dom s.\Phi(x)$, and for every $n$ with $\fld_s(n)=x$ and $p\in\dom\cnt_s(n)$:
+$\cnt_s(n)(p)=\nul$ or $s.\Acc(\cnt_s(n)(p)).\mathsf{type}=\tau$
+(an existing override must already conform to the new definition).
+\item[Effect] $s'.\Phi=s.\Phi[x\mapsto s.\Phi(x)[p\mapsto\tau]]$, $s'.\Acc=s.\Acc$, and for every $n$ with $\fld_s(n)=x$ and $p\notin\dom\cnt_s(n)$,
+$\cnt_{s'}(n)=\cnt_s(n)[p\mapsto\nul]$; all other containers are unchanged. $r=\ok$. (Eager padding, \od{3}.)
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+\end{operation}
+
+\begin{operation}[\textsf{dropDef}$(x,p)$]\label{op:dropdef}
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $x\in\dom s.\Phi$ and $p\in\dom s.\Phi(x)$.
+\item[Effect] $s'=(s.\Phi[x\mapsto s.\Phi(x)\setminus\{p\}],\ s.\Acc,\ s.\Gamma)$, where $\setminus$ removes the key $p$. $r=\ok$.
+Existing nodes for $p$ are retained and become overrides.
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+\end{operation}
+
+\subsection{Data operations}
+
+\begin{assumption}[Candidate selection]\label{ass:sel}
+A function $\sel:\Pfin(\Idn)\setminus\{\emptyset\}\to\Idn$ with $\sel(C)\in C$ is a parameter of the specification.
+Every result below holds for every such $\sel$ \od{1}.
+\end{assumption}
+
+\begin{operation}[\textsf{write}$(x,W)$]\label{op:write}
+Creates a container in field $x$, or extends an existing one that carries no more information.
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $x\in\dom s.\Phi$; $\mathsf{Conf}_{s.\Phi(x)}(W)$; and $\Intern(s.\Acc,W)=(\Acc',\widehat W)\neq\Err$.
+\item[Padding] $\overline W:=\widehat W\ \cup\ \{(p,\nul) : p\in\dom s.\Phi(x)\setminus\dom\widehat W\}\in\Cnt$.
+\item[Candidates] $\Cand_s(x,W):=\{n\in\dom s.\Gamma : \fld_s(n)=x\ \wedge\ \eff_s(n)\subseteq\eff(\overline W)\}$ \od{6}.
+\item[Effect, $\Cand=\emptyset$] choose a fresh $n\in\Idn\setminus\dom s.\Gamma$; $s'=(s.\Phi,\ \Acc',\ s.\Gamma\oplus\{n\mapsto(x,\overline W)\})$; $r=n$.
+\item[Effect, $\Cand\neq\emptyset$] let $n_0:=\sel(\Cand_s(x,W))$; $s'=(s.\Phi,\ \Acc',\ s.\Gamma\oplus\{n_0\mapsto(x,\overline W)\})$; $r=n_0$.
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+In words: if some existing container of $x$ states only facts that the new content also states, that container is made equal to the new content;
+otherwise a new container is made. Data that were not yet indexed receive new addresses (Definition~\ref{def:intern}).
+\end{operation}
+
+\begin{operation}[\textsf{update}$(n,p,u)$]\label{op:update}
+Changes one property of one container.
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $n\in\dom s.\Gamma$; $u\in U$; with $x:=\fld_s(n)$ and $W:=\{p\mapsto u\}$: $\mathsf{Conf}_{s.\Phi(x)}(W)$ and $\Intern(s.\Acc,W)=(\Acc',\widehat W)\neq\Err$.
+\item[Effect] $s'=(s.\Phi,\ \Acc',\ s.\Gamma\oplus\{n\mapsto(x,\ \cnt_s(n)[p\mapsto\widehat W(p)])\})$; $r=\ok$.
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+If $p\notin\dom s.\Phi(x)$ the update creates or changes an override. The previous address of $(n,p)$ is not retained (Remark~\ref{rem:nohistory}).
+\end{operation}
+
+\begin{operation}[\textsf{retarget}$(a,d)$]\label{op:retarget}
+Edits the datum behind an address for \emph{all} nodes that refer to it, by moving them to the address of the new datum.
+The old address and its datum are kept.
+\begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
+\item[Precondition] $a\in\dom s.\Acc$; $d\in\Dat$; $\Intern(s.\Acc,d)=(\Acc',a')\neq\Err$ (so $a'=h(d)$); and for every $(n,p)\in R:=\refs_s(a)$ with $p\in\dom s.\Phi(\fld_s(n))$: $d.\mathsf{type}=s.\Phi(\fld_s(n))(p)$ \od{4}.
+\item[Effect] $s'=(s.\Phi,\ \Acc',\ \Gamma')$ where, simultaneously for all $n\in\dom s.\Gamma$,
+\[
+\Gamma'(n)=\big(\fld_s(n),\ \cnt_s(n)\oplus\{p\mapsto a' : (n,p)\in R\}\big),
+\]
+and $r=a'$.
+\item[Failure] $r=\Err$ otherwise.
+\end{description}
+\end{operation}
+
+\begin{remark}[Editing a single node]\label{rem:single}
+Editing the value of one node only is \textsf{update}$(n,p,d)$: the node is assigned the address of the new datum, which is created if it is not yet indexed.
+A bulk edit restricted to a subset of the referrers is the sequential composition of such updates; no scoped variant of \textsf{retarget} is needed.
+\end{remark}
+
+\begin{remark}[No history]\label{rem:nohistory}
+Following the specification's author, a container does not retain the value that an \textsf{update} replaces:
+the state (Definition~\ref{def:state}) has no component that records earlier addresses of a slot.
+After \textsf{retarget}, the old address stays in $\Acc$ (Lemma~\ref{lem:accmono}) but no longer has referrers, and nothing records which nodes used to refer to it.
+\end{remark}
+
+\begin{remark}[Not specified]\label{rem:unspec}
+The source specifies no operation that deletes a container or a field, renames a property, or removes an entry of $\Acc$.
+None is introduced here \od{6}. In particular the specification never removes an address from $\Acc$; reclamation of unreferenced addresses is an implementation concern.
+\end{remark}
+
+\subsection{Executions}
+
+\begin{definition}[Execution, reachable state]
+An \emph{execution} is a sequence $s_\emptyset=s_0\to s_1\to\dots\to s_k$ of successful steps.
+A state is \emph{reachable} if it is the last state of some execution.
+\end{definition}
+
+%% =====================================================================
+\section{Contextual existence: interface}
+\label{sec:ctx}
+
+Contextual existences are \emph{Abstract Edges}, \emph{Tables}, \emph{Graphs} and \emph{Directional Edges}.
+Their internal mechanisms, storage and rendering are implementation-defined.
+This section fixes only what the absolute layer must provide so that any implementation can realize them, and the meaning of firing conditions.
+
+\begin{definition}[Contextual objects, purity]\label{def:purity}
+A \emph{contextual object} $\kappa$ has an \emph{evaluation} $\llbracket\kappa\rrbracket:\Stt\to\mathsf{Out}$ such that:
+(P1) $\llbracket\kappa\rrbracket(s)$ is determined by $s$ and the definition of $\kappa$ alone and has no effect on $s$;
+(P2) every element occurring in $\llbracket\kappa\rrbracket(s)$ is a container identifier of $s.\Gamma$, a property, or an address or datum of $s.\Acc$ (``contextual data are references to absolute data'');
+(P3) the only way a contextual object can cause a change of stored data is by issuing operations of Section~\ref{sec:ops}.
+\end{definition}
+
+\subsection{Abstract Edges and Tables}
+
+\begin{definition}[Abstract Edge]\label{def:aedge}
+An \emph{abstract edge} is a pair $\alpha=(K,p)$ where $K\subseteq\Nod$ is a finite set of nodes (the co-members of a cell) and $p\in\Prp$ is the property of the cell $x$ the edge determines. Its evaluation is
+\[
+\llbracket\alpha\rrbracket_s:=\{(n,\rd_s(n,p)) : n\in\Match_s(K)\}.
+\]
+Thus, for every container $n$ that includes $K$, the cell $x$ takes the address that $n$ holds for $x.\mathsf{property}$.
+The result may be empty, a singleton, or contain several containers (all matches are returned).
+\end{definition}
+
+\begin{definition}[Table (informative)]\label{def:table}
+For a field $x$ and columns $P=(p_1,\dots,p_k)$ the canonical table is
+$\mathsf{Tab}_{x,P}(s):=\big(n,\ (\rd_s(n,p_i))_{i\le k}\big)_{n\in\dom s.\Gamma,\ \fld_s(n)=x}$.
+Whether overrides are displayed, and the layout, are implementation-defined.
+Each cell $(n,p_i)$ is the value of the abstract edge $(\{(q,\rd_s(n,q)) : q\in Q\},p_i)$ for any set $Q$ of identifying columns whose combination is unique to $n$.
+\end{definition}
+
+\subsection{Graph nodes with subnodes}
+
+\begin{definition}[Graph node]\label{def:gnode}
+A \emph{graph node} is $g=(p,a,K)$, a node $(p,a)$ together with a finite set $K\subseteq\Nod$ of \emph{subnodes}. Its evaluation is
+\[
+\llbracket g\rrbracket_s:=\Match_s\big(K\cup\{(p,a)\}\big),\qquad
+\mathsf{Slots}_s(g):=\{(n,p) : n\in\llbracket g\rrbracket_s\}.
+\]
+All matches are returned; choosing among them is not part of the specification.
+\end{definition}
+
+\begin{remark}
+With $K=\emptyset$, $\llbracket g\rrbracket_s$ is the group of all containers whose property $p$ has address $a$ (e.g.\ every cut that is ``in progress'').
+With $K=\{(\mathsf{cut\_num},a_1),(\mathsf{work},a_{\mathrm{mod}})\}$ it is the set of ``in progress'' cells of the modelling work of cut~1.
+Grouping is by address equality (Theorem~\ref{thm:coherence}); no values are compared.
+\end{remark}
+
+\subsection{Directional Edges, conditions and runtimes}
+
+\begin{definition}[Condition]\label{def:cond}
+A \emph{condition} is a decidable predicate $\varphi:\Stt\times\Stt\to\{\top,\bot\}$ on pairs of states.
+The syntax in which implementations express conditions is not specified \od{9}.
+\end{definition}
+
+\begin{definition}[Directional Edge]\label{def:dedge}
+A \emph{directional edge} is a tuple $e=(g_{\mathrm{src}},g_{\mathrm{dst}},\varphi_e,\nu_e)$ with graph nodes $g_{\mathrm{src}},g_{\mathrm{dst}}$,
+a condition $\varphi_e$, and an \emph{expression node} $\nu_e=(n_\nu,p_\nu)$, a slot that holds the edge's expression \od{9}.
+The edge is \emph{armed in $s$} iff $a:=\rd_s(n_\nu,p_\nu)\neq\nul$ and $\Acc(a).\mathsf{type}=\tExp$;
+then the \emph{expression} of $e$ in $s$ is $\mathsf{expr}_s(e):=\Acc(a).\mathsf{value}\in\Prog$.
+\end{definition}
+
+\begin{definition}[Firing]\label{def:fire}
+$\Fire(e,s,s')$ holds iff $s\to s'$ is a successful step, $e$ is armed in $s'$, and $\varphi_e(s,s')$ holds.
+\end{definition}
+
+\begin{definition}[Standard conditions]\label{def:std}
+For a graph node $g$:
+\[
+\Enter(g)(s,s'):\iff \llbracket g\rrbracket_{s'}\setminus\llbracket g\rrbracket_s\neq\emptyset,\qquad
+\Leave(g)(s,s'):\iff \llbracket g\rrbracket_s\setminus\llbracket g\rrbracket_{s'}\neq\emptyset.
+\]
+Conditions are closed under $\wedge,\vee,\neg$. Both edge-triggered conditions (``becomes satisfied'', such as $\Enter$) and
+level-triggered ones (``is satisfied after the step'') are conditions in the sense of Definition~\ref{def:cond}.
+\end{definition}
+
+\begin{definition}[Runtime interface]\label{def:runtime}
+The \emph{runtime} of an edge $e$ is an implementation-defined, possibly partial, function
+$\mathsf{Rt}_e:\Stt\times\Stt\pfun\mathsf{Op}^{*}$ from a firing pair to a finite sequence of operations of Section~\ref{sec:ops}.
+Its implementation language is not specified. Any effect of a runtime on stored data is the application of the returned operations.
+Ordering, atomicity of the batch, failure handling, cascading and termination are implementation-defined \od{9}.
+\end{definition}
+
+\begin{remark}[Sufficiency]\label{rem:suff}
+The primitives $\rd$, $\refs$, $\Match$, successful steps and $\Fire$ suffice to build the three views of the motivation:
+a progress table is $\mathsf{Tab}_{x,P}$; a dependency graph is the set of directional edges between graph nodes;
+the workload of an assignee $b$ is the cardinality of $\Match_s(\{(\mathsf{assignee},b)\})\setminus\Match_s(\{(\mathsf{status},a_{\mathrm{done}})\})$.
+Bulk renames are \textsf{retarget} and use the reverse index $\refs$.
+\end{remark}
+
+\begin{remark}[Reconstructibility, non-normative]\label{rem:recon}
+If the definitions of contextual objects are stored outside the absolute state, replicas that exchange only absolute state cannot reproduce them.
+Implementations that replicate are therefore advised to store those definitions as containers of reserved fields \od{8}.
+\end{remark}
+
+%% =====================================================================
+\section{Metatheory}
+\label{sec:meta}
+
+\begin{theorem}[Preservation of well-formedness]\label{thm:wf}
+If $\mathrm{WF}(s)$ and $s\tr{\mathit{op}}{r}s'$ then $\mathrm{WF}(s')$. Hence every reachable state is well-formed.
+\end{theorem}
+\begin{proof}
+If $r=\Err$ then $s'=s$. Otherwise by cases on $\mathit{op}$; throughout, Lemma~\ref{lem:intern} gives WF1 and WF2 for $\Acc'$ whenever interning occurs, and
+WF3 is checked on the changed slots (old slots point into $\dom s.\Acc\subseteq\dom\Acc'$).
+\emph{defField.} $\Acc,\Gamma$ unchanged; $\dom\Phi$ grows and no container belongs to the new field, so WF4--WF6 hold.
+\emph{addDef.} $\Acc$ is unchanged. WF5: every container of $x$ now has $p$ in its domain, by padding or because it already had it. WF6: for the new definition $(p,\tau)$ a container has either a null address (padding) or an address whose type is $\tau$, by the precondition; other definitions are unchanged.
+\emph{dropDef.} $\dom\Phi(x)$ shrinks and contents are unchanged, so WF5 and WF6 are inherited.
+\emph{write.} The new or replaced content $\overline W$ has addresses in $\dom\Acc'\cup\{\nul\}$ (Lemma~\ref{lem:intern}(c)); $x\in\dom\Phi$ gives WF4; $\overline W$ contains all of $\dom\Phi(x)$ by padding, giving WF5; conformance gives WF6. Other containers are unchanged.
+\emph{update.} Only $(n,p)$ changes; $\dom\cnt(n)$ only grows, so WF5 holds; if $p\in\dom\Phi(x)$ then conformance gives WF6; otherwise $p$ is an override and is unconstrained.
+\emph{retarget.} The new address $a'=h(d)$ lies in $\dom\Acc'$ and differs from $\nul$ by Definition~\ref{def:intern}(ii), giving WF3; domains of contents are unchanged, giving WF5; the precondition gives WF6 on the moved slots; other slots are unchanged.
+The last claim follows by induction on executions from $\mathrm{WF}(s_\emptyset)$.
+\end{proof}
+
+\begin{lemma}[Access monotonicity]\label{lem:accmono}
+If $s\tr{\mathit{op}}{r}s'$ then $\graph s.\Acc\subseteq\graph s'.\Acc$.
+\end{lemma}
+\begin{proof}
+Only \textsf{write}, \textsf{update} and \textsf{retarget} change $\Acc$, and only through $\Intern$; apply Lemma~\ref{lem:intern}(a).
+\end{proof}
+
+\begin{theorem}[Address--value coherence]\label{thm:coherence}
+Let $\mathrm{WF}(s)$. For all $a,b\in\dom s.\Acc$: $a=b\iff s.\Acc(a)=s.\Acc(b)$.
+Equivalently, for $d,d'\in\rng s.\Acc$: $d=d'\iff h(d)=h(d')$.
+Hence two nodes denote the same datum iff their addresses are equal, and group-by is computed by address comparison.
+\end{theorem}
+\begin{proof}
+($\Rightarrow$) $\Acc$ is a function. ($\Leftarrow$) By WF1, $a=h(\Acc(a))=h(\Acc(b))=b$.
+For the equivalent form let $d=\Acc(a)$, $d'=\Acc(b)$; then $h(d)=a$ and $h(d')=b$ by WF1.
+\end{proof}
+
+\begin{corollary}[Group-by]\label{cor:group}
+Let $\mathrm{WF}(s)$, $n,m\in\dom s.\Gamma$ and $p\in\Prp$. Then $\rd_s(n,p)=\rd_s(m,p)$ iff $\mathsf{dat}_s(n,p)=\mathsf{dat}_s(m,p)$.
+\end{corollary}
+\begin{proof}
+If both addresses are $\nul$ both data are $\nil$. If exactly one is $\nul$ both sides are false. Otherwise apply Theorem~\ref{thm:coherence}.
+\end{proof}
+
+\begin{theorem}[Reads]\label{thm:reads}
+Let $\mathrm{WF}(s)$. Then $\rd_s$ is total with values in $\dom s.\Acc\cup\{\nul\}$; and if $p\in\dom s.\Phi(\fld_s(n))$ then $p\in\dom\cnt_s(n)$.
+Absent and null-valued nodes are indistinguishable by $\rd$ and by $\eff$; they can differ only on overrides, where they are not observable.
+\end{theorem}
+\begin{proof}
+Totality is Definition~\ref{def:read} together with WF3; the second claim is WF5; indistinguishability is Lemma~\ref{lem:eff}.
+\end{proof}
+
+\begin{theorem}[\textsf{write}]\label{thm:write}
+Let $\mathrm{WF}(s)$, $s\tr{\textsf{write}(x,W)}{n}s'$ with $n\neq\Err$, and $C:=\Cand_s(x,W)$. Then:
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item $n\in\dom s'.\Gamma$, $\fld_{s'}(n)=x$ and $\eff_{s'}(n)=\{(p,h(W(p))) : W(p)\in\Dat\}$; for $p\in\dom W$, $\rd_{s'}(n,p)=\widehat W(p)$.
+\item If $C=\emptyset$ then $n\notin\dom s.\Gamma$ and $\dom s'.\Gamma=\dom s.\Gamma\cup\{n\}$; otherwise $n=\sel(C)\in\dom s.\Gamma$ and $\dom s'.\Gamma=\dom s.\Gamma$.
+\item $s'.\Gamma(m)=s.\Gamma(m)$ for all $m\neq n$.
+\item (information monotonicity) $\eff_s(m)\subseteq\eff_{s'}(m)$ for every $m\in\dom s.\Gamma$.
+\item If a container of $x$ already has effective content equal to $\eff(\overline W)$, no new container is created.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(a) $\eff(\overline W)$ drops exactly the null entries of $\overline W$, i.e.\ the $\nil$ inputs and the padding. (b),(c) are the two cases of the effect. (d) For $m\neq n$ by (c); for $m=n\in C$ by the definition of $C$; a new container has no predecessor. (e) Such a container belongs to $C$, so $C\neq\emptyset$.
+\end{proof}
+
+\begin{theorem}[\textsf{update}]\label{thm:update}
+Let $\mathrm{WF}(s)$ and $s\tr{\textsf{update}(n,p,u)}{\ok}s'$. Then $\dom s'.\Gamma=\dom s.\Gamma$, $s'.\Phi=s.\Phi$,
+$\rd_{s'}(m,q)=\rd_s(m,q)$ for all $(m,q)\neq(n,p)$, and $\rd_{s'}(n,p)=\nul$ if $u=\nil$ and $h(u)$ otherwise.
+\end{theorem}
+\begin{proof}
+Directly from the effect of Operation~\ref{op:update} and Definition~\ref{def:read}.
+\end{proof}
+
+\begin{theorem}[\textsf{retarget}]\label{thm:retarget}
+Let $\mathrm{WF}(s)$ and $s\tr{\textsf{retarget}(a,d)}{a'}s'$. Put $R=\refs_s(a)$ and $\varphi(b):=a'$ if $b=a$, $\varphi(b):=b$ otherwise. Then:
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item $a\in\dom s'.\Acc$ with $s'.\Acc(a)=s.\Acc(a)$ (the old address and datum are kept), and $s'.\Acc(a')=d$.
+\item $\rd_{s'}(n,p)=\varphi(\rd_s(n,p))$ for \emph{all} $n,p$; $s'.\Phi=s.\Phi$ and $\dom s'.\Gamma=\dom s.\Gamma$.
+\item If $a'\neq a$: $\refs_{s'}(a)=\emptyset$ and $\refs_{s'}(a')=\refs_s(a')\cup R$. In particular, if $d$ was already indexed, its class and that of $a$ merge; no separate merge rule is needed.
+\item (coarsening) $\rd_s(n,p)=\rd_s(m,q)\Rightarrow\rd_{s'}(n,p)=\rd_{s'}(m,q)$.
+\item The step is atomic: no state in which only some referrers have been moved is a state of the transition system.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(a) Lemma~\ref{lem:accmono} and Definition~\ref{def:intern}. (b) Slots in $R$ receive $a'=\varphi(a)$; all other slots keep their address $b\neq a$, so $\varphi(b)=b$; absent slots read $\nul=\varphi(\nul)$ because $a\neq\nul$.
+(c) By (b), for every address $b\neq\nul$ we have $\refs_{s'}(b)=\bigcup\{\refs_s(c) : \varphi(c)=b\}$.
+If $a'\neq a$ then no $c$ satisfies $\varphi(c)=a$ (since $\varphi(a)=a'\neq a$ and $\varphi(c)=c\neq a$ otherwise), so $\refs_{s'}(a)=\emptyset$;
+and $\varphi(c)=a'$ exactly for $c\in\{a,a'\}$, so $\refs_{s'}(a')=\refs_s(a)\cup\refs_s(a')$.
+(d) From (b), as $\varphi$ is a function. (e) The effect is a single transition.
+\end{proof}
+
+\begin{theorem}[Field operations are observationally conservative]\label{thm:fieldops}
+Let $\mathrm{WF}(s)$.
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+\item If $s\tr{\textsf{addDef}(x,p,\tau)}{\ok}s'$ then $\rd_{s'}=\rd_s$ and
+$\eff_{s'}(n)=\eff_s(n)$ for all $n$.
+\item If $s\tr{\textsf{dropDef}(x,p)}{\ok}s'$ then $\rd_{s'}=\rd_s$ and $\eff_{s'}=\eff_s$, and
+for every container $n$ of $x$ we have $\ovr_{s'}(n)=\ovr_s(n)\cup\{p\}$.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(a) Padding adds only nodes with address $\nul$, which $\rd$ already returns for absent properties (Definition~\ref{def:read}) and which $\eff$ discards. Consequently an implementation may realize \textsf{addDef} lazily without observable difference (\od{3}).
+(b) Contents are unchanged; by WF5 of $s$, $p\in\dom\cnt_s(n)$ for each container $n$ of $x$.
+\end{proof}
+
+\begin{theorem}[Environment independence]\label{thm:env}
+The relation $s\tr{\mathit{op}}{r}s'$ does not depend on any file environment $\mathsf{fs}$.
+Hence a change of $\mathsf{fs}$, including the disappearance of a file, changes no component of the state; a Reference datum with null linkage persists
+(Lemma~\ref{lem:accmono}), and a node changes only through an explicit \textsf{update} or \textsf{retarget}.
+\end{theorem}
+\begin{proof}
+$\mathsf{fs}$ occurs in none of the Operations~\ref{op:deffield}--\ref{op:retarget}; it occurs only in Definition~\ref{def:resolve}.
+\end{proof}
+
+\begin{remark}[Determinism]
+Given the same fresh identifiers and the same $\sel$, each operation is a function of $(s,\mathit{op})$. All theorems hold for every choice.
+\end{remark}
+
+\begin{remark}[Relinking files]
+Since the datum behind a Reference address is a path, \textsf{retarget}$(a,\datum{\pi'}{\tRef})$ re-points every node that used the old path to the new one in one atomic step.
+\end{remark}
+
+%% =====================================================================
+\section{Worked example}
+\label{sec:example}
+
+\begin{example}\label{ex:main}
+Let $\delta=\{\mathsf{cut\_num}\mapsto\mathsf{Int},\ \mathsf{work}\mapsto\mathsf{Str},\ \mathsf{status}\mapsto\mathsf{Str}\}$.
+Write $a_{v}:=h(\datum{v}{\tau})$ with the evident type, e.g.\ $a_1=h(\datum{1}{\mathsf{Int}})$.
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item $\textsf{defField}(\mathsf{Cut},\delta)$.
+\item $\textsf{write}(\mathsf{Cut},\{\mathsf{cut\_num}\mapsto\datum{1}{\mathsf{Int}},\ \mathsf{work}\mapsto\datum{\text{modelling}}{\mathsf{Str}},\ \mathsf{status}\mapsto\datum{\text{WIP}}{\mathsf{Str}}\})$ creates $n_1$ ($\Cand=\emptyset$).
+\item The same with $\mathsf{cut\_num}=2$ creates $n_2$: $\eff(n_1)\not\subseteq\eff(\overline W)$ because $(\mathsf{cut\_num},a_1)$ is absent from the new content.
+\item Repeating step~2 returns $n_1$ and creates nothing: $n_1\in\Cand$ (Theorem~\ref{thm:write}(e)).
+\item $\textsf{update}(n_1,\mathsf{status},\datum{\text{done}}{\mathsf{Str}})$: $n_1$ now points to $a_{\mathrm{done}}$; $n_2$ still points to $a_{\mathrm{WIP}}$.
+\item $\textsf{update}(n_2,\mathsf{note},\datum{\text{retake}}{\mathsf{Str}})$: $\mathsf{note}\notin\dom\delta$, so it is an override: $\ovr(n_2)=\{\mathsf{note}\}$; reading $\mathsf{note}$ on $n_1$ yields $\nul$.
+\item $\textsf{retarget}(a_{\mathrm{WIP}},\datum{\text{in progress}}{\mathsf{Str}})$: $\refs(a_{\mathrm{WIP}})=\{(n_2,\mathsf{status})\}$ is moved to $a_{\mathrm{prog}}$; $a_{\mathrm{WIP}}$ remains in $\Acc$ without referrers, and no record of the previous address is kept (Remark~\ref{rem:nohistory}).
+\item The graph node $g=(\mathsf{status},a_{\mathrm{prog}},\{(\mathsf{cut\_num},a_2)\})$ evaluates to $\{n_2\}$.
+\item With $g_{\mathrm{done}}=(\mathsf{status},a_{\mathrm{done}},\{(\mathsf{cut\_num},a_2)\})$, the step $\textsf{update}(n_2,\mathsf{status},\datum{\text{done}}{\mathsf{Str}})$
+satisfies $\Enter(g_{\mathrm{done}})$, so an edge $e$ with $\varphi_e=\Enter(g_{\mathrm{done}})$ fires and $\mathsf{Rt}_e$ may return operations, e.g.\ an \textsf{update} on a downstream cut.
+\end{enumerate}
+\end{example}
+
+%% =====================================================================
+\section{Decision register}
+\label{sec:register}
+
+Table~\ref{tab:fixed} lists what the author of the specification decided; these are normative.
+Table~\ref{tab:open} lists points on which the source material is silent, ambiguous or in tension, together with the provisional treatment used above.
+Each \od{n} can be changed without affecting the others unless stated.
+
+\begin{longtable}{@{}l p{0.82\textwidth}@{}}
+\caption{Decisions fixed by the author.}\label{tab:fixed}\\
+\toprule ID & Decision \\ \midrule \endfirsthead
+\toprule ID & Decision \\ \midrule \endhead
+F1 & Containers are created or extended by \textsf{write} (subset-extension rule) and changed by \textsf{update}, which addresses one property of one container.\\
+F2 & Container identifiers are random and unique; they are unrelated to content.\\
+F3 & Containers hold addresses only; data live in Access; identical data (value and type) share one address obtained by hashing.\\
+F4 & Editing the datum behind an address moves all its referrers to the address of the new datum and keeps the old address (\textsf{retarget}); editing one node assigns it another address (\textsf{update}).\\
+F5 & The value replaced by an \textsf{update} is not retained.\\
+F6 & Graph nodes carry subnodes; evaluation returns all matches; choosing among them is left to implementations.\\
+F7 & The mechanisms of contextual existences are implementation-defined; the specification provides firing conditions for edge runtimes, while the runtime language is implementation-dependent.\\
+F8 & The properties of a field are included in the properties of every container of the field; the surplus are overrides; an absent property reads as null.\\
+F9 & A lost file leaves its Reference datum intact (null linkage); nothing changes until an explicit \textsf{update}.\\
+F10 & Edge servers, replication and merging are implementation features.\\
+F11 & The expression of a directional edge is stored in a special expression node.\\
+\bottomrule
+\end{longtable}
+
+\begin{longtable}{@{}l p{0.82\textwidth}@{}}
+\caption{Open decisions and their provisional treatment.}\label{tab:open}\\
+\toprule ID & Open point and provisional treatment \\ \midrule \endfirsthead
+\toprule ID & Open point and provisional treatment \\ \midrule \endhead
+OD-1 & \textbf{Several write candidates.} The source rule presupposes one container $n_0$ below the new content. If several qualify, the behaviour (absorb all, pick one by a rule, reject, create) is undetermined. \emph{Treatment:} parameter $\sel$ (Assumption~\ref{ass:sel}); all theorems hold for any $\sel$.\\
+OD-2 & \textbf{Null versus absent.} A null-address node is treated as an absent node (Definition~\ref{def:eff}), so that padding with null does not defeat the subset test of \textsf{write}. \emph{Alternative:} compare raw node sets; then filling a null slot by \textsf{write} would create a new container.\\
+OD-3 & \textbf{Field extension.} The source requires the field's properties to be included in each container's properties and also states the null-read rule. \emph{Treatment:} eager padding with null in \textsf{addDef}, so that WF5 holds literally; Theorem~\ref{thm:fieldops} shows that a lazy realization is observationally equivalent.\\
+OD-4 & \textbf{Type conformance.} The source pairs properties with types but does not say that the datum behind a node must have that type. \emph{Treatment:} WF6 for non-null nodes of defined properties; \textsf{retarget} fails if it would violate WF6; overrides are unconstrained.\\
+OD-5 & \textbf{Functionality.} ``Series'' of definitions and nodes is read as one type per property per field and at most one address per property per container, consistent with \textsf{update} on a single property. Multi-valued properties would need a different update operation.\\
+OD-6 & \textbf{Unspecified lifecycle.} No deletion of containers or fields, renaming of properties, or moving of a container between fields is specified. The candidate search of \textsf{write} is restricted to the same field (source: ``in field $x_1$'').\\
+OD-7 & \textbf{Files.} A Reference address names a path, not content; the file environment is external (Definition~\ref{def:fs}). Whether the VFS overwrites files in place (so that $\mathsf{resolve}$ changes with no operation) or stores each save under a new path (so that a new Reference must be installed explicitly) is not specified.\\
+OD-8 & \textbf{Storage of contextual definitions.} Implementation-defined; the specification does not guarantee that they survive replication (Remark~\ref{rem:recon}).\\
+OD-9 & \textbf{Conditions and runtimes.} ``Designated conditions are satisfied'' is formalized as a predicate on a step, which admits edge- and level-triggered readings. The special expression node is modelled as a slot whose datum has the reserved type $\tExp$. Scheduling, ordering, loop prevention, double execution after merges, failure handling and sandboxing are implementation-defined.\\
+OD-10 & \textbf{Hash function.} The source uses MD5; the specification parametrizes $h$ and adds failure on a null hash or a collision between different data. MD5 is not collision-resistant against adversarial inputs; the choice of $h$ is a deployment decision.\\
+\bottomrule
+\end{longtable}
+
+%% =====================================================================
+\appendix
+\section{Summary of operations}
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Operation & changes $\Phi$ & changes $\Acc$ & changes $\Gamma$ \\ \midrule
+\textsf{defField}$(x,\delta)$ & adds field $x$ & --- & --- \\
+\textsf{addDef}$(x,p,\tau)$ & adds $(p,\tau)$ & --- & null padding of containers of $x$ \\
+\textsf{dropDef}$(x,p)$ & removes $p$ & --- & --- (nodes become overrides) \\
+\textsf{write}$(x,W)$ & --- & adds new data & adds or replaces one container \\
+\textsf{update}$(n,p,u)$ & --- & adds $u$ if new & one slot of one container \\
+\textsf{retarget}$(a,d)$ & --- & adds $d$ if new & every slot in $\refs(a)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Index of well-formedness conditions}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+WF1 & stored data are at their own address \\
+WF2 & stored data are admissible (references are paths, expressions are programs) \\
+WF3 & containers point only to stored addresses or to null \\
+WF4 & every container belongs to an existing field \\
+WF5 & field properties are included in container properties (surplus = overrides) \\
+WF6 & non-null nodes of defined properties have the defined type \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
