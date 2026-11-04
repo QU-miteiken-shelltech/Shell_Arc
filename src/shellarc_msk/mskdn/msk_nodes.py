@@ -1,8 +1,9 @@
 class MSKDN_Port:
-    def __init__(self, node, name, is_output):
+    def __init__(self, node, name, is_output, node_expression=None):
         self.node = node
         self.name = name
         self.is_output = is_output
+        self.node_expression = node_expression
         self.wires = []
 
     @property
