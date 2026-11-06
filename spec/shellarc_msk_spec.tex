@@ -72,16 +72,16 @@
 \newcommand{\datum}[2]{\langle #1\!:\!#2\rangle}
 \newcommand{\Pfin}{\mathcal{P}_{\mathrm{fin}}}
 
-\title{\textbf{A Formal Specification of the\\ \emph{Multimedia System Kernel} Data Structure}\\[4pt]
-\large Absolute existence, operations, and the interface to contextual existence}
-\author{Specification draft v0.1}
+\title{\textbf{MSK: A Formal Specification of the\\ Multimedia System Kernel}\\[4pt]
+\large An \emph{everything-is-a-node} store: absolute existence, operations,\\ and the interface to contextual existence}
+\author{Specification draft v0.1.2}
 \date{4 November 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We specify a data store for content production in which every piece of information
+We specify MSK (Multimedia System Kernel), a data store for content production in which every piece of information
 (a cut number, an assignee, an asset, a state) is held as a node of a content-addressed graph.
 Presentation structures such as progress tables, dependency graphs and workload views are not stored:
 they are \emph{contextual} existences derived from a small core of \emph{absolute} existences.
@@ -145,14 +145,24 @@ choices that the source material left open are listed in Table~\ref{tab:open} an
 \label{sec:domains}
 
 \begin{definition}[Universes]\label{def:universes}
-Fix non-empty sets $\Val$ (values), $\Typ$ (types), $\Prp$ (property names), $\Fld$ (field names),
+Fix a finite alphabet $\Sigma$ and non-empty sets $\Prp$ (property names), $\Fld$ (field names) and $\Typ$ (types, see below).
+\emph{Values} are character strings, $\Val:=\Sigma^{*}$: every value is stored as a string and the store gives it no further meaning. Let
 $\Pth\subseteq\Val$ (relative file paths, interpreted relative to the VFS directory \texttt{/data}) and
 $\Prog\subseteq\Val$ (expression programs in some implementation language).
-$\Typ$ contains two distinct reserved types: $\tRef$ (\emph{Reference}) and $\tExp$ (\emph{Expression}).
+A \emph{type} is a user-defined category of data such as \textsf{person}, \textsf{cut} or \textsf{status}.
+It is an opaque label: it has no relation to programming-language types such as integers or strings, carries no operations, and is used only for equality tests.
+$\Typ$ contains two distinct reserved types: $\tRef$ (\emph{Reference}) and $\tExp$ (\emph{Expression}) \od{11}.
 Data are pairs $\Dat:=\Val\times\Typ$ with projections $d.\mathsf{value}$ and $d.\mathsf{type}$.
 A datum $d$ is \emph{admissible} if $d.\mathsf{type}=\tRef\Rightarrow d.\mathsf{value}\in\Pth$ and
 $d.\mathsf{type}=\tExp\Rightarrow d.\mathsf{value}\in\Prog$. Let $\Dat^{\mathrm{ok}}\subseteq\Dat$ be the admissible data.
 \end{definition}
+
+\begin{remark}[Strings and categories]\label{rem:strings}
+Because values are strings and the type is part of a datum, ``Yamada'' as a \textsf{person} and ``Yamada'' as an \textsf{asset} are different data with different addresses,
+and the strings ``1'' and ``01'' are different values.
+Any numeric, ordering or other interpretation of a string belongs to the contextual layer.
+Two nodes share an address only if both the string and the category coincide; hence a bulk edit by \textsf{retarget} affects only nodes of that category.
+\end{remark}
 
 \begin{definition}[Addresses and identifiers]\label{def:addr}
 $\Adr:=\{0,1\}^{128}$ is the set of addresses (written as 32 hexadecimal digits).
@@ -292,7 +302,7 @@ A state $s=(\Phi,\Acc,\Gamma)$ is \emph{well-formed}, written $\mathrm{WF}(s)$, 
 \item[WF3] \emph{(closure)} $\forall n\in\dom\Gamma,\ p\in\dom\cnt(n).\ \cnt(n)(p)\in\dom\Acc\cup\{\nul\}$.
 \item[WF4] \emph{(field existence)} $\forall n\in\dom\Gamma.\ \fld(n)\in\dom\Phi$.
 \item[WF5] \emph{(field coverage)} $\forall n\in\dom\Gamma.\ \dom\Phi(\fld(n))\subseteq\dom\cnt(n)$, i.e.\ the properties of a field are included in the properties of each of its containers; the surplus is $\ovr(n)$ \od{3}.
-\item[WF6] \emph{(type conformance)} $\forall n\in\dom\Gamma,\ p\in\dom\Phi(\fld(n))$: if $a:=\cnt(n)(p)\neq\nul$ then $\Acc(a).\mathsf{type}=\Phi(\fld(n))(p)$ \od{4}.
+\item[WF6] \emph{(type conformance)} $\forall n\in\dom\Gamma,\ p\in\dom\Phi(\fld(n))$: if $a:=\cnt(n)(p)\neq\nul$ then $\Acc(a).\mathsf{type}=\Phi(\fld(n))(p)$.
 \end{description}
 \end{definition}
 
@@ -419,7 +429,7 @@ If $p\notin\dom s.\Phi(x)$ the update creates or changes an override. The previo
 Edits the datum behind an address for \emph{all} nodes that refer to it, by moving them to the address of the new datum.
 The old address and its datum are kept.
 \begin{description}[leftmargin=2.2cm,labelwidth=2cm,font=\bfseries]
-\item[Precondition] $a\in\dom s.\Acc$; $d\in\Dat$; $\Intern(s.\Acc,d)=(\Acc',a')\neq\Err$ (so $a'=h(d)$); and for every $(n,p)\in R:=\refs_s(a)$ with $p\in\dom s.\Phi(\fld_s(n))$: $d.\mathsf{type}=s.\Phi(\fld_s(n))(p)$ \od{4}.
+\item[Precondition] $a\in\dom s.\Acc$; $d\in\Dat$; $\Intern(s.\Acc,d)=(\Acc',a')\neq\Err$ (so $a'=h(d)$); and for every $(n,p)\in R:=\refs_s(a)$ with $p\in\dom s.\Phi(\fld_s(n))$: $d.\mathsf{type}=s.\Phi(\fld_s(n))(p)$.
 \item[Effect] $s'=(s.\Phi,\ \Acc',\ \Gamma')$ where, simultaneously for all $n\in\dom s.\Gamma$,
 \[
 \Gamma'(n)=\big(\fld_s(n),\ \cnt_s(n)\oplus\{p\mapsto a' : (n,p)\in R\}\big),
@@ -676,18 +686,18 @@ Since the datum behind a Reference address is a path, \textsf{retarget}$(a,\datu
 \label{sec:example}
 
 \begin{example}\label{ex:main}
-Let $\delta=\{\mathsf{cut\_num}\mapsto\mathsf{Int},\ \mathsf{work}\mapsto\mathsf{Str},\ \mathsf{status}\mapsto\mathsf{Str}\}$.
-Write $a_{v}:=h(\datum{v}{\tau})$ with the evident type, e.g.\ $a_1=h(\datum{1}{\mathsf{Int}})$.
+Let $\delta=\{\mathsf{cut\_num}\mapsto\mathsf{CutNo},\ \mathsf{work}\mapsto\mathsf{Work},\ \mathsf{status}\mapsto\mathsf{Status}\}$, where the types are user-defined categories and all values are strings.
+Write $a_{v}:=h(\datum{v}{\tau})$ with the category $\tau$ of the property concerned, e.g.\ $a_1=h(\datum{1}{\mathsf{CutNo}})$.
 \begin{enumerate}[label=\arabic*.,leftmargin=*]
 \item $\textsf{defField}(\mathsf{Cut},\delta)$.
-\item $\textsf{write}(\mathsf{Cut},\{\mathsf{cut\_num}\mapsto\datum{1}{\mathsf{Int}},\ \mathsf{work}\mapsto\datum{\text{modelling}}{\mathsf{Str}},\ \mathsf{status}\mapsto\datum{\text{WIP}}{\mathsf{Str}}\})$ creates $n_1$ ($\Cand=\emptyset$).
+\item $\textsf{write}(\mathsf{Cut},\{\mathsf{cut\_num}\mapsto\datum{1}{\mathsf{CutNo}},\ \mathsf{work}\mapsto\datum{\text{modelling}}{\mathsf{Work}},\ \mathsf{status}\mapsto\datum{\text{WIP}}{\mathsf{Status}}\})$ creates $n_1$ ($\Cand=\emptyset$).
 \item The same with $\mathsf{cut\_num}=2$ creates $n_2$: $\eff(n_1)\not\subseteq\eff(\overline W)$ because $(\mathsf{cut\_num},a_1)$ is absent from the new content.
 \item Repeating step~2 returns $n_1$ and creates nothing: $n_1\in\Cand$ (Theorem~\ref{thm:write}(e)).
-\item $\textsf{update}(n_1,\mathsf{status},\datum{\text{done}}{\mathsf{Str}})$: $n_1$ now points to $a_{\mathrm{done}}$; $n_2$ still points to $a_{\mathrm{WIP}}$.
-\item $\textsf{update}(n_2,\mathsf{note},\datum{\text{retake}}{\mathsf{Str}})$: $\mathsf{note}\notin\dom\delta$, so it is an override: $\ovr(n_2)=\{\mathsf{note}\}$; reading $\mathsf{note}$ on $n_1$ yields $\nul$.
-\item $\textsf{retarget}(a_{\mathrm{WIP}},\datum{\text{in progress}}{\mathsf{Str}})$: $\refs(a_{\mathrm{WIP}})=\{(n_2,\mathsf{status})\}$ is moved to $a_{\mathrm{prog}}$; $a_{\mathrm{WIP}}$ remains in $\Acc$ without referrers, and no record of the previous address is kept (Remark~\ref{rem:nohistory}).
+\item $\textsf{update}(n_1,\mathsf{status},\datum{\text{done}}{\mathsf{Status}})$: $n_1$ now points to $a_{\mathrm{done}}$; $n_2$ still points to $a_{\mathrm{WIP}}$.
+\item $\textsf{update}(n_2,\mathsf{note},\datum{\text{retake}}{\mathsf{Note}})$: $\mathsf{note}\notin\dom\delta$, so it is an override: $\ovr(n_2)=\{\mathsf{note}\}$; reading $\mathsf{note}$ on $n_1$ yields $\nul$.
+\item $\textsf{retarget}(a_{\mathrm{WIP}},\datum{\text{in progress}}{\mathsf{Status}})$: $\refs(a_{\mathrm{WIP}})=\{(n_2,\mathsf{status})\}$ is moved to $a_{\mathrm{prog}}$; $a_{\mathrm{WIP}}$ remains in $\Acc$ without referrers, and no record of the previous address is kept (Remark~\ref{rem:nohistory}).
 \item The graph node $g=(\mathsf{status},a_{\mathrm{prog}},\{(\mathsf{cut\_num},a_2)\})$ evaluates to $\{n_2\}$.
-\item With $g_{\mathrm{done}}=(\mathsf{status},a_{\mathrm{done}},\{(\mathsf{cut\_num},a_2)\})$, the step $\textsf{update}(n_2,\mathsf{status},\datum{\text{done}}{\mathsf{Str}})$
+\item With $g_{\mathrm{done}}=(\mathsf{status},a_{\mathrm{done}},\{(\mathsf{cut\_num},a_2)\})$, the step $\textsf{update}(n_2,\mathsf{status},\datum{\text{done}}{\mathsf{Status}})$
 satisfies $\Enter(g_{\mathrm{done}})$, so an edge $e$ with $\varphi_e=\Enter(g_{\mathrm{done}})$ fires and $\mathsf{Rt}_e$ may return operations, e.g.\ an \textsf{update} on a downstream cut.
 \end{enumerate}
 \end{example}
@@ -715,6 +725,8 @@ F8 & The properties of a field are included in the properties of every container
 F9 & A lost file leaves its Reference datum intact (null linkage); nothing changes until an explicit \textsf{update}.\\
 F10 & Edge servers, replication and merging are implementation features.\\
 F11 & The expression of a directional edge is stored in a special expression node.\\
+F12 & Values are strings. A type is a user-defined category of data (e.g.\ person) with no programming-language meaning.\\
+F13 & The type of the datum behind a node must equal the type that the Field prescribes for that property; a mismatch is an error ($\Err$) and has no effect. A null node is exempt, since the null address has no datum.\\
 \bottomrule
 \end{longtable}
 
@@ -725,13 +737,14 @@ F11 & The expression of a directional edge is stored in a special expression nod
 OD-1 & \textbf{Several write candidates.} The source rule presupposes one container $n_0$ below the new content. If several qualify, the behaviour (absorb all, pick one by a rule, reject, create) is undetermined. \emph{Treatment:} parameter $\sel$ (Assumption~\ref{ass:sel}); all theorems hold for any $\sel$.\\
 OD-2 & \textbf{Null versus absent.} A null-address node is treated as an absent node (Definition~\ref{def:eff}), so that padding with null does not defeat the subset test of \textsf{write}. \emph{Alternative:} compare raw node sets; then filling a null slot by \textsf{write} would create a new container.\\
 OD-3 & \textbf{Field extension.} The source requires the field's properties to be included in each container's properties and also states the null-read rule. \emph{Treatment:} eager padding with null in \textsf{addDef}, so that WF5 holds literally; Theorem~\ref{thm:fieldops} shows that a lazy realization is observationally equivalent.\\
-OD-4 & \textbf{Type conformance.} The source pairs properties with types but does not say that the datum behind a node must have that type. \emph{Treatment:} WF6 for non-null nodes of defined properties; \textsf{retarget} fails if it would violate WF6; overrides are unconstrained.\\
+OD-4 & \textbf{Types of overrides.} Type conformance for properties defined by a Field is fixed (F13). A property that a container carries but its Field does not define (an override) has no prescribed type, so none is checked. \emph{Alternative:} require every override to be declared with a type, or restrict overrides to a default category.\\
 OD-5 & \textbf{Functionality.} ``Series'' of definitions and nodes is read as one type per property per field and at most one address per property per container, consistent with \textsf{update} on a single property. Multi-valued properties would need a different update operation.\\
 OD-6 & \textbf{Unspecified lifecycle.} No deletion of containers or fields, renaming of properties, or moving of a container between fields is specified. The candidate search of \textsf{write} is restricted to the same field (source: ``in field $x_1$'').\\
 OD-7 & \textbf{Files.} A Reference address names a path, not content; the file environment is external (Definition~\ref{def:fs}). Whether the VFS overwrites files in place (so that $\mathsf{resolve}$ changes with no operation) or stores each save under a new path (so that a new Reference must be installed explicitly) is not specified.\\
 OD-8 & \textbf{Storage of contextual definitions.} Implementation-defined; the specification does not guarantee that they survive replication (Remark~\ref{rem:recon}).\\
 OD-9 & \textbf{Conditions and runtimes.} ``Designated conditions are satisfied'' is formalized as a predicate on a step, which admits edge- and level-triggered readings. The special expression node is modelled as a slot whose datum has the reserved type $\tExp$. Scheduling, ordering, loop prevention, double execution after merges, failure handling and sandboxing are implementation-defined.\\
 OD-10 & \textbf{Hash function.} The source uses MD5; the specification parametrizes $h$ and adds failure on a null hash or a collision between different data. MD5 is not collision-resistant against adversarial inputs; the choice of $h$ is a deployment decision.\\
+OD-11 & \textbf{Status of types.} Types are read as user-defined, opaque categories. \emph{Treatment:} $\Typ$ is the set of all labels, so there is no declaration step and no operation registers a type. Not decided: whether a category must be declared before use, and whether a category is tied to a Field (e.g.\ a value of type \textsf{person} must name an existing container of a Field \textsf{Person}).\\
 \bottomrule
 \end{longtable}
 

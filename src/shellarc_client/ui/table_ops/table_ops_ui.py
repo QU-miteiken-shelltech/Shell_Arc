@@ -62,15 +62,31 @@ class CellEditDialig(QDialog):
                  ) -> None:
         super().__init__(parent)
         dialog_lo = QVBoxLayout()
+
         field_name_lo = QHBoxLayout()
         field_name_lo.addWidget(QLabel("Field name : "))
         self.field_name_input = QLineEdit(cell.field_name)
         field_name_lo.addWidget(self.field_name_input)
-        dialog_lo.addWidget(QLabel(f"field_name : {cell.field_name}"))
-        dialog_lo.addWidget(QLabel(f"container : {cell.container_index}"))
-        dialog_lo.addWidget(QLabel(f"property : {cell.property}"))
-        dialog_lo.addWidget(QLabel(f"adress : {cell.adress}"))
-        dialog_lo.addWidget(QLabel(f"value : {cell.value}"))
+        dialog_lo.addLayout(field_name_lo)
+
+        container_index_lo = QHBoxLayout()
+        container_index_lo.addWidget(QLabel("Container index : "))
+        self.container_index_input = QLineEdit(cell.container_index)
+        container_index_lo.addWidget(self.container_index_input)
+        dialog_lo.addLayout(container_index_lo)
+
+        property_lo = QHBoxLayout()
+        property_lo.addWidget(QLabel("Property : "))
+        self.property_input = QLineEdit(cell.property)
+        property_lo.addWidget(self.property_input)
+        dialog_lo.addLayout(property_lo)
+
+        dialog_lo.addWidget(QLabel(f"Adress : {cell.adress}"))
+        dialog_lo.addWidget(QLabel(f"Value : {cell.value}"))
+
+        btns_lo = QHBoxLayout()
+        set
+
         self.setLayout(dialog_lo)
 
 

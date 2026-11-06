@@ -15,24 +15,26 @@ class MSK_Field:
                  ) -> None:
         mskfs_pathsolver = MSKFS_PathSolver()
 
-        field_offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
-        if not field_offset_file.exists():
-            with open(field_offset_file, "wb") as f:
+        self.field_offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
+        if not self.field_offset_file.exists():
+            with open(self.field_offset_file, "wb") as f:
                 f.write(b"")
         if self.field_offset_bin is None:
-            with open(field_offset_file, "rb") as f:
+            with open(self.field_offset_file, "rb") as f:
                 self.field_offset_bin = f.read()
 
-        field_file = mskfs_pathsolver.mskfs_config / ".msk_field"
-        if not field_file.exists():
-            with open(field_file, "wb") as f:
+        self.field_file = mskfs_pathsolver.mskfs_config / ".msk_field"
+        if not self.field_file.exists():
+            with open(self.field_file, "wb") as f:
                 f.write(b"")
-        with open(field_file, "rb") as f:
+        with open(self.field_file, "rb") as f:
             self.field_bin = f.read()
 
+        self.pos_index = -1
         self.field_ls = self._get_field_bin(
             target_field_name=field_name
         )
+        self.field_name = field_name
 
     def _get_field_bin(self, 
                       target_field_name: str
@@ -45,13 +47,14 @@ class MSK_Field:
             offset_pos = i * 8
             chunk_offset = struct.unpack("<Q", self.field_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(self.type_bin)
+                chunk_next_offset = len(self.field_bin)
             else:
                 chunk_next_offset = struct.unpack("<Q", self.field_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
             field_name_len = struct.unpack("<Q", self.field_bin[chunk_offset : chunk_offset + 8])[0]
             current_field_name = self.field_bin[chunk_offset + 8 : chunk_offset + 8 + field_name_len].decode("utf-8")
             if current_field_name == target_field_name:
+                self.pos_index = i
                 field_len = chunk_next_offset - chunk_offset - 8 - field_name_len
                 field_prop_count = field_len // 32
                 field_prop_offset_start = chunk_offset + 8 + field_name_len
@@ -65,5 +68,47 @@ class MSK_Field:
                     rtn.append((current_prop, current_type))
                 return rtn
 
-        return None
+        self._declear_field(field_name=self.field_name)
+        return []
+
+    def _declear_field(self, 
+                  field_name: str
+                  ) -> None:
+        field_name_bin = field_name.encode("utf-8")
+        field_name_len_int = len(field_name_bin)
+        field_name_len_bin = struct.pack("<Q", field_name_len_int)
+        empty_field = field_name_len_bin + field_name_bin
+        self.field_bin += empty_field
+        self.field_offset_bin += struct.pack("<Q", len(empty_field))
+        self._write_binaries()
+
+    def def_field(self, prop: MSK_Property, type: MSK_Type) -> None:
+        if (prop, type) in self.field_ls:
+            return
+
+        new_bin = prop.prop_index.to_bytes() + type.type_index.to_bytes()
+        shift = len(new_bin)
+
+        num_chunks = len(self.field_offset_bin) // 8
+        offsets = list(struct.unpack(f"<{num_chunks}Q", self.field_offset_bin))
+
+        if self.pos_index == num_chunks - 1:
+            insert_at = len(self.field_bin)
+        else:
+            insert_at = offsets[self.pos_index + 1]
+
+        for i in range(self.pos_index + 1, num_chunks):
+            offsets[i] += shift
+        self.field_offset_bin = struct.pack(f"<{num_chunks}Q", *offsets)
+
+        self.field_bin = self.field_bin[:insert_at] + new_bin + self.field_bin[insert_at:]
+
+        self.field_ls.append((prop, type))
+        self._write_binaries()
+
+    def _write_binaries(self):
+        with open(self.field_file, "wb") as f:
+            f.write(self.field_bin)
+        with open(self.field_offset_file, "wb") as f:
+            f.write(self.field_offset_bin)
 

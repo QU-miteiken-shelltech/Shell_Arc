@@ -109,7 +109,9 @@ class MSK_Containers(MSK_Field):
                 container_index=container[0],
                 requesting_prop=requesting_prop
             )
-            self.container_bin[pos : pos + 48] = new_entity
+            ba_container_bin = bytearray(self.container_bin)
+            ba_container_bin[pos : pos + 48] = new_entity
+            self.container_bin = bytes(ba_container_bin)
         else:
             self.container_bin += new_entity
         self._write_binaries(new_bin=self.container_bin)
