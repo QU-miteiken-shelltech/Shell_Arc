@@ -7,4 +7,3 @@ class MSKDN_AbstEdge:
                  ) -> None:
         self.upstream : MSKDN_Metanode = upstream
         self.derivitive : MSKDN_Metanode = derivitive
-
