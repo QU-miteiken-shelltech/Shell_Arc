@@ -15,9 +15,12 @@ class MSK_Property:
         if prop_index is None and (prop_type is None or prop_name is None):
             raise ValueError("MSK_Property cannot be made from None")
 
-        self.prop_index : Optional[MSK_HexIndex] = None
-        self.prop_type : Optional[MSK_Type] = None
+        self.prop_index : Optional[MSK_HexIndex] = MSK_HexIndex(value=None)
+        self.prop_type : Optional[MSK_Type] = MSK_Type(type_index=MSK_HexIndex(value=None))
         self.prop_name : Optional[str] = None
+
+        if prop_index == MSK_HexIndex(value=None):
+            return
 
         if prop_type is not None and prop_name is not None:
             type_name = prop_type.type_name

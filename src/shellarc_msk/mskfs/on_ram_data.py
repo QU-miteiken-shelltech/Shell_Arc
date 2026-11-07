@@ -1,9 +1,11 @@
+from typing import Optional
+
 class MSKFS_OnRamData:
-    adress_bin : bytes = None
-    adress_offset_bin : bytes = None
-    field_bin : bytes = None
-    field_offset_bin : bytes = None
-    property_bin : bytes = None
-    property_offset_bin : bytes = None
-    type_bin : bytes = None
-    type_offset_bin : bytes = None
+    adress_bin : Optional[bytes] = None
+    adress_offset_bin : Optional[bytes] = None
+    field_bin : Optional[bytes] = None
+    field_offset_bin : Optional[bytes] = None
+    property_bin : Optional[bytes] = None
+    property_offset_bin : Optional[bytes] = None
+    type_bin : Optional[bytes] = None
+    type_offset_bin : Optional[bytes] = None

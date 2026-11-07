@@ -13,8 +13,11 @@ class MSK_Type:
         if type_index is None and type_name is None:
             raise ValueError("MSK_Type cannot be made from None")
 
-        self.type_index : Optional[MSK_HexIndex] = None
+        self.type_index : MSK_HexIndex = MSK_HexIndex(value=None)
         self.type_name : Optional[str] = None
+
+        if type_index == MSK_HexIndex(value=None):
+            return
 
         if type_name is not None:
             type_index = MSK_HexIndex(

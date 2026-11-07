@@ -15,9 +15,12 @@ class MSK_Adress:
         if adress_index is None and (adress_type is None or adress_value is None):
             raise ValueError("MSK_Adress cannot be made from None")
 
-        self.adress_index : Optional[MSK_HexIndex] = None
-        self.type : Optional[MSK_Type] = None
+        self.adress_index : Optional[MSK_HexIndex] = MSK_HexIndex(value=None)
+        self.type : Optional[MSK_Type] = MSK_Type(type_index=MSK_HexIndex(value=None))
         self.value : Optional[str] = None
+
+        if adress_index == MSK_HexIndex(value=None):
+            return
 
         if adress_type is not None and adress_value is not None:
             self.adress_index = MSK_HexIndex(
