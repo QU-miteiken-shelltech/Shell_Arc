@@ -8,8 +8,8 @@ class MSK_Entity:
                  ) -> None:
         if len(entity_chunk) != 48:
             raise ValueError("Requested entity exceeded binary size")
-        self.container_index : MSK_HexIndex = MSK_HexIndex(value=entity_chunk[: 16].decode("utf-8"))
-        prop_index = MSK_HexIndex(value=entity_chunk[16 : 32].decode("utf-8"))
+        self.container_index : MSK_HexIndex = MSK_HexIndex.from_bytes(entity_chunk[: 16])
+        prop_index = MSK_HexIndex.from_bytes(entity_chunk[16 : 32])
         self.prop : MSK_Property = MSK_Property(prop_index=prop_index)
-        adress_index = MSK_HexIndex(value=entity_chunk[32 :].decode("utf-8"))
+        adress_index = MSK_HexIndex.from_bytes(entity_chunk[32 :])
         self.address : MSK_Adress = MSK_Adress(adress_index=adress_index)

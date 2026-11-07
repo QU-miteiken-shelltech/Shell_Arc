@@ -18,7 +18,7 @@ class MSK_Adress:
             raise ValueError("MSK_Adress cannot be made from None")
 
         self.adress_index : Optional[MSK_HexIndex] = None
-        selftype : Optional[MSK_Type] = None
+        self.type : Optional[MSK_Type] = None
         self.value : Optional[str] = None
 
         if adress_type is not None and adress_value is not None:
@@ -52,7 +52,8 @@ class MSK_Adress:
   
 
         my_adress = self._search_target_adress(
-            target_adress_index=adress_index,
+            # when made from (type, value) the index to look for is the computed one
+            target_adress_index=self.adress_index if allow_make else adress_index,
             allow_make=allow_make
         )
         self.adress_index = my_adress[0]
@@ -65,8 +66,6 @@ class MSK_Adress:
                               allow_make: bool=False
                               ) -> Optional[tuple[MSK_HexIndex, MSK_Type, str]]:
         num_chunks = len(self.adress_offset_bin) // 8
-        if num_chunks == 0:
-            return None
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
@@ -76,9 +75,9 @@ class MSK_Adress:
             else:
                 chunk_next_offset = struct.unpack("<Q", self.adress_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_adress_index = MSK_HexIndex(value=self.adress_bin[chunk_offset : chunk_offset + 16].decode("utf-8"))
+            current_adress_index = MSK_HexIndex.from_bytes(self.adress_bin[chunk_offset : chunk_offset + 16])
             if current_adress_index == target_adress_index:
-                current_type_index = MSK_HexIndex(value=self.adress_bin[chunk_offset + 16 : chunk_offset + 32].decode("utf-8"))
+                current_type_index = MSK_HexIndex.from_bytes(self.adress_bin[chunk_offset + 16 : chunk_offset + 32])
                 current_type = MSK_Type(type_index=current_type_index)
                 current_value = self.adress_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
                 return (current_adress_index, current_type, current_value)
@@ -92,9 +91,18 @@ class MSK_Adress:
 
     def _make_new_type(self):
         new_type_bytes = self.adress_index.to_bytes() + self.type.type_index.to_bytes() + self.value.encode("utf-8")
+        # the offset file holds the START position of each record
+        self.adress_offset_bin += len(self.adress_bin).to_bytes(8, byteorder="little")
         self.adress_bin += new_type_bytes
-        self.adress_offset_bin += len(new_type_bytes).to_bytes(8, byteorder="little")
         self._write_binaries()
+
+    def __eq__(self, other):
+        if not isinstance(other, MSK_Adress):
+            return NotImplemented
+        return self.adress_index == other.adress_index
+
+    def __hash__(self):
+        return hash(self.adress_index)
 
     def _write_binaries(self):
         with open(self.adress_bin_file, "wb") as f:

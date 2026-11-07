@@ -40,8 +40,6 @@ class MSK_Field:
                       target_field_name: str
                       ) -> Optional[list[tuple[MSK_Property, MSK_Type]]]:
         num_chunks = len(self.field_offset_bin) // 8
-        if num_chunks == 0:
-            return None
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
@@ -61,14 +59,15 @@ class MSK_Field:
                 rtn = []
                 for j in range(0, field_prop_count):
                     current_start = field_prop_offset_start + j * 32
-                    current_prop_index = MSK_HexIndex(self.field_bin[current_start : current_start + 16].decode("utf-8"))
+                    current_prop_index = MSK_HexIndex.from_bytes(self.field_bin[current_start : current_start + 16])
                     current_prop = MSK_Property(prop_index=current_prop_index)
-                    current_type_index = MSK_HexIndex(self.field_bin[current_start + 16 : current_start + 32].decode("utf-8"))
+                    current_type_index = MSK_HexIndex.from_bytes(self.field_bin[current_start + 16 : current_start + 32])
                     current_type = MSK_Type(type_index=current_type_index)
                     rtn.append((current_prop, current_type))
                 return rtn
 
-        self._declear_field(field_name=self.field_name)
+        self.pos_index = num_chunks
+        self._declear_field(field_name=target_field_name)
         return []
 
     def _declear_field(self, 
@@ -78,8 +77,9 @@ class MSK_Field:
         field_name_len_int = len(field_name_bin)
         field_name_len_bin = struct.pack("<Q", field_name_len_int)
         empty_field = field_name_len_bin + field_name_bin
+        # the offset file holds the START position of each record
+        self.field_offset_bin += struct.pack("<Q", len(self.field_bin))
         self.field_bin += empty_field
-        self.field_offset_bin += struct.pack("<Q", len(empty_field))
         self._write_binaries()
 
     def def_field(self, prop: MSK_Property, type: MSK_Type) -> None:

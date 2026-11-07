@@ -52,7 +52,8 @@ class MSK_Property:
                 self.property_offset_bin = f.read()
 
         my_prop = self._search_target_prop(
-            target_prop_index= prop_index,
+            # when made from (type, name) the index to look for is the computed one
+            target_prop_index=self.prop_index if allow_make else prop_index,
             allow_make=allow_make
         )
         self.prop_index : MSK_HexIndex = my_prop[0]
@@ -64,23 +65,21 @@ class MSK_Property:
                             target_prop_index: MSK_HexIndex,
                             allow_make: bool=False
                             ) -> Optional[tuple[MSK_HexIndex, MSK_Type, str]]:
-        num_chunks = len(self.type_offset_bin) // 8
-        if num_chunks == 0:
-            return None
+        num_chunks = len(self.property_offset_bin) // 8
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
-            chunk_offset = struct.unpack("<Q", self.type_offset_bin[offset_pos : offset_pos + 8])[0]
+            chunk_offset = struct.unpack("<Q", self.property_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(self.type_bin)
+                chunk_next_offset = len(self.property_bin)
             else:
-                chunk_next_offset = struct.unpack("<Q", self.type_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+                chunk_next_offset = struct.unpack("<Q", self.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_prop_index = MSK_HexIndex(value=self.type_bin[chunk_offset : chunk_offset + 16].decode("utf-8"))
+            current_prop_index = MSK_HexIndex.from_bytes(self.property_bin[chunk_offset : chunk_offset + 16])
             if current_prop_index == target_prop_index:
-                current_type_index = MSK_HexIndex(value=self.type_bin[chunk_offset + 16 : chunk_offset + 32].decode("utf-8"))
+                current_type_index = MSK_HexIndex.from_bytes(self.property_bin[chunk_offset + 16 : chunk_offset + 32])
                 current_type = MSK_Type(type_index=current_type_index)
-                current_prop_name = self.type_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
+                current_prop_name = self.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
                 return (current_prop_index, current_type, current_prop_name)
 
         if (allow_make and 
@@ -92,9 +91,18 @@ class MSK_Property:
 
     def _make_new_type(self):
         new_type_bytes = self.prop_index.to_bytes() + self.prop_type.type_index.to_bytes() + self.prop_name.encode("utf-8")
+        # the offset file holds the START position of each record
+        self.property_offset_bin += len(self.property_bin).to_bytes(8, byteorder="little")
         self.property_bin += new_type_bytes
-        self.property_offset_bin += len(new_type_bytes).to_bytes(8, byteorder="little")
         self._write_binaries()
+
+    def __eq__(self, other):
+        if not isinstance(other, MSK_Property):
+            return NotImplemented
+        return self.prop_index == other.prop_index
+
+    def __hash__(self):
+        return hash(self.prop_index)
 
     def _write_binaries(self):
         with open(self.property_bin_file, "wb") as f:

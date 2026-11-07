@@ -40,3 +40,10 @@ class MSK_HexIndex(str):
     def to_bytes(self):
         bytes_rep = bytes.fromhex(self[2:])
         return bytes_rep
+
+    @classmethod
+    def from_bytes(cls, raw: bytes):
+        # inverse of to_bytes(): 16 raw bytes -> "0x" + 32 hex digits
+        if len(raw) != 16:
+            raise ValueError("MSK_HexIndex.from_bytes needs exactly 16 bytes")
+        return cls(value=f"0x{raw.hex()}")

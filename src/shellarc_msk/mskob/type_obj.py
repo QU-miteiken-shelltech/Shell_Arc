@@ -60,8 +60,6 @@ class MSK_Type:
                             allow_make: bool=False
                             ) -> Optional[tuple[MSK_HexIndex, str]]:
         num_chunks = len(self.type_offset_bin) // 8
-        if num_chunks == 0:
-            return None
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
@@ -71,7 +69,7 @@ class MSK_Type:
             else:
                 chunk_next_offset = struct.unpack("<Q", self.type_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_type_index = MSK_HexIndex(value=self.type_bin[chunk_offset : chunk_offset + 16].decode("utf-8"))
+            current_type_index = MSK_HexIndex.from_bytes(self.type_bin[chunk_offset : chunk_offset + 16])
             if current_type_index == target_type_index:
                 current_type_name = self.type_bin[chunk_offset + 16 : chunk_next_offset].decode("utf-8")
                 return (current_type_index, current_type_name)
@@ -84,9 +82,18 @@ class MSK_Type:
 
     def _make_new_type(self):
         new_type_bytes = self.type_index.to_bytes() + self.type_name.encode("utf-8")
+        # the offset file holds the START position of each record
+        self.type_offset_bin += len(self.type_bin).to_bytes(8, byteorder="little")
         self.type_bin += new_type_bytes
-        self.type_offset_bin += len(new_type_bytes).to_bytes(8, byteorder="little")
         self._write_binaries()
+
+    def __eq__(self, other):
+        if not isinstance(other, MSK_Type):
+            return NotImplemented
+        return self.type_index == other.type_index
+
+    def __hash__(self):
+        return hash(self.type_index)
 
     def _write_binaries(self):
         with open(self.type_bin_file, "wb") as f:

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from shellarc_msk.mskob.field_obj import MSK_Field
@@ -14,10 +15,10 @@ class MSK_ContainerCollection(MSK_Field):
                  field_name: str
                  ) -> None:
         super().__init__(field_name=field_name)
+        mskfs_pathsolver = MSKFS_PathSolver()
         self.container_bin = None
         self.field_bin_file = mskfs_pathsolver.mskfs_config / f".msk_container_{field_name}"
         if self.container_bin is None:
-            mskfs_pathsolver = MSKFS_PathSolver()
             if not self.field_bin_file.exists():
                 with open(self.field_bin_file, "wb") as f:
                     f.write(b"")
@@ -37,14 +38,18 @@ class MSK_ContainerCollection(MSK_Field):
                          ) -> list[MSK_Container]:
         rtn: list[MSK_Container] = []
 
-        container_index_list = []
+        # a container matches only if it satisfies ALL conditions (spec: Match);
+        # no conditions -> every container matches
+        satisfied: dict[MSK_HexIndex, set[int]] = {}
         for entity in self.entities_iter():
-            for condition in conditions:
-                if entity.prop != conditions[0] or entity.address != condition[1]:
-                    continue
-                container_index_list.append(entity.container_index)
-            if len(container_index_list) >= max_count:
-                break
+            hits = satisfied.setdefault(entity.container_index, set())
+            for i, condition in enumerate(conditions):
+                if entity.prop == condition[0] and entity.address == condition[1]:
+                    hits.add(i)
+
+        container_index_list = [
+            ci for ci, hits in satisfied.items() if len(hits) == len(conditions)
+        ][:max_count]
 
         for container_index in container_index_list:
             from shellarc_msk.mskob.container_obj import MSK_Container
@@ -100,10 +105,10 @@ class MSK_ContainerCollection(MSK_Field):
             self.container_bin += new_entity
         else:
             self.container_bin = self.container_bin[: pos] + new_entity + self.container_bin[pos + 48 :]
-        self._write_binaries(new_bin=self.container_bin)
+        self._write_container_binaries(new_bin=self.container_bin)
 
-    def _write_binaries(self,
-                        new_bin: bytes):
+    def _write_container_binaries(self,
+                                  new_bin: bytes):
         with open(self.field_bin_file, "wb") as f:
             f.write(new_bin)
             
