@@ -62,17 +62,6 @@ class MSK_ContainerCollection(MSK_Field):
             container_index=container_index
         )
 
-    def request_adress(self,
-                       container_index: MSK_HexIndex,
-                       requesting_prop: MSK_Property
-                       ) -> MSK_Adress:
-        for entity in self.entities_iter():
-            if (entity.container_index == container_index and
-                entity.prop == requesting_prop):
-                return entity.address
-
-        return MSK_Adress(adress_index=MSK_HexIndex(value=None))
-
     def request_position(self,
                          container_index: MSK_HexIndex,
                          requesting_prop: MSK_Property
