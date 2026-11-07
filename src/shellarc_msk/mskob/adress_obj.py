@@ -1,14 +1,12 @@
 import struct
 from typing import Optional
 
+from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type
 
 class MSK_Adress:
-    adress_bin = None
-    adress_offset_bin = None
-
     def __init__(self,
                  adress_index: MSK_HexIndex | None=None,
                  adress_type: MSK_Type | None=None,
@@ -38,17 +36,17 @@ class MSK_Adress:
         if not self.adress_bin_file.exists():
             with open(self.adress_bin_file, "wb") as f:
                 f.write(b"")
-        if self.adress_bin is None:
+        if MSKFS_OnRamData.adress_bin is None:
             with open(self.adress_bin_file, "rb") as f:
-                self.adress_bin = f.read()
+                MSKFS_OnRamData.adress_bin = f.read()
 
         self.adress_offset_file = mskfs_pathsolver.mskfs_config / ".msk_adress_offset"
         if not self.adress_offset_file.exists():
             with open(self.adress_offset_file, "wb") as f:
                 f.write(b"")
-        if self.adress_offset_bin is None:
+        if MSKFS_OnRamData.adress_offset_bin is None:
             with open(self.adress_offset_file, "rb") as f:
-                self.adress_offset_bin = f.read()
+                MSKFS_OnRamData.adress_offset_bin = f.read()
   
 
         my_adress = self._search_target_adress(
@@ -65,21 +63,21 @@ class MSK_Adress:
                               target_adress_index: MSK_HexIndex,
                               allow_make: bool=False
                               ) -> Optional[tuple[MSK_HexIndex, MSK_Type, str]]:
-        num_chunks = len(self.adress_offset_bin) // 8
+        num_chunks = len(MSKFS_OnRamData.adress_offset_bin) // 8
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
-            chunk_offset = struct.unpack("<Q", self.adress_offset_bin[offset_pos : offset_pos + 8])[0]
+            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(self.adress_bin)
+                chunk_next_offset = len(MSKFS_OnRamData.adress_bin)
             else:
-                chunk_next_offset = struct.unpack("<Q", self.adress_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+                chunk_next_offset = struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_adress_index = MSK_HexIndex.from_bytes(self.adress_bin[chunk_offset : chunk_offset + 16])
+            current_adress_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.adress_bin[chunk_offset : chunk_offset + 16])
             if current_adress_index == target_adress_index:
-                current_type_index = MSK_HexIndex.from_bytes(self.adress_bin[chunk_offset + 16 : chunk_offset + 32])
+                current_type_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.adress_bin[chunk_offset + 16 : chunk_offset + 32])
                 current_type = MSK_Type(type_index=current_type_index)
-                current_value = self.adress_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
+                current_value = MSKFS_OnRamData.adress_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
                 return (current_adress_index, current_type, current_value)
 
         if (allow_make and 
@@ -92,8 +90,8 @@ class MSK_Adress:
     def _make_new_type(self):
         new_type_bytes = self.adress_index.to_bytes() + self.type.type_index.to_bytes() + self.value.encode("utf-8")
         # the offset file holds the START position of each record
-        self.adress_offset_bin += len(self.adress_bin).to_bytes(8, byteorder="little")
-        self.adress_bin += new_type_bytes
+        MSKFS_OnRamData.adress_offset_bin += len(MSKFS_OnRamData.adress_bin).to_bytes(8, byteorder="little")
+        MSKFS_OnRamData.adress_bin += new_type_bytes
         self._write_binaries()
 
     def __eq__(self, other):
@@ -106,6 +104,6 @@ class MSK_Adress:
 
     def _write_binaries(self):
         with open(self.adress_bin_file, "wb") as f:
-            f.write(self.adress_bin)
+            f.write(MSKFS_OnRamData.adress_bin)
         with open(self.adress_offset_file, "wb") as f:
-            f.write(self.adress_offset_bin)
+            f.write(MSKFS_OnRamData.adress_offset_bin)

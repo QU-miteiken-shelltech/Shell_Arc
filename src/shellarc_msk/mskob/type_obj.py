@@ -1,13 +1,11 @@
 import struct 
 from typing import Optional
 
+from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 
 class MSK_Type:
-    type_bin = None
-    type_offset_bin = None
-
     def __init__(self,
                  type_index: MSK_HexIndex | None=None,
                  type_name: str | None=None
@@ -35,17 +33,17 @@ class MSK_Type:
         if not self.type_bin_file.exists():
             with open(self.type_bin_file, "wb") as f:
                 f.write(b"")
-        if self.type_bin is None:
+        if MSKFS_OnRamData.type_bin is None:
             with open(self.type_bin_file, "rb") as f:
-                self.type_bin = f.read()
+                MSKFS_OnRamData.type_bin = f.read()
 
         self.type_offset_file = mskfs_pathsolver.mskfs_config / ".msk_type_offset"
         if not self.type_offset_file.exists():
             with open(self.type_offset_file, "wb") as f:
                 f.write(b"")
-        if self.type_offset_bin is None:
+        if MSKFS_OnRamData.type_offset_bin is None:
             with open(self.type_offset_file, "rb") as f:
-                self.type_offset_bin = f.read()
+                MSKFS_OnRamData.type_offset_bin = f.read()
 
         my_type = self._search_target_type(
             target_type_index=type_index,
@@ -59,19 +57,19 @@ class MSK_Type:
                             target_type_index: MSK_HexIndex,
                             allow_make: bool=False
                             ) -> Optional[tuple[MSK_HexIndex, str]]:
-        num_chunks = len(self.type_offset_bin) // 8
+        num_chunks = len(MSKFS_OnRamData.type_offset_bin) // 8
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
-            chunk_offset = struct.unpack("<Q", self.type_offset_bin[offset_pos : offset_pos + 8])[0]
+            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.type_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(self.type_bin)
+                chunk_next_offset = len(MSKFS_OnRamData.type_bin)
             else:
-                chunk_next_offset = struct.unpack("<Q", self.type_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+                chunk_next_offset = struct.unpack("<Q", MSKFS_OnRamData.type_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_type_index = MSK_HexIndex.from_bytes(self.type_bin[chunk_offset : chunk_offset + 16])
+            current_type_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.type_bin[chunk_offset : chunk_offset + 16])
             if current_type_index == target_type_index:
-                current_type_name = self.type_bin[chunk_offset + 16 : chunk_next_offset].decode("utf-8")
+                current_type_name = MSKFS_OnRamData.type_bin[chunk_offset + 16 : chunk_next_offset].decode("utf-8")
                 return (current_type_index, current_type_name)
 
         if allow_make and (self.type_index is not None and self.type_name is not None):
@@ -82,9 +80,8 @@ class MSK_Type:
 
     def _make_new_type(self):
         new_type_bytes = self.type_index.to_bytes() + self.type_name.encode("utf-8")
-        # the offset file holds the START position of each record
-        self.type_offset_bin += len(self.type_bin).to_bytes(8, byteorder="little")
-        self.type_bin += new_type_bytes
+        MSKFS_OnRamData.type_offset_bin += len(MSKFS_OnRamData.type_bin).to_bytes(8, byteorder="little")
+        MSKFS_OnRamData.type_bin += new_type_bytes
         self._write_binaries()
 
     def __eq__(self, other):
@@ -97,6 +94,6 @@ class MSK_Type:
 
     def _write_binaries(self):
         with open(self.type_bin_file, "wb") as f:
-            f.write(self.type_bin)
+            f.write(MSKFS_OnRamData.type_bin)
         with open(self.type_offset_file, "wb") as f:
-            f.write(self.type_offset_bin)
+            f.write(MSKFS_OnRamData.type_offset_bin)
