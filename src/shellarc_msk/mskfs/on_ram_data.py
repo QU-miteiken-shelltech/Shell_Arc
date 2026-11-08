@@ -3,15 +3,20 @@ import os
 import atexit
 from typing import Optional
 
+from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
+
 class MSKFS_OnRamData:
-    adress_bin : Optional[bytes] = None
-    adress_offset_bin : Optional[bytes] = None
+    # adress / property / type are append-only: kept as bytearray so that += does not copy
+    adress_bin : Optional[bytearray] = None
+    adress_offset_bin : Optional[bytearray] = None
     field_bin : Optional[bytes] = None
     field_offset_bin : Optional[bytes] = None
-    property_bin : Optional[bytes] = None
-    property_offset_bin : Optional[bytes] = None
-    type_bin : Optional[bytes] = None
-    type_offset_bin : Optional[bytes] = None
+    property_bin : Optional[bytearray] = None
+    property_offset_bin : Optional[bytearray] = None
+    type_bin : Optional[bytearray] = None
+    type_offset_bin : Optional[bytearray] = None
+    # container index -> row numbers (48-byte rows) in that container's file
+    container_index_table : dict[MSK_HexIndex, list[int]] = {}
 
 
 class MSKFS_OnRamMmap:

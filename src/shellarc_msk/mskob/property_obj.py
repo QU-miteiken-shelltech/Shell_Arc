@@ -42,7 +42,7 @@ class MSK_Property:
                 f.write(b"")
         if MSKFS_OnRamData.property_bin is None:
             with open(self.property_bin_file, "rb") as f:
-                MSKFS_OnRamData.property_bin = f.read()
+                MSKFS_OnRamData.property_bin = bytearray(f.read())
 
         self.property_offset_file = mskfs_pathsolver.mskfs_config / ".msk_property_offset"
         if not self.property_offset_file.exists():
@@ -50,7 +50,7 @@ class MSK_Property:
                 f.write(b"")
         if MSKFS_OnRamData.property_offset_bin is None:
             with open(self.property_offset_file, "rb") as f:
-                MSKFS_OnRamData.property_offset_bin = f.read()
+                MSKFS_OnRamData.property_offset_bin = bytearray(f.read())
 
         my_prop = self._search_target_prop(
             # when made from (type, name) the index to look for is the computed one
@@ -93,9 +93,10 @@ class MSK_Property:
     def _make_new_type(self):
         new_type_bytes = self.prop_index.to_bytes() + self.prop_type.type_index.to_bytes() + self.prop_name.encode("utf-8")
         # the offset file holds the START position of each record
-        MSKFS_OnRamData.property_offset_bin += len(MSKFS_OnRamData.property_bin).to_bytes(8, byteorder="little")
+        new_offset_bytes = len(MSKFS_OnRamData.property_bin).to_bytes(8, byteorder="little")
+        MSKFS_OnRamData.property_offset_bin += new_offset_bytes
         MSKFS_OnRamData.property_bin += new_type_bytes
-        self._write_binaries()
+        self._append_binaries(new_type_bytes, new_offset_bytes)
 
     def __eq__(self, other):
         if not isinstance(other, MSK_Property):
@@ -105,8 +106,9 @@ class MSK_Property:
     def __hash__(self):
         return hash(self.prop_index)
 
-    def _write_binaries(self):
-        with open(self.property_bin_file, "wb") as f:
-            f.write(MSKFS_OnRamData.property_bin)
-        with open(self.property_offset_file, "wb") as f:
-            f.write(MSKFS_OnRamData.property_offset_bin)
+    def _append_binaries(self, record_bytes: bytes, offset_bytes: bytes):
+        # append only the new record (the files are never rewritten)
+        with open(self.property_bin_file, "ab") as f:
+            f.write(record_bytes)
+        with open(self.property_offset_file, "ab") as f:
+            f.write(offset_bytes)

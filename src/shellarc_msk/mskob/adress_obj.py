@@ -41,7 +41,7 @@ class MSK_Adress:
                 f.write(b"")
         if MSKFS_OnRamData.adress_bin is None:
             with open(self.adress_bin_file, "rb") as f:
-                MSKFS_OnRamData.adress_bin = f.read()
+                MSKFS_OnRamData.adress_bin = bytearray(f.read())
 
         self.adress_offset_file = mskfs_pathsolver.mskfs_config / ".msk_adress_offset"
         if not self.adress_offset_file.exists():
@@ -49,7 +49,7 @@ class MSK_Adress:
                 f.write(b"")
         if MSKFS_OnRamData.adress_offset_bin is None:
             with open(self.adress_offset_file, "rb") as f:
-                MSKFS_OnRamData.adress_offset_bin = f.read()
+                MSKFS_OnRamData.adress_offset_bin = bytearray(f.read())
   
 
         my_adress = self._search_target_adress(
@@ -93,9 +93,10 @@ class MSK_Adress:
     def _make_new_type(self):
         new_type_bytes = self.adress_index.to_bytes() + self.type.type_index.to_bytes() + self.value.encode("utf-8")
         # the offset file holds the START position of each record
-        MSKFS_OnRamData.adress_offset_bin += len(MSKFS_OnRamData.adress_bin).to_bytes(8, byteorder="little")
+        new_offset_bytes = len(MSKFS_OnRamData.adress_bin).to_bytes(8, byteorder="little")
+        MSKFS_OnRamData.adress_offset_bin += new_offset_bytes
         MSKFS_OnRamData.adress_bin += new_type_bytes
-        self._write_binaries()
+        self._append_binaries(new_type_bytes, new_offset_bytes)
 
     def __eq__(self, other):
         if not isinstance(other, MSK_Adress):
@@ -105,8 +106,9 @@ class MSK_Adress:
     def __hash__(self):
         return hash(self.adress_index)
 
-    def _write_binaries(self):
-        with open(self.adress_bin_file, "wb") as f:
-            f.write(MSKFS_OnRamData.adress_bin)
-        with open(self.adress_offset_file, "wb") as f:
-            f.write(MSKFS_OnRamData.adress_offset_bin)
+    def _append_binaries(self, record_bytes: bytes, offset_bytes: bytes):
+        # append only the new record (the files are never rewritten)
+        with open(self.adress_bin_file, "ab") as f:
+            f.write(record_bytes)
+        with open(self.adress_offset_file, "ab") as f:
+            f.write(offset_bytes)

@@ -38,7 +38,7 @@ class MSK_Type:
                 f.write(b"")
         if MSKFS_OnRamData.type_bin is None:
             with open(self.type_bin_file, "rb") as f:
-                MSKFS_OnRamData.type_bin = f.read()
+                MSKFS_OnRamData.type_bin = bytearray(f.read())
 
         self.type_offset_file = mskfs_pathsolver.mskfs_config / ".msk_type_offset"
         if not self.type_offset_file.exists():
@@ -46,7 +46,7 @@ class MSK_Type:
                 f.write(b"")
         if MSKFS_OnRamData.type_offset_bin is None:
             with open(self.type_offset_file, "rb") as f:
-                MSKFS_OnRamData.type_offset_bin = f.read()
+                MSKFS_OnRamData.type_offset_bin = bytearray(f.read())
 
         my_type = self._search_target_type(
             target_type_index=type_index,
@@ -83,9 +83,10 @@ class MSK_Type:
 
     def _make_new_type(self):
         new_type_bytes = self.type_index.to_bytes() + self.type_name.encode("utf-8")
-        MSKFS_OnRamData.type_offset_bin += len(MSKFS_OnRamData.type_bin).to_bytes(8, byteorder="little")
+        new_offset_bytes = len(MSKFS_OnRamData.type_bin).to_bytes(8, byteorder="little")
+        MSKFS_OnRamData.type_offset_bin += new_offset_bytes
         MSKFS_OnRamData.type_bin += new_type_bytes
-        self._write_binaries()
+        self._append_binaries(new_type_bytes, new_offset_bytes)
 
     def __eq__(self, other):
         if not isinstance(other, MSK_Type):
@@ -95,8 +96,9 @@ class MSK_Type:
     def __hash__(self):
         return hash(self.type_index)
 
-    def _write_binaries(self):
-        with open(self.type_bin_file, "wb") as f:
-            f.write(MSKFS_OnRamData.type_bin)
-        with open(self.type_offset_file, "wb") as f:
-            f.write(MSKFS_OnRamData.type_offset_bin)
+    def _append_binaries(self, record_bytes: bytes, offset_bytes: bytes):
+        # append only the new record (the files are never rewritten)
+        with open(self.type_bin_file, "ab") as f:
+            f.write(record_bytes)
+        with open(self.type_offset_file, "ab") as f:
+            f.write(offset_bytes)

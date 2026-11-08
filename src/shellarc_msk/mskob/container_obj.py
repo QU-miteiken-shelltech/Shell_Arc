@@ -42,20 +42,9 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
     def _find_from_mskindex(self,
                             container_index: MSK_HexIndex
                             ) -> list[MSK_Entity]:
-        entity_count = len(self.container_bin) // 48
-        unit_comparer = (
-            container_index.to_bytes() +
-            (b'\x00' * 32) 
-        )
-        found_offset_counts = self.masking_comparison(
-            reversed_container_bin=bytes(~b & 0xFF for b in bytes(self.container_bin)),
-            unit_mask=(b'\xff' * 16) + (b'\x00' * 32),
-            unit_comparer=unit_comparer,
-            entity_count=entity_count,
-            compare_range=(0, 16)
-        )
+        # cached in MSKFS_OnRamData.container_index_table; scanned (and cached) only on a miss
         return self._find_from_offset_count(
-            offset_counts=found_offset_counts
+            offset_counts=self._rows_of_container(container_index)
         )
 
     def append(self, object):
