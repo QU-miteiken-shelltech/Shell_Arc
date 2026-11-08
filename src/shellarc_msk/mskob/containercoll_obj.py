@@ -68,11 +68,11 @@ class MSK_ContainerCollection(MSK_Field):
         )
         result_bin = bytes(
             a == b for a, b
-            in zip(comparer_bin, self.container_bin)
+            in zip(comparer_bin, bytes(self.container_bin))  # mmap items are bytes, not int
         )
 
-        target_pattern = b'\xff' * compare_range_size
-        mv = memoryview(self.container_bin)
+        target_pattern = b'\x01' * compare_range_size
+        mv = memoryview(result_bin)
         found_indices = []
         for n in range(0, entity_count):
             pos = n * 48 + compare_range[0]
@@ -86,43 +86,52 @@ class MSK_ContainerCollection(MSK_Field):
                          conditions: list[tuple[MSK_Property, MSK_Adress]],
                          max_count: int=1
                          ) -> list[MSK_Container]:
-        entity_count = len(self.container_bin) // 48
-        reversed_container_bin = bytes(~b & 0xFF for b in self.container_bin)
+        # local import: container_obj imports this module (circular)
+        from shellarc_msk.mskob.container_obj import MSK_Container
 
-        found_indices = []
+        entity_count = len(self.container_bin) // 48
+        # iterating an mmap yields 1-byte bytes objects, not ints: convert first
+        reversed_container_bin = bytes(~b & 0xFF for b in bytes(self.container_bin))
+
+        # all container indices in order of first appearance
+        all_ids: list[MSK_HexIndex] = []
+        for i in range(entity_count):
+            idx = MSK_HexIndex.from_bytes(bytes(self.container_bin[i * 48 : i * 48 + 16]))
+            if idx not in all_ids:
+                all_ids.append(idx)
+
+        # a container matches iff EVERY condition (prop, address) is held by one of its rows (AND)
+        matched_ids = None
         for condition in conditions:
             unit_comparer = (
                 (b'\x00' * 16) +
-                condition[0].prop_index.to_bytes() + 
+                condition[0].prop_index.to_bytes() +
                 condition[1].adress_index.to_bytes()
             )
-            found_indices.extend(
-                self.masking_comparison(
-                    reversed_container_bin=reversed_container_bin,
-                    unit_mask=(b'\x00' * 16) + (b'\x01' * 32),
-                    unit_comparer=unit_comparer,
-                    entity_count=entity_count,
-                    compare_range=(16, 48)
-                )
+            rows = self.masking_comparison(
+                reversed_container_bin=reversed_container_bin,
+                unit_mask=(b'\x00' * 16) + (b'\xff' * 32),
+                unit_comparer=unit_comparer,
+                entity_count=entity_count,
+                compare_range=(16, 48)
             )
+            ids = {
+                MSK_HexIndex.from_bytes(bytes(self.container_bin[r * 48 : r * 48 + 16]))
+                for r in rows
+            }
+            matched_ids = ids if matched_ids is None else (matched_ids & ids)
 
-        indices_offsetcount_dict : dict[MSK_HexIndex, list[int]] = {}
-        for i in range(0, entity_count):
-            idx = MSK_HexIndex(self.container_bin[i * 48 : i * 48 + 16])
-            if idx not in indices_offsetcount_dict:
-                indices_offsetcount_dict[idx] = [i]
-            else:
-                indices_offsetcount_dict[idx].append(i)
+        # no condition: every container matches
+        if matched_ids is not None:
+            all_ids = [i for i in all_ids if i in matched_ids]
 
-        rtn = [
+        return [
             MSK_Container(
                 field_name=self.field_name,
-                container_offset_counts=v
+                container_index=idx
             )
-            for _,v in indices_offsetcount_dict.items()
+            for idx in all_ids[: max_count]
         ]
-
-        return rtn[: max_count]
 
     def request_container(self,
                           container_index: MSK_HexIndex
@@ -168,11 +177,20 @@ class MSK_ContainerCollection(MSK_Field):
             requesting_prop=prop
         )
         if pos == -1:
-            self.container_bin += new_entity
+            # an mmap cannot grow (or be concatenated): append to the file, then map it again
+            with open(self.field_bin_file, "ab") as f:
+                f.write(new_entity)
+            MSKFS_OnRamMmap.register(
+                field_name=self.field_name,
+                filepath=self.field_bin_file
+            )
+            self.container_bin = MSKFS_OnRamMmap.container_bins[self.field_name]
         else:
-            self.container_bin = self.container_bin[: pos] + new_entity + self.container_bin[pos + 48 :]
-        self._write_container_binaries()
+            # same-size in-place overwrite keeps the mmap
+            self.container_bin[pos : pos + 48] = new_entity
+            self._write_container_binaries()
 
     def _write_container_binaries(self):
-        self.container_bin.flush()
+        if hasattr(self.container_bin, "flush"):
+            self.container_bin.flush()
             

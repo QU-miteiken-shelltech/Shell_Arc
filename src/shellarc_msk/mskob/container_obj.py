@@ -48,8 +48,8 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
             (b'\x00' * 32) 
         )
         found_offset_counts = self.masking_comparison(
-            reversed_container_bin=bytes(~b & 0xFF for b in self.container_bin),
-            unit_mask=(b'\x01' * 16) + (b'\x00' * 32),
+            reversed_container_bin=bytes(~b & 0xFF for b in bytes(self.container_bin)),
+            unit_mask=(b'\xff' * 16) + (b'\x00' * 32),
             unit_comparer=unit_comparer,
             entity_count=entity_count,
             compare_range=(0, 16)
@@ -74,9 +74,16 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
 
     def request_entity(self,
                        requesting_prop: MSK_Property
-                       ) -> MSK_Adress:
+                       ) -> MSK_Entity:
         for entity in self:
             if entity.prop == requesting_prop:
                 return entity
 
-        return MSK_Adress(adress_index=MSK_HexIndex(value=None))
+        # absent property reads as null: return an Entity holding the null address
+        null = MSK_HexIndex(value=None)
+        container_index = self.container_index if self.container_index is not None else null
+        return MSK_Entity(
+            entity_chunk=(container_index.to_bytes() +
+                          requesting_prop.prop_index.to_bytes() +
+                          null.to_bytes())
+        )
