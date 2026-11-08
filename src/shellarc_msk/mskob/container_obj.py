@@ -1,4 +1,5 @@
 from collections import UserList
+from typing import Optional
 
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.entity_obj import MSK_Entity
@@ -9,15 +10,55 @@ from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
     def __init__(self,
                  field_name: str,
-                 container_index: MSK_HexIndex
+                 container_index: Optional[MSK_HexIndex]=None,
+                 container_offset_counts: Optional[list[int]]=None
                  ) -> None:
         MSK_ContainerCollection.__init__(self, field_name=field_name)
-        member_entities = [
-            entity for entity in self.entities_iter() 
-            if entity.container_index == container_index
-        ]
+        if container_offset_counts is not None:
+            member_entities = self._find_from_offset_count(
+                offset_counts=container_offset_counts
+            )
+        elif container_index is not None:
+            member_entities = self._find_from_mskindex(
+                container_index=container_index
+            )
+        else:
+            raise ValueError("Container cannot be built from None")
         super().__init__(member_entities)
         self.container_index = container_index
+
+    def _find_from_offset_count(self,
+                                offset_counts: list[int]
+                                ) -> list[MSK_Entity]:
+        entities = []
+        for c in offset_counts:
+            entities.append(
+                MSK_Entity(
+                    entity_chunk=self.container_bin[c * 48 : (c + 1) * 48]
+                )
+            )
+        return entities
+
+    def _find_from_mskindex(self,
+                            container_index: MSK_HexIndex
+                            ) -> list[MSK_Entity]:
+        entity_count = len(self.container_bin) // 48
+        unit_comparer = (
+            container_index.to_bytes() +
+            (b'\x00' * 32) 
+        )
+        found_offset_counts = self.masking_comparison(
+            reversed_container_bin=bytes(~b & 0xFF for b in self.container_bin),
+            unit_mask=(b'\x01' * 16) + (b'\x00' * 32),
+            unit_comparer=unit_comparer,
+            entity_count=entity_count,
+            compare_range=(0, 16)
+        )
+        return self._find_from_offset_count(
+            offset_counts=found_offset_counts
+        )
+
+
 
     def append(self, object):
         if not isinstance(object, MSK_Entity):

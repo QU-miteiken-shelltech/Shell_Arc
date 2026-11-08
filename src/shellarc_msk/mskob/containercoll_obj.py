@@ -25,38 +25,98 @@ class MSK_ContainerCollection(MSK_Field):
             with open(self.field_bin_file, "rb") as f:
                 self.container_bin = f.read()
 
-    def entities_iter(self):
+    def chunks_iter(self):
         entity_count = len(self.container_bin) // 48
         for i in range(entity_count):
             start = i * 48
             chunk = self.container_bin[start : start + 48]
+            yield chunk
+
+    def entities_iter(self):
+        for chunk in self.chunks_iter():
             yield MSK_Entity(entity_chunk=chunk)
+
+    def masking_comparison(self,
+                           reversed_container_bin: bytes,
+                           unit_mask: bytes,
+                           unit_comparer: bytes,
+                           entity_count: int, 
+                           compare_range: tuple[int, int]
+                           ) -> list[int]:
+        mask_bin = unit_mask * entity_count
+        comparer_raw_bin = unit_comparer * entity_count
+        if not (len(mask_bin) 
+            == len(comparer_raw_bin) 
+            == len(reversed_container_bin) 
+            == len(self.container_bin)):
+            raise ValueError("All comparison masks must be of same size")
+
+        compare_range_size = compare_range[1] - compare_range[0]
+        if compare_range[0] < 0 or compare_range[1] > 48:
+            raise ValueError("Compare range out of range 48")
+
+        comparer_bin = bytes(
+            (ai & ~mi | bi & mi) & 0xFF 
+            for ai, mi, bi 
+            in zip(reversed_container_bin, mask_bin, comparer_raw_bin)
+        )
+        result_bin = bytes(
+            a == b for a, b
+            in zip(comparer_bin, self.container_bin)
+        )
+
+        target_pattern = b'\xff' * compare_range_size
+        mv = memoryview(self.container_bin)
+        found_indices = []
+        for n in range(0, entity_count):
+            pos = n * 48 + compare_range[0]
+            if mv[pos : pos + compare_range_size] == target_pattern:
+                found_indices.append(n)
+
+        return found_indices
+
 
     def filter_container(self,
                          conditions: list[tuple[MSK_Property, MSK_Adress]],
                          max_count: int=1
                          ) -> list[MSK_Container]:
-        rtn: list[MSK_Container] = []
+        entity_count = len(self.container_bin) // 48
+        reversed_container_bin = bytes(~b & 0xFF for b in self.container_bin)
 
-        # a container matches only if it satisfies ALL conditions (spec: Match);
-        # no conditions -> every container matches
-        satisfied: dict[MSK_HexIndex, set[int]] = {}
-        for entity in self.entities_iter():
-            hits = satisfied.setdefault(entity.container_index, set())
-            for i, condition in enumerate(conditions):
-                if entity.prop == condition[0] and entity.address == condition[1]:
-                    hits.add(i)
-
-        container_index_list = [
-            ci for ci, hits in satisfied.items() if len(hits) == len(conditions)
-        ][:max_count]
-
-        for container_index in container_index_list:
-            from shellarc_msk.mskob.container_obj import MSK_Container
-            rtn.append(
-                self.request_container(container_index=container_index)
+        found_indices = []
+        for condition in conditions:
+            unit_comparer = (
+                (b'\x00' * 16) +
+                condition[0].prop_index.to_bytes() + 
+                condition[1].adress_index.to_bytes()
             )
-        return rtn
+            found_indices.extend(
+                self.masking_comparison(
+                    reversed_container_bin=reversed_container_bin,
+                    unit_mask=(b'\x00' * 16) + (b'\x01' * 32),
+                    unit_comparer=unit_comparer,
+                    entity_count=entity_count,
+                    compare_range=(16, 48)
+                )
+            )
+
+        indices_offsetcount_dict : dict[MSK_HexIndex, list[int]] = {}
+        for i in range(0, entity_count):
+            idx = MSK_HexIndex(self.container_bin[i * 48 : i * 48 + 16])
+            if idx not in indices_offsetcount_dict:
+                indices_offsetcount_dict[idx] = [i]
+            else:
+                indices_offsetcount_dict[idx].append(i)
+
+        rtn = [
+            MSK_Container(
+                field_name=self.field_name,
+                container_offset_counts=v
+            )
+            for _,v in indices_offsetcount_dict.items()
+        ]
+
+        return rtn[: max_count]
 
     def request_container(self,
                           container_index: MSK_HexIndex
