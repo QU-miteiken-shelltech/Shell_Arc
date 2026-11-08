@@ -58,8 +58,6 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
             offset_counts=found_offset_counts
         )
 
-
-
     def append(self, object):
         if not isinstance(object, MSK_Entity):
             return

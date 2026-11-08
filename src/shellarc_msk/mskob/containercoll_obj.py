@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import mmap
 
+from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamMmap
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
@@ -15,15 +17,19 @@ class MSK_ContainerCollection(MSK_Field):
                  field_name: str
                  ) -> None:
         super().__init__(field_name=field_name)
+
         mskfs_pathsolver = MSKFS_PathSolver()
-        self.container_bin = None
         self.field_bin_file = mskfs_pathsolver.mskfs_config / f".msk_container_{field_name}"
-        if self.container_bin is None:
+        if (MSKFS_OnRamMmap.container_bins is None or
+            field_name not in MSKFS_OnRamMmap.container_bins):
             if not self.field_bin_file.exists():
                 with open(self.field_bin_file, "wb") as f:
                     f.write(b"")
-            with open(self.field_bin_file, "rb") as f:
-                self.container_bin = f.read()
+            MSKFS_OnRamMmap.register(
+                field_name=field_name,
+                filepath=self.field_bin_file
+            )
+        self.container_bin = MSKFS_OnRamMmap.container_bins[field_name]
 
     def chunks_iter(self):
         entity_count = len(self.container_bin) // 48
@@ -165,10 +171,8 @@ class MSK_ContainerCollection(MSK_Field):
             self.container_bin += new_entity
         else:
             self.container_bin = self.container_bin[: pos] + new_entity + self.container_bin[pos + 48 :]
-        self._write_container_binaries(new_bin=self.container_bin)
+        self._write_container_binaries()
 
-    def _write_container_binaries(self,
-                                  new_bin: bytes):
-        with open(self.field_bin_file, "wb") as f:
-            f.write(new_bin)
+    def _write_container_binaries(self):
+        self.container_bin.flush()
             
