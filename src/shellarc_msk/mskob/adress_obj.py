@@ -74,25 +74,25 @@ class MSK_Adress:
         num_pages = len(MSKFS_OnRamData.adress_offset_bin) // (120000 * 8)
 
         adress_index_int = int(target_adress_index, 0)
+        prim_offset_pos = adress_index_int % (120000 - 1)
         do_hit = False
-        # Every page is an independent open-addressing table (linear probing, wrapping around).
-        # A slot holds (record offset in adress_bin + 1); 0 means "empty" and ends the probe of that page.
-        for page in range(0, num_pages):
-            prim_offset_pos = adress_index_int % (120000 - 1)
-            for _ in range(0, 120000 - 1):
+        # The probe does not stop at an empty slot (original method): for every position, every page
+        # is looked at. The positions wrap around the page end; one full cycle at most.
+        for _ in range(0, 120000 - 1):
+            for page in range(0, num_pages):
                 offset_start = page * (120000 * 8) + 8
                 offset_pos = offset_start + prim_offset_pos * 8
                 slot = struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8])[0]
                 if slot == 0:
-                    break
-                chunk_offset = slot - 1
+                    continue  # empty slot: not the target, and there is no record to read
+                chunk_offset = slot - 1  # a slot holds (record offset + 1)
                 current_adress_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.adress_bin[chunk_offset : chunk_offset + 16])
                 if current_adress_index == target_adress_index:
                     do_hit = True
                     break
-                prim_offset_pos = (prim_offset_pos + 1) % (120000 - 1)
             if do_hit:
                 break
+            prim_offset_pos = (prim_offset_pos + 1) % (120000 - 1)
 
         if do_hit:
             # record = index(16) + type(16) + value length(8, "<Q") + value
@@ -117,33 +117,41 @@ class MSK_Adress:
         # a slot holds (record offset + 1), so that 0 can mean "empty slot"
         new_offset_bytes = (len(MSKFS_OnRamData.adress_bin) + 1).to_bytes(8, byteorder="little")
 
-        # New records go into the newest page. The first 8 bytes of a page count its filled slots.
+        # The first 8 bytes of a page count its filled slots.
         num_pages = len(MSKFS_OnRamData.adress_offset_bin) // (120000 * 8)
-        page_start = (num_pages - 1) * (120000 * 8)
-        filled_num = struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[page_start : page_start + 8])[0]
-        if filled_num >= 80000:
+        filled_nums = [
+            struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[page * (120000 * 8) : page * (120000 * 8) + 8])[0]
+            for page in range(0, num_pages)
+        ]
+        # add a page when EVERY page has reached the limit (with max() a page would be added per insert)
+        if min(filled_nums) >= 80000:
             MSKFS_OnRamData.adress_offset_bin += b'\x00' * (120000 * 8)
             num_pages += 1
-            page_start += 120000 * 8
-            filled_num = 0
+            filled_nums.append(0)
 
         adress_index_int = int(self.adress_index, 0)
         prim_offset_pos = adress_index_int % (120000 - 1)
-        for _ in range(0, 120000 - 1):
-            offset_start = page_start + 8
-            offset_pos = offset_start + prim_offset_pos * 8
-            chunk_offset_bytes = MSKFS_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8]
-            if chunk_offset_bytes == b'\x00' * 8:
+        is_empty = False
+        for _ in range(0, 120000 - 1):  # positions wrap around the page end; one full cycle at most
+            for page in range(0, num_pages):
+                offset_start = page * (120000 * 8) + 8
+                offset_pos = offset_start + prim_offset_pos * 8
+                chunk_offset_bytes = MSKFS_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8]
+                if chunk_offset_bytes == b'\x00' * 8:
+                    is_empty = True
+                    break
+            if is_empty:
                 break
             prim_offset_pos = (prim_offset_pos + 1) % (120000 - 1)
-        else:
-            raise RuntimeError("adress table page is full")
+        if not is_empty:
+            raise RuntimeError("adress table is full")
 
         MSKFS_OnRamData.adress_bin += new_adress_bytes
         MSKFS_OnRamData.adress_offset_bin = (MSKFS_OnRamData.adress_offset_bin[: offset_pos] +
                                              new_offset_bytes +
                                              MSKFS_OnRamData.adress_offset_bin[offset_pos + 8 :])
-        MSKFS_OnRamData.adress_offset_bin[page_start : page_start + 8] = struct.pack("<Q", filled_num + 1)
+        page_start = page * (120000 * 8)
+        MSKFS_OnRamData.adress_offset_bin[page_start : page_start + 8] = struct.pack("<Q", filled_nums[page] + 1)
 
         self._append_binaries(
             appended_adress_bytes=new_adress_bytes,
