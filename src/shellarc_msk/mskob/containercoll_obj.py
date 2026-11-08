@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import mmap
 
 from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData, MSKFS_OnRamMmap
 from shellarc_msk.mskob.field_obj import MSK_Field
