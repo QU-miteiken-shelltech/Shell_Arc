@@ -9,14 +9,14 @@ class MSKDN_Hypergraph(MSK_ContainerCollection):
         super().__init__(field_name)
 
     def get_abstract_edge(self,
-                          upstream_metanode: MSKDN_Metanode,
+                          upstream_metanodes: list[MSKDN_Metanode],
                           target_prop: MSK_Property,
                           max_count: int=1
                           ) -> MSKDN_AbstEdge:
         target_containers = self.filter_container(
             conditions=[
-                (node.prop, node.address) 
-                for node in upstream_metanode
+                (metanode.get_prim_node().prop, metanode.get_prim_node().address) 
+                for metanode in upstream_metanodes
             ],
             max_count=max_count
         )
@@ -27,7 +27,8 @@ class MSKDN_Hypergraph(MSK_ContainerCollection):
             ]
         )
         abst_edge = MSKDN_AbstEdge(
-            upstream=upstream_metanode,
-            derivitive=derived_metanode
+            upstream=upstream_metanodes,
+            derivitive=derived_metanode,
+            deriving_property=target_prop
         )
         return abst_edge

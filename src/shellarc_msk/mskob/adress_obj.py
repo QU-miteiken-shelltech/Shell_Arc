@@ -44,7 +44,6 @@ class MSK_Adress:
                 MSKFS_OnRamData.adress_bin = bytearray(f.read())
 
         self.adress_offset_file = mskfs_pathsolver.mskfs_config / ".msk_adress_offset"
-        # a missing OR empty file (e.g. made by an older version) starts as one empty page
         if not self.adress_offset_file.exists() or self.adress_offset_file.stat().st_size == 0:
             with open(self.adress_offset_file, "wb") as f:
                 init_zeros = b'\x00' * (120000 * 8)
@@ -114,16 +113,13 @@ class MSK_Adress:
         value_bin = self.value.encode("utf-8")
         new_adress_bytes = (self.adress_index.to_bytes() + self.type.type_index.to_bytes() +
                             struct.pack("<Q", len(value_bin)) + value_bin)
-        # a slot holds (record offset + 1), so that 0 can mean "empty slot"
         new_offset_bytes = (len(MSKFS_OnRamData.adress_bin) + 1).to_bytes(8, byteorder="little")
 
-        # The first 8 bytes of a page count its filled slots.
         num_pages = len(MSKFS_OnRamData.adress_offset_bin) // (120000 * 8)
         filled_nums = [
             struct.unpack("<Q", MSKFS_OnRamData.adress_offset_bin[page * (120000 * 8) : page * (120000 * 8) + 8])[0]
             for page in range(0, num_pages)
         ]
-        # add a page when EVERY page has reached the limit (with max() a page would be added per insert)
         if min(filled_nums) >= 80000:
             MSKFS_OnRamData.adress_offset_bin += b'\x00' * (120000 * 8)
             num_pages += 1

@@ -41,6 +41,24 @@ class MSK_ContainerCollection(MSK_Field):
         for chunk in self.chunks_iter():
             yield MSK_Entity(entity_chunk=chunk)
 
+    def container_iter(self):
+        from shellarc_msk.mskob.container_obj import MSK_Container
+
+        rows_by_id: dict[bytes, list[int]] = {}
+        with memoryview(self.container_bin) as mv:
+            for n in range(len(mv) // 48):
+                rows_by_id.setdefault(bytes(mv[n * 48 : n * 48 + 16]), []).append(n)
+
+        def _generate():
+            for id_bytes, rows in rows_by_id.items():
+                yield MSK_Container(
+                    field_name=self.field_name,
+                    container_index=MSK_HexIndex.from_bytes(id_bytes),
+                    container_offset_counts=rows
+                )
+
+        return _generate()
+
     def masking_comparison(self,
                            unit_comparer: bytes,
                            compare_range: tuple[int, int]

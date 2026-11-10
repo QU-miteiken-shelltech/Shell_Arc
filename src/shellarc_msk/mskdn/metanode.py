@@ -1,9 +1,13 @@
+from typing import Optional
 from collections import UserList
 from shellarc_msk.mskdn.node import MSKDN_VNode
 
 class MSKDN_Metanode(UserList[MSKDN_VNode]):
-    def __init__(self, iterable=None):
+    def __init__(self, 
+                 prim_node: Optional[int]=0,
+                 iterable=None):
         super().__init__()
+        self.prim_node = prim_node
         if iterable:
             for item in iterable:
                 self.append(item)
@@ -11,6 +15,11 @@ class MSKDN_Metanode(UserList[MSKDN_VNode]):
     def _validate(self, object):
         if not isinstance(object, MSKDN_VNode):
             raise TypeError(f"MSKDN_VNode accepts only MSK_VNode")
+
+    def get_prim_node(self) -> Optional[MSKDN_VNode]:
+        if len(self) > self.prim_node:
+            return self[self.prim_node]
+        return None
 
     def append(self, object):
         self._validate(object)

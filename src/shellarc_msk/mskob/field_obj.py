@@ -38,6 +38,31 @@ class MSK_Field:
         )
         self.field_name = field_name
 
+    @classmethod
+    def field_names(cls) -> list[str]:
+        mskfs_pathsolver = MSKFS_PathSolver()
+
+        if MSKFS_OnRamData.field_offset_bin is None:
+            offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
+            if not offset_file.exists():
+                return []
+            MSKFS_OnRamData.field_offset_bin = offset_file.read_bytes()
+        if MSKFS_OnRamData.field_bin is None:
+            field_file = mskfs_pathsolver.mskfs_config / ".msk_field"
+            if not field_file.exists():
+                return []
+            MSKFS_OnRamData.field_bin = field_file.read_bytes()
+
+        names = []
+        for i in range(len(MSKFS_OnRamData.field_offset_bin) // 8):
+            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.field_offset_bin[i * 8 : i * 8 + 8])[0]
+            name_len = struct.unpack("<Q", MSKFS_OnRamData.field_bin[chunk_offset : chunk_offset + 8])[0]
+            names.append(
+                MSKFS_OnRamData.field_bin[chunk_offset + 8 : chunk_offset + 8 + name_len].decode("utf-8")
+            )
+        return names
+
+
     def _get_field_bin(self, 
                       target_field_name: str
                       ) -> Optional[list[tuple[MSK_Property, MSK_Type]]]:
