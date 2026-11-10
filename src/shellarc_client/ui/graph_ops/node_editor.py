@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QLineF
 
-from shellarc_msk.mskdn.msk_nodes import MSKDN_Node, MSKDN_Port, MSKDN_Wire
+#from shellarc_msk.mskdn.msk_nodes import MSKDN_Node, MSKDN_Port, MSKDN_Wire
 from shellarc_client.ui.graph_ops.property_editors import NodePropertyEditor, WirePropertyEditor
 
 class MSKDN_PortWidget(MSKDN_Port, QGraphicsEllipseItem):

@@ -9,7 +9,7 @@ from shellarc_client.ui.call_ops.call_ops_ui import CallOpsUi
 from shellarc_client.ui.task_ops.task_ops_ui import TaskOpsUi
 from shellarc_client.ui.chat_ops.chat_ops_ui import ChatOpsUi
 from shellarc_client.ui.table_ops.table_ops_ui import TableOpsUi
-from shellarc_client.ui.graph_ops.graph_ops_ui import GraphOpsUi
+#from shellarc_client.ui.graph_ops.graph_ops_ui import GraphOpsUi
 from shellarc_client.ui.package_ops.package_ops_ui import PackageOpsUi
 
 
@@ -38,8 +38,8 @@ class MainWindow(QMainWindow):
         table_ops_tab = TableOpsUi()
         self.tab_widget.addTab(table_ops_tab, "Table")
 
-        graph_ops_tab = GraphOpsUi()
-        self.tab_widget.addTab(graph_ops_tab, "Graph")
+        # graph_ops_tab = GraphOpsUi()
+        # self.tab_widget.addTab(graph_ops_tab, "Graph")
 
         package_ops_tab = PackageOpsUi()
         self.tab_widget.addTab(package_ops_tab, "Package")
