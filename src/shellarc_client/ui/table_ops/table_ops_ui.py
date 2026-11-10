@@ -1,20 +1,29 @@
 from typing import Optional
+from ast import literal_eval
 import math
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QTableWidget, QTableWidgetItem,
     QComboBox, QPushButton, QAbstractItemView,
-    QDialog, QLineEdit, QSpinBox
+    QDialog, QLineEdit, QSpinBox, 
 )
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import (
     QPainter, QPen, QBrush, 
     QColor, QPolygonF)
 
-from shellarc_client.ui.table_ops.table_cells import TableCell, CellEditDialog, HeaderEditDialog
+from shellarc_client.ui.table_ops.table_cells import (
+    TableCell, CellEditDialog, HeaderEditDialog,
+    BuildAbstEdgeDialog
+)
 
 from shellarc_msk.mskob.field_obj import MSK_Field
+from shellarc_msk.mskob.property_obj import MSK_Property
+from shellarc_msk.mskdn.abstract_edge import MSKDN_AbstEdge
+from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
+from shellarc_msk.mskdn.metanode import MSKDN_Metanode
+
 
 
 class MSK_TableView(QTableWidget):
@@ -76,7 +85,7 @@ class MSK_TableView(QTableWidget):
             cell = self._cell_at(pos)
             if cell is not None:
                 self._arrow_info.append(
-                    (pos, pos)
+                    (pos, pos, cell)
                 )
         super().mousePressEvent(event)  
 
@@ -84,14 +93,15 @@ class MSK_TableView(QTableWidget):
         if self._arrow_info:
             self._arrow_info[-1] = (
                 self._arrow_info[-1][0],
-                event.position().toPoint()
+                event.position().toPoint(),
+                self._arrow_info[-1][2]
             )
             self.viewport().update()  
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self._arrow_info:
-            start_cell = self._cell_at(self._arrow_info[-1][0])
+            start_cell = self._arrow_info[-1][2]
             end_cell = self._cell_at(event.position().toPoint())
             is_sameendpos = (
                 end_cell == self._cell_at(self._arrow_info[len(self._arrow_info) - 2][1])
@@ -111,17 +121,103 @@ class MSK_TableView(QTableWidget):
                 self.viewport().update()
         super().mouseReleaseEvent(event)
 
+    def link_table_cell(self,
+                        arrow_info: dict[str, list]
+                        ) -> None:
+        def link_cell(target_prop: MSK_Property, 
+                      upstream_cells: list[tuple[int, int]],
+                      derivitive_cell: tuple[int, int]
+                      ):
+            print(upstream_cells)
+            abst_edge = hypergraph.get_abstract_edge(
+                upstream_metanodes=[
+                    self.item(p[1], p[0]).metanode 
+                    for p in upstream_cells 
+                    if p is not None],
+                target_prop=target_prop,
+                max_count=10
+            )
+            self.setItem(
+                derivitive_cell[1],
+                derivitive_cell[0],
+                TableCell(
+                    field_name=field_name, 
+                    metanode=abst_edge.derivitive,
+                    upstream_cells=upstream_cells,
+                    derived_property=target_prop
+                )
+            )
+
+        field_name = self.parentWidget().field_name
+        hypergraph = MSKDN_Hypergraph(field_name=field_name)
+        if len(arrow_info["upstreams"]) > 1:
+            build_abst_edge_dialog = BuildAbstEdgeDialog(self)
+            result = build_abst_edge_dialog.exec()
+            if result == QDialog.DialogCode.Accepted:
+                target_prop = build_abst_edge_dialog.get_abst_edge()
+                link_cell(
+                    target_prop=target_prop, 
+                    upstream_cells=arrow_info["upstreams"],
+                    derivitive_cell=arrow_info["derivitive"][0]
+                )
+        elif len(arrow_info["upstreams"]) == 1:
+            if arrow_info["upstreams"][0] is None:
+                return
+            original_item = self.item(
+                arrow_info["upstreams"][0][1],
+                arrow_info["upstreams"][0][0]
+            )
+            target_prop = original_item.derived_property
+            upstream_cells = original_item.upstream_cells
+            if target_prop is None or upstream_cells is None:
+                return
+            c1, c2 = arrow_info["upstreams"][0][0], arrow_info["derivitive"][0][0]
+            r1, r2 = arrow_info["upstreams"][0][1], arrow_info["derivitive"][0][1]
+            print("******")
+            for col in range(min(c1, c2), max(c1, c2) + 1):
+                for row in range(min(r1, r2), max(r1, r2) + 1):
+                    my_upstream_cells = [
+                        (
+                            cell[0] if cell[0] != arrow_info["upstreams"][0][0] else col,
+                            cell[1] if cell[1] != arrow_info["upstreams"][0][1] else row,
+                        ) for cell in upstream_cells
+                    ]
+                    link_cell(
+                        target_prop=target_prop, 
+                        upstream_cells=my_upstream_cells,
+                        derivitive_cell=(col, row)
+                    )
+                    # except Exception as e:
+                    #     print(f"Link cell failed : col{col} row{row} due to error : {e}")
+                    #     continue
+            print("******")
+        else:
+            return
+
+        
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Return and self._arrow_info:
             arrow_info = {
-                "upstreams" : [],
-                "derivitive" : []
+                "upstreams" : [], # list[tuple[int, int]]
+                "derivitive" : [] # list[tuple[int, int]]
             }
             for arrow in self._arrow_info:
-                arrow_info["upstreams"].append(self._cell_at(arrow[0]))
+                arrow_info["upstreams"].append(arrow[2])
             arrow_info["derivitive"].append(self._cell_at(self._arrow_info[-1][1]))
-            print(arrow_info)
             
+            self.link_table_cell(arrow_info=arrow_info)
+
+            self._arrow_info.clear()
+            self.viewport().update()
+            # try:
+            #     self.link_table_cell(arrow_info=arrow_info)
+            # except Exception as e:
+            #     print(e)
+            # finally:
+            #     self._arrow_info.clear()
+            #     self.viewport().update()
+            #     super().keyPressEvent(event)
+        elif event.key() == Qt.Key.Key_Escape and self._arrow_info:
             self._arrow_info.clear()
             self.viewport().update()
         super().keyPressEvent(event)
@@ -195,7 +291,7 @@ class TableOpsUi(QWidget):
     def switch_field(self):
         new_field_name = self.field_combo.currentText()
         current_field = MSK_Field(field_name=new_field_name)
-        self.field_members = [p[0].prop_name for p in current_field.field_ls]
+        self.field_members = [p for p in current_field.field_ls]
         self.field_name = new_field_name
 
     def change_row_num(self, new_val):
