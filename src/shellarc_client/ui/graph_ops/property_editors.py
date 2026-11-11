@@ -1,13 +1,22 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout,
     QPushButton, QTextEdit
 )
 
+if TYPE_CHECKING:
+    from shellarc_client.ui.graph_ops.node_editor import MSKDN_NodeWidget
+
 class NodePropertyEditor(QDialog):
-    def __init__(self, node_widget, parent=None):
+    def __init__(self, 
+                 node_widget: MSKDN_NodeWidget, 
+                 parent=None
+                 ):
         super().__init__(parent)
         self.setFixedSize(500, 300)
-        self.node_widget = node_widget
+        self.metanode = node_widget.metanode
         
         dialog_lo = QVBoxLayout()
         btn = QPushButton("Test")

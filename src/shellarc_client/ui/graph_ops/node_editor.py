@@ -27,13 +27,11 @@ class MSKDN_PortWidget(QGraphicsEllipseItem):
         self.affiliated_node = affiliated_node
         self.is_output = is_output
         self.index = index
-        # このポートに繋がっているワイヤー
         self.wires: list[MSKDN_WireWidget] = []
         self.setBrush(QApplication.palette().base())
         self.setCursor(Qt.CursorShape.CrossCursor)
 
     def can_connect(self, other) -> bool:
-        """出力と入力の組で、別ノード同士で、まだ繋がっていなければ True。"""
         if not isinstance(other, MSKDN_PortWidget) or other is self:
             return False
         if other.is_output == self.is_output:
@@ -56,10 +54,10 @@ class MSKDN_PortWidget(QGraphicsEllipseItem):
 
 class MSKDN_NodeWidget(QGraphicsRectItem):
     WIDTH = 140
-    HEADER = 24
-    ROW = 22
+    HEIGHT = 65
 
-    def __init__(self, metanode: MSKDN_VNode,
+    def __init__(self, 
+                 metanode: MSKDN_Metanode,
                  input_num: int = 1,
                  output_num: int = 1
                  ):
@@ -67,7 +65,6 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
         self.metanode = metanode
         self.input_num = input_num
         self.output_num = output_num
-        # setFlags より先に用意しておく（itemChange から参照されるため）
         self.inputs: list[MSKDN_PortWidget] = []
         self.outputs: list[MSKDN_PortWidget] = []
         self.setBrush(QApplication.palette().base())
@@ -75,11 +72,16 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
-        self.title = QGraphicsSimpleTextItem(self.metanode.get_prim_node().prop.prop_name, self)
-        self.title.setPos(6, 3)
+        self.title = QGraphicsSimpleTextItem(self.metanode.get_prim_node().address.value, self)
+        font = self.title.font()
+        font.setPointSize(20)
+        self.title.setFont(font)
+        self.title.setPos(
+            (self.WIDTH  - self.title.boundingRect().width()) / 2,
+            (self.HEIGHT - self.title.boundingRect().height()) / 2
+        )
         self.relayout()
 
-    # ---- ポート管理 ----
     def set_port_counts(self, input_num: int, output_num: int):
         self.input_num = input_num
         self.output_num = output_num
@@ -89,7 +91,6 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
         self.relayout()
 
     def _sync_ports(self, ports: list[MSKDN_PortWidget], count: int, is_output: bool):
-        """ports の数を count に合わせる。減らす場合は繋がっているワイヤーも消す。"""
         while len(ports) < count:
             ports.append(MSKDN_PortWidget(self, is_output, len(ports)))
         while len(ports) > count:
@@ -104,19 +105,17 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
     def relayout(self):
         self._sync_ports(self.inputs, self.input_num, is_output=False)
         self._sync_ports(self.outputs, self.output_num, is_output=True)
-        rows = max(self.input_num, self.output_num, 1)
-        self.setRect(0, 0, self.WIDTH, self.HEADER + rows * self.ROW)
+        self.setRect(0, 0, self.WIDTH, self.HEIGHT)
         for i, port in enumerate(self.inputs):
-            port.setPos(0, self.HEADER + self.ROW * (i + 0.5))
+            port.setPos((self.WIDTH / (len(self.inputs) + 1)) * (i + 1), 0)
         for i, port in enumerate(self.outputs):
-            port.setPos(self.WIDTH, self.HEADER + self.ROW * (i + 0.5))
+            port.setPos((self.WIDTH / (len(self.outputs) + 1)) * (i + 1), self.HEIGHT)
         self.refresh_wires()
 
     def refresh_wires(self):
         for port in self.inputs + self.outputs:
             port.refresh_wires()
 
-    # ---- イベント ----
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             NodePropertyEditor(node_widget=self).exec()
@@ -129,7 +128,6 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
 
 
 class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
-    """ワイヤー中点の小さな丸。ダブルクリックを受け付ける。"""
     R = 5
 
     def __init__(self, wire):
@@ -139,7 +137,6 @@ class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def mousePressEvent(self, event):
-        # 受け取らないとダブルクリックが届かないので、押下を受理する
         event.accept()
 
     def mouseDoubleClickEvent(self, event):
@@ -149,11 +146,6 @@ class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
 
 
 class MSKDN_WireWidget(QGraphicsLineItem):
-    """
-    ポート間の線。データとしての辺は self.edge (MSKDN_DirectionalEdge) に持たせる。
-    確定済みワイヤー: start_port = 出力側, end_port = 入力側, edge あり
-    ドラッグ中ワイヤー: start_port = 押したポート, end_port = None, edge = None
-    """
 
     def __init__(self,
                  start_port: MSKDN_PortWidget,
@@ -170,7 +162,6 @@ class MSKDN_WireWidget(QGraphicsLineItem):
         self.handle = MSKDN_WireHandleWidget(self)
         self.refresh()
 
-    # 以前の upstream / downstream 属性との互換用
     @property
     def upstream(self):
         return self.edge.upstream if self.edge is not None else None
@@ -187,7 +178,6 @@ class MSKDN_WireWidget(QGraphicsLineItem):
         return None
 
     def attach(self):
-        """両端のポートに自分を登録する（ノード移動時に追従させるため）。"""
         for port in (self.start_port, self.end_port):
             if port is not None and self not in port.wires:
                 port.wires.append(self)
@@ -234,7 +224,6 @@ class MSKDN_NodeScene(QGraphicsScene):
         return node
 
     def connect_ports(self, a: MSKDN_PortWidget, b: MSKDN_PortWidget):
-        """向きは自動で 出力->入力 にそろえる。繋げない組み合わせなら None。"""
         if not a.can_connect(b):
             return None
         out, inp = (a, b) if a.is_output else (b, a)
@@ -250,7 +239,6 @@ class MSKDN_NodeScene(QGraphicsScene):
     def begin_wire_drag(self,
                         port: MSKDN_PortWidget,
                         scene_pos):
-        # ドラッグ中は仮の線だけ。辺 (edge) は接続が確定した時に作る。
         wire = MSKDN_WireWidget(start_port=port)
         wire.drag_pos = scene_pos
         wire.refresh()

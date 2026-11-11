@@ -1,5 +1,4 @@
 from __future__ import annotations
-from functools import partial
 
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QPainter, QAction
