@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 
 from PySide6.QtCore import (
     QRectF, Qt, QPoint
@@ -13,15 +14,21 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QLineF
 
-#from shellarc_msk.mskdn.msk_nodes import MSKDN_Node, MSKDN_Port, MSKDN_Wire
+from shellarc_msk.mskdn.metanode import MSKDN_Metanode
+from shellarc_msk.mskdn.node import MSKDN_VNode
+from shellarc_msk.mskdn.directional_edge import MSKDN_DirectionalEdge
 from shellarc_client.ui.graph_ops.property_editors import NodePropertyEditor, WirePropertyEditor
 
-class MSKDN_PortWidget(MSKDN_Port, QGraphicsEllipseItem):
+class MSKDN_PortWidget(QGraphicsEllipseItem):
     R = 6
  
-    def __init__(self, node, name, is_output):
-        QGraphicsEllipseItem.__init__(self, -self.R, -self.R, 2 * self.R, 2 * self.R, node)
-        MSKDN_Port.__init__(self, node, name, is_output)
+    def __init__(self, 
+                 affiliated_node: MSKDN_NodeWidget, 
+                 is_output: bool
+                 ):
+        QGraphicsEllipseItem.__init__(self, -self.R, -self.R, 2 * self.R, 2 * self.R, affiliated_node)
+        self.affiliated_node = affiliated_node
+        self.is_output = is_output
         self.setBrush(QApplication.palette().base())
  
     def mousePressEvent(self, event):
@@ -32,44 +39,43 @@ class MSKDN_PortWidget(MSKDN_Port, QGraphicsEllipseItem):
             super().mousePressEvent(event)
  
  
-class MSKDN_NodeWidget(MSKDN_Node, QGraphicsRectItem):
+class MSKDN_NodeWidget(QGraphicsRectItem):
     WIDTH = 140
     HEADER = 24
     ROW = 22
  
-    def __init__(self, title="Node"):
+    def __init__(self, 
+                 metanode: MSKDN_Metanode, 
+                 input_num: int,
+                 output_num: int
+                 ):
         QGraphicsRectItem.__init__(self)
-        MSKDN_Node.__init__(self, title)
+        self.metanode = metanode
         self.setBrush(QApplication.palette().base())
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
-        QGraphicsSimpleTextItem(title, self).setPos(6, 3)
+        self.input_num = input_num
+        self.output_num = output_num
+        QGraphicsSimpleTextItem(self.metanode.get_prim_node().address.value, self).setPos(6, 3)
         self.relayout()
- 
-    def create_port(self, name, is_output):
-        port = MSKDN_PortWidget(self, name, is_output)
-        port.label = QGraphicsSimpleTextItem(name, self)
-        return port
+
  
     def on_ports_changed(self):
         self.relayout()
  
     def relayout(self):
-        rows = max(len(self.inputs), len(self.outputs), 1)
+        rows = max(self.input_num, self.output_num, 1)
         self.setRect(0, 0, self.WIDTH, self.HEADER + rows * self.ROW)
-        for i, port in enumerate(self.inputs):
+        for i in range(self.input_num):
             y = self.HEADER + self.ROW * (i + 0.5)
             box = port.label.boundingRect()
             port.setPos(0, y)
-            port.label.setPos(10, y - box.height() / 2)
         for i, port in enumerate(self.outputs):
             y = self.HEADER + self.ROW * (i + 0.5)
             box = port.label.boundingRect()
             port.setPos(self.WIDTH, y)
-            port.label.setPos(self.WIDTH - 10 - box.width(), y - box.height() / 2)
-        self.refresh_wires()
  
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -77,9 +83,10 @@ class MSKDN_NodeWidget(MSKDN_Node, QGraphicsRectItem):
         super().mouseDoubleClickEvent(event)
 
     def itemChange(self, change, value):
-        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            self.refresh_wires()
+        # if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+        #     self.refresh_wires()
         return super().itemChange(change, value)
+
  
  
 class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
@@ -102,12 +109,15 @@ class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
         event.accept()
 
 
-class MSKDN_WireWidget(MSKDN_Wire, QGraphicsLineItem):
-    def __init__(self, start_port, end_port=None):
+class MSKDN_WireWidget(MSKDN_DirectionalEdge, QGraphicsLineItem):
+    def __init__(self, 
+                 directional_edge: MSKDN_DirectionalEdge
+                 ):
         QGraphicsLineItem.__init__(self)
+        self.upstream = directional_edge.upstream
+        self.downstream = directional_edge.downstream
         self.drag_pos = None
         self.handle = MSKDN_WireHandleWidget(self)
-        MSKDN_Wire.__init__(self, start_port, end_port)
         self.setPen(QPen(QApplication.palette().color(QPalette.ColorRole.Text), 2))
         self.setZValue(-1)          
         self.refresh()
@@ -121,7 +131,7 @@ class MSKDN_WireWidget(MSKDN_Wire, QGraphicsLineItem):
         self.setLine(QLineF(p1, p2))
         handle = getattr(self, 'handle', None)
         if handle is not None:
-            handle.setVisible(self.end_port is not None)   # ドラッグ中の仮配線では隠す
+            handle.setVisible(self.end_port is not None)   
             handle.setPos((p1 + p2) / 2)
  
  
@@ -130,12 +140,17 @@ class MSKDN_NodeScene(QGraphicsScene):
         super().__init__(parent)
         self._drag_wire = None
  
-    def add_node(self, title, inputs=(), outputs=(), pos=QPoint(0,0)):
-        node = MSKDN_NodeWidget(title)
-        for name in inputs:
-            node.add_input(name)
-        for name in outputs:
-            node.add_output(name)
+    def add_node(self, 
+                 metanode: MSKDN_Metanode, 
+                 input_num: int=1, 
+                 output_num: int=1, 
+                 pos=QPoint(0,0)
+                 ):
+        node = MSKDN_NodeWidget(
+            metanode=metanode,
+            input_num=input_num,
+            output_num=output_num
+        )
         node.setPos(pos)
         self.addItem(node)
         return node
@@ -145,13 +160,23 @@ class MSKDN_NodeScene(QGraphicsScene):
         if not a.can_connect(b):
             return None
         out, inp = (a, b) if a.is_output else (b, a)
-        wire = MSKDN_WireWidget(out, inp)
+        wire = MSKDN_WireWidget(
+            directional_edge=MSKDN_DirectionalEdge(
+                upstream=out.affiliated_node,
+                downstream=inp.affiliated_node
+            )
+        )
         self.addItem(wire)
         return wire
  
-    # --- ポートからのドラッグ接続 ---------------------------------------------
-    def begin_wire_drag(self, port, scene_pos):
-        wire = MSKDN_WireWidget(port)           # 仮配線 (ポートには登録されない)
+    def begin_wire_drag(self, 
+                        port: MSKDN_PortWidget, 
+                        scene_pos):
+        wire = MSKDN_WireWidget(
+            directional_edge=MSKDN_DirectionalEdge(
+                upstream=port.affiliated_node
+            )
+        )          
         wire.drag_pos = scene_pos
         wire.refresh()
         self.addItem(wire)
@@ -168,7 +193,7 @@ class MSKDN_NodeScene(QGraphicsScene):
         wire = self._drag_wire
         if wire is not None:
             self._drag_wire = None
-            self.removeItem(wire)               # 先に仮配線を消してから、下のポートを探す
+            self.removeItem(wire)             
             pos = event.scenePos()
             for item in self.items(QRectF(pos.x() - 8, pos.y() - 8, 16, 16)):
                 if isinstance(item, MSKDN_PortWidget):

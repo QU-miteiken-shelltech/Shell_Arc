@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
     QPushButton, QMessageBox, QGridLayout,
     QComboBox, QSplitter
 )
-from PySide6.QtGui import QIntValidator
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
+from PySide6.QtCore import Qt, QRegularExpression
 
 from shellarc_msk.mskdn.metanode import MSKDN_Metanode
 from shellarc_msk.mskdn.node import MSKDN_VNode
@@ -24,6 +24,8 @@ class TableCell(QTableWidgetItem):
                  metanode: Optional[MSKDN_Metanode]=None,
                  upstream_cells: Optional[list[tuple[int, int]]]=None,
                  derived_property: Optional[MSK_Property]=None,
+                 max_metanode_num: int=10,
+                 display_nodes: Optional[list[int]]=None,
                  parent=None
                  ) -> None:
         super().__init__(parent)
@@ -31,11 +33,24 @@ class TableCell(QTableWidgetItem):
         self.upstream_cells = upstream_cells
         self.derived_property = derived_property
         self.metanode = metanode if metanode is not None else MSKDN_Metanode(iterable=[])
-        if self.metanode:
-            self.set_diaplay(text=str(self.metanode.get_prim_node().address.value))
+        self.max_metanode_num = max_metanode_num
+        if metanode is None:
+            self.display_nodes = None
+        elif display_nodes is not None:
+            self.display_nodes = display_nodes 
+        else:
+            self.display_nodes = [self.metanode.prim_node] 
+        if self.metanode and self.metanode.prim_node is not None:
+            self.set_display()
 
-    def set_diaplay(self, text: str):
-        self.setText(text)
+    def set_display(self):
+        diaplay_node_list = [
+            self.metanode[i].address.value 
+            for i in self.display_nodes
+            if i < len(self.metanode)
+        ]
+        display_text = ", ".join(diaplay_node_list)
+        self.setText(display_text)
         
 
 class CellEditDialog(QDialog):
@@ -44,20 +59,39 @@ class CellEditDialog(QDialog):
                  parent=None
                  ) -> None:
         super().__init__(parent)
+        self.cell = cell
         dialog_lo = QVBoxLayout()
         dialog_lo.addWidget(QLabel(f"Field name : {cell.field_name}"))
-        if cell.derived_property is not None and cell.upstream_cells is not None:
+        if (cell.derived_property is not None and 
+            cell.upstream_cells is not None and 
+            cell.display_nodes is not None):
+            display_node_lo = QHBoxLayout()
+            display_node_lo.addWidget(QLabel("Display nodes : "))
+            self.display_node_input = QLineEdit(" ".join([str(n) for n in cell.display_nodes]))
+            validator = QRegularExpressionValidator(QRegularExpression(r"^\d+(\s\d+)*\s?$|^$"), self)
+            self.display_node_input.setValidator(validator)
+            display_node_lo.addWidget(self.display_node_input)
+            dialog_lo.addLayout(display_node_lo)
             dialog_lo.addWidget(QLabel(f"Upstreams : {",".join([str(cell) for cell in cell.upstream_cells])}"))
             dialog_lo.addWidget(QLabel(f"Property : {cell.derived_property.prop_name}"))
 
         for i,node in enumerate(cell.metanode):
             dialog_lo.addWidget(QSplitter(Qt.Orientation.Vertical))
             dialog_lo.addWidget(QLabel(f"Container : {node.entity.container_index}"))
+            dialog_lo.addWidget(QLabel(f"Node index : {i}"))
             dialog_lo.addWidget(QLabel(f"Property : {node.prop.prop_name}"))
             dialog_lo.addWidget(QLabel(f"Type : {node.address.type.type_name}"))
             dialog_lo.addWidget(QLabel(f"Value : {node.address.value}"))
 
         self.setLayout(dialog_lo)
+
+    def set_display_nodes(self) -> None:
+        if (self.cell.derived_property is None or
+            self.cell.upstream_cells is None or 
+            self.cell.display_nodes is None):
+            return
+        self.cell.display_nodes = [int(n) for n in self.display_node_input.text().split(" ")]
+        self.cell.set_display()
 
 class HeaderEditDialog(QDialog):
     def __init__(self, 
@@ -162,6 +196,13 @@ class BuildAbstEdgeDialog(QDialog):
         property_lo.addWidget(self.property_combo)
         dialog_lo.addLayout(property_lo)
 
+        max_length_lo = QHBoxLayout()
+        max_length_lo.addWidget(QLabel("Max length : "))
+        self.max_length_input = QLineEdit("10")
+        self.max_length_input.setValidator(QIntValidator(bottom=1))
+        max_length_lo.addWidget(self.max_length_input)
+        dialog_lo.addLayout(max_length_lo)
+
         apply_btn = QPushButton("Apply abstract edge")
         apply_btn.clicked.connect(self.accept)
         dialog_lo.addWidget(apply_btn)
@@ -171,6 +212,9 @@ class BuildAbstEdgeDialog(QDialog):
     def get_abst_edge(self) -> MSK_Property:
         target_property = self.parentWidget().parentWidget().field_members[self.property_combo.currentIndex()][0]
         return target_property
+
+    def get_max_length(self) -> int:
+        return int(self.max_length_input.text())
 
 
 
