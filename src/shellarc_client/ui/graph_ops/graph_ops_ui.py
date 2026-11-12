@@ -106,11 +106,27 @@ class GraphOpsUi(QWidget):
             )
 
     def switch_pivot_value(self):
+        pivot_property : MSK_Property = self.pivot_property_combo.currentData()
         pivot_value_entity = self.pivot_value_combo.currentData()
-        self.pivot_vnode = MSKDN_VNode(entity=pivot_value_entity)
+        self.available_metanodes: list[MSKDN_Metanode] = []
+        for container in MSK_ContainerCollection(field_name=self.field_name).container_iter():
+            entity = container.request_entity(requesting_prop=pivot_property)
+            if entity.address.value == pivot_value_entity.address.value:
+                self.available_metanodes.append(
+                    MSKDN_Metanode.container_to_metanode(
+                        container=container
+                    )
+                )
 
     def switch_display_property(self):
+        if not self.available_metanodes:
+            return
         self.display_property = self.display_property_combo.currentData()
+        for metanode in self.available_metanodes:
+            for i, entity in enumerate(metanode):
+                if entity.prop == self.display_property:
+                    metanode.prim_node = i
+                    break
 
     def build_context_menu(self, position: QPoint):
         menu = QMenu(self)
@@ -120,19 +136,9 @@ class GraphOpsUi(QWidget):
         view_pos = self.view.mapFromGlobal(glob_pos)
         scene_pos = self.view.mapToScene(view_pos)
 
-        pivot_metanode = MSKDN_Metanode(
-            iterable=[self.pivot_vnode]
-        )
-        hypergraph = MSKDN_Hypergraph(field_name=self.field_name)
-        abst_edge = hypergraph.get_abstract_edge(
-            upstream_metanodes=[pivot_metanode],
-            target_prop=self.display_property,
-            max_count=100
-        )
-        available_metanode = abst_edge.derivitive
-        for available_vnode in available_metanode:
-            action = menu.addAction(available_vnode.address.value)
-            action.setData(MSKDN_Metanode(iterable=[available_vnode]))
+        for available_metanode in self.available_metanodes:
+            action = menu.addAction(available_metanode.get_prim_node().address.value)
+            action.setData(available_metanode)
             action.triggered.connect(lambda checked=False, a=action, p=scene_pos: self.spawn_node(a, p))
 
         menu.exec(glob_pos)

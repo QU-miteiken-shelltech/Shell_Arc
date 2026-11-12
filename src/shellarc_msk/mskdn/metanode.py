@@ -1,6 +1,10 @@
+from __future__ import annotations
 from typing import Optional
 from collections import UserList
+
 from shellarc_msk.mskdn.node import MSKDN_VNode
+from shellarc_msk.mskob.entity_obj import MSK_Entity
+from shellarc_msk.mskob.container_obj import MSK_Container
 
 class MSKDN_Metanode(UserList[MSKDN_VNode]):
     def __init__(self, 
@@ -11,6 +15,17 @@ class MSKDN_Metanode(UserList[MSKDN_VNode]):
         if iterable:
             for item in iterable:
                 self.append(item)
+
+    @classmethod
+    def container_to_metanode(cls,
+                              container: MSK_Container
+                              ) -> MSKDN_Metanode:
+        vnodes_from_container = [
+            MSKDN_VNode(entity=entity) 
+            for entity in container 
+            if isinstance(entity, MSK_Entity)
+        ]
+        return cls(iterable=vnodes_from_container)
 
     def _validate(self, object):
         if not isinstance(object, MSKDN_VNode):

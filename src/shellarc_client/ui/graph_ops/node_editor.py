@@ -1,8 +1,14 @@
 from __future__ import annotations
 from typing import Optional
 
-from PySide6.QtCore import QLineF, QPointF, QRectF, Qt
-from PySide6.QtGui import QPalette, QPen
+from PySide6.QtCore import (
+    Qt, QLineF, QPointF, 
+    QRectF
+)
+from PySide6.QtGui import (
+    QPalette, QPen, QColor, 
+    QBrush
+)
 from PySide6.QtWidgets import (
     QApplication, QGraphicsItem, QGraphicsScene,
     QGraphicsEllipseItem, QGraphicsRectItem, QGraphicsLineItem,
@@ -125,6 +131,17 @@ class MSKDN_NodeWidget(QGraphicsRectItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.refresh_wires()
         return super().itemChange(change, value)
+
+    def colorize_border(self, color: QColor):
+        self.setPen(color)
+
+    def colorize_block(self, color: QColor):
+        self.setBrush(color)
+
+    def set_border_thickness(self, thickness: int):
+        pen = self.pen()
+        pen.setWidth(thickness)
+        self.setPen(pen)
 
 
 class MSKDN_WireHandleWidget(QGraphicsEllipseItem):
