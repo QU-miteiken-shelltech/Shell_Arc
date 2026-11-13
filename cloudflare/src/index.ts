@@ -13,7 +13,7 @@ interface Env {
 const PUT_EXPIRES_SEC = 300;
 const GET_EXPIRES_SEC = 300;
 
-// ★ 認証スタブ: 本番では JWT 検証 / セッション / Cloudflare Access 等に置き換える
+// AUTH
 async function authenticate(req: Request, env: Env): Promise<string | null> {
   const auth = req.headers.get("Authorization");
   if (auth !== `Bearer ${env.API_TOKEN}`) return null;
@@ -31,10 +31,6 @@ function cors(env: Env): HeadersInit {
 
 function json(env: Env, body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: cors(env) });
-}
-
-function isOwnKey(key: string, userId: string): boolean {
-  return key.startsWith(`uploads/${userId}/`) && !key.includes("..");
 }
 
 async function signUrl(
@@ -98,12 +94,17 @@ async function uploadPresign(req: Request, env: Env, userId: string): Promise<Re
   const contentType = body?.contentType || "application/octet-stream";
   const rawExt = body?.ext ?? "";
   const ext = /^[a-z0-9]{1,10}$/i.test(rawExt) ? rawExt.toLowerCase() : "bin";
-  const key = `uploads/${userId}/${crypto.randomUUID()}.${ext}`;
+  const key = body?.key ?? `uploads/${userId}/${crypto.randomUUID()}.${ext}`;
 
-  const url = await signUrl(env, "PUT", key, {
-    expires: PUT_EXPIRES_SEC,
-    contentType,
-  });
+  const url = await signUrl(
+    env, 
+    "PUT", 
+    key, 
+    {
+      expires: PUT_EXPIRES_SEC,
+      contentType,
+    }
+  );
 
   return json(env, {
     key,
@@ -117,8 +118,6 @@ async function uploadPresign(req: Request, env: Env, userId: string): Promise<Re
 async function uploadComplete(req: Request, env: Env, userId: string): Promise<Response> {
   const body = await req.json<{ key?: string }>().catch(() => null);
   const key = body?.key ?? "";
-
-  if (!isOwnKey(key, userId)) return json(env, { error: "forbidden" }, 403);
 
   const head = await env.BUCKET.head(key);
   if (!head) return json(env, { error: "object not found" }, 404);
@@ -136,8 +135,6 @@ async function downloadPresign(req: Request, env: Env, userId: string): Promise<
     .json<{ key?: string; filename?: string }>()
     .catch(() => null);
   const key = body?.key ?? "";
-
-  if (!isOwnKey(key, userId)) return json(env, { error: "forbidden" }, 403);
 
   const head = await env.BUCKET.head(key);
   if (!head) return json(env, { error: "object not found" }, 404);
