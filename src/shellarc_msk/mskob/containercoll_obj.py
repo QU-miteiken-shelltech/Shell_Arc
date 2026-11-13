@@ -5,7 +5,7 @@ from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData, MSKFS_OnRamMmap
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
-from shellarc_msk.mskob.adress_obj import MSK_Adress
+from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 if TYPE_CHECKING:
@@ -72,7 +72,6 @@ class MSK_ContainerCollection(MSK_Field):
             raise ValueError("Compare range out of range 48")
 
         target = unit_comparer[start : end]
-        # `with` releases the memoryview, so the mmap can still be closed / re-mapped later
         with memoryview(self.container_bin) as mv:
             entity_count = len(mv) // 48
             return [
@@ -107,7 +106,7 @@ class MSK_ContainerCollection(MSK_Field):
 
 
     def filter_container(self,
-                         conditions: list[tuple[MSK_Property, MSK_Adress]],
+                         conditions: list[tuple[MSK_Property, MSK_Address]],
                          max_count: int=1
                          ) -> list[MSK_Container]:
         # local import: container_obj imports this module (circular)
@@ -172,31 +171,28 @@ class MSK_ContainerCollection(MSK_Field):
     def write_entity(self,
                      container_index: MSK_HexIndex,
                      prop: MSK_Property,
-                     adress: MSK_Adress,
+                     adress: MSK_Address,
                      do_override: bool=False
-                     ) -> None:
+                     ) -> MSK_Entity:
         if (prop, prop.prop_type) not in self.field_ls and not do_override:
             raise ValueError("Properties undefined in Field shall only be defined as overrides")
         if prop.prop_type != adress.type:
             raise ValueError("Type unmatch")
         
-        new_entity = (container_index.to_bytes() + 
+        new_entity_binary = (container_index.to_bytes() + 
                       prop.prop_index.to_bytes() + 
                       adress.adress_index.to_bytes()
                       )
-        if len(new_entity) != 48:
+        if len(new_entity_binary) != 48:
             raise ValueError("An entiny of a container must be of length 48 bytes")
         pos = self.request_position(
             container_index=container_index,
             requesting_prop=prop
         )
         if pos == -1:
-            # an mmap cannot grow (or be concatenated): append to the file, then map it again
             new_row = len(self.container_bin) // 48
             with open(self.field_bin_file, "ab") as f:
-                f.write(new_entity)
-            # keep the index table complete: a cached container gains this row
-            # (an uncached container is simply scanned at its next lookup)
+                f.write(new_entity_binary)
             cached_rows = MSKFS_OnRamData.container_index_table.get(container_index)
             if cached_rows is not None:
                 cached_rows.append(new_row)
@@ -206,9 +202,10 @@ class MSK_ContainerCollection(MSK_Field):
             )
             self.container_bin = MSKFS_OnRamMmap.container_bins[self.field_name]
         else:
-            # same-size in-place overwrite keeps the mmap
-            self.container_bin[pos : pos + 48] = new_entity
+            self.container_bin[pos : pos + 48] = new_entity_binary
             self._write_container_binaries()
+
+        return MSK_Entity(entity_chunk=new_entity_binary)
 
     def _write_container_binaries(self):
         if hasattr(self.container_bin, "flush"):

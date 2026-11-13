@@ -6,14 +6,14 @@ from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type
 
-class MSK_Adress:
+class MSK_Address:
     def __init__(self,
                  adress_index: MSK_HexIndex | None=None,
                  adress_type: MSK_Type | None=None,
                  adress_value: str | None=None
                  ) -> None:
         if adress_index is None and (adress_type is None or adress_value is None):
-            raise ValueError("MSK_Adress cannot be made from None")
+            raise ValueError("MSK_Address cannot be made from None")
 
         self.adress_index : Optional[MSK_HexIndex] = MSK_HexIndex(value=None)
         self.type : Optional[MSK_Type] = MSK_Type(type_index=MSK_HexIndex(value=None))
@@ -99,6 +99,7 @@ class MSK_Adress:
             current_type = MSK_Type(type_index=current_type_index)
             value_len = struct.unpack("<Q", MSKFS_OnRamData.adress_bin[chunk_offset + 32 : chunk_offset + 40])[0]
             current_value = MSKFS_OnRamData.adress_bin[chunk_offset + 40 : chunk_offset + 40 + value_len].decode("utf-8")
+            self._set_slot_pos(slot_pos=prim_offset_pos)
             return (current_adress_index, current_type, current_value)
 
         if (allow_make and 
@@ -153,9 +154,13 @@ class MSK_Adress:
             appended_adress_bytes=new_adress_bytes,
             offset_bin=MSKFS_OnRamData.adress_offset_bin
         )
+        self._set_slot_pos(slot_pos=prim_offset_pos)
+
+    def _set_slot_pos(self, slot_pos: int):
+        ...
 
     def __eq__(self, other):
-        if not isinstance(other, MSK_Adress):
+        if not isinstance(other, MSK_Address):
             return NotImplemented
         return self.adress_index == other.adress_index
 
