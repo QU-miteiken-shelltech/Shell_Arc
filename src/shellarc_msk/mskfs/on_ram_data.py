@@ -15,6 +15,7 @@ class MSKFS_OnRamData:
     property_offset_bin : Optional[bytearray] = None
     type_bin : Optional[bytearray] = None
     type_offset_bin : Optional[bytearray] = None
+    veradress_bin: Optional[bytearray] = None
     # container index -> row numbers (48-byte rows) in that container's file
     container_index_table : dict[MSK_HexIndex, list[int]] = {}
 

@@ -1,6 +1,8 @@
 from pathlib import Path
 
 class MSKFS_PathSolver:
+    space_root = "msk"
+
     def __init__(self):
         self.root_dir = Path("/Users/shiinaayame/Documents/test_sa2027")
 
@@ -9,7 +11,8 @@ class MSKFS_PathSolver:
 
     @property
     def mskfs_config(self) -> Path:
-        return self.root_dir / "msk"
+        return self.root_dir / MSKFS_PathSolver.space_root
 
     def mskfs_ref(self, ref: str) -> Path:
         return
+    

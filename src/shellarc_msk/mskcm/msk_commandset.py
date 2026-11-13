@@ -3,7 +3,7 @@ from typing import get_type_hints
 
 from shellarc_msk.mskdn import *
 from shellarc_msk.mskob.field_obj import MSK_Field
-from shellarc_msk.mskob.adress_obj import MSK_Adress
+from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 from shellarc_msk.mskob.entity_obj import MSK_Entity
