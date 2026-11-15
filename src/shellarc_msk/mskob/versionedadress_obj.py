@@ -23,7 +23,7 @@ class MSK_VersionedAdress(MSK_Address):
         self.veradress_bin_file = mskfs_pathsolver.mskfs_config / ".msk_ver_adress"
         if not self.veradress_bin_file.exists():
             with open(self.veradress_bin_file, "wb") as f:
-                f.write(b"")
+                f.write(b"\x00" * 8)
         if MSKFS_OnRamData.veradress_bin is None:
             with open(self.veradress_bin_file, "rb") as f:
                 MSKFS_OnRamData.veradress_bin = bytearray(f.read())
@@ -31,21 +31,37 @@ class MSK_VersionedAdress(MSK_Address):
     def _set_slot_pos(self, slot_pos: int):
         self.slot_pos = slot_pos
 
-    def _count_ones(self, bit_chunk: bytearray) -> int:
-        count_target = bit_chunk[0 : self.slot_pos]
-        ...
+    def _rank_one(self, bit_chunk: bytearray) -> int:
+        if not hasattr(self, "slot_pos"):
+            raise RuntimeError("slot_pos attribute not found")
+        count_target = bit_chunk[0 : self.slot_pos // 8 + 1]
+        bit_count = len(count_target) * 8
+        if self.slot_pos <= 0:
+            return 0
+        if self.slot_pos >= bit_count:
+            raise ValueError("Slot position cannot be larger than the total bit count")
+        int_val = int.from_bytes(count_target, "big")
+        shift_amount = bit_count - self.slot_pos
 
+        return (int_val >> shift_amount).bit_count()
+        
     @property
     def self_chunk_offset(self) -> int:
         if not hasattr(self, "slot_pos"):
             raise RuntimeError("slot_pos attribute not found")
-        header_length = struct.unpack("<Q", MSKFS_OnRamData.veradress_bin[0:8])[0]
-        occupation_map = MSKFS_OnRamData.veradress_bin[8 : 8 + header_length]
-        my_flag = (occupation_map[self.slot_pos // 8] >> (8 - self.slot_pos % 8)) & 1
+        index_header_length = struct.unpack("<Q", MSKFS_OnRamData.veradress_bin[0:8])[0]
+        required_header_len = (self.slot_pos // 8) + 1
+        if index_header_length < required_header_len:
+            zero_bytes_to_add = required_header_len - index_header_length
+            MSKFS_OnRamData.veradress_bin[8 + index_header_length : 8 + index_header_length] = b"\x00" * zero_bytes_to_add
+            MSKFS_OnRamData.veradress_bin[0:8] = struct.pack("<Q", required_header_len)
+            return -1
+        index_header = MSKFS_OnRamData.veradress_bin[8 : 8 + index_header_length]
+        my_flag = (index_header[self.slot_pos // 8] >> (7 - self.slot_pos % 8)) & 1
         if my_flag == 0:
             return -1
-        occupied_count_before_self = self._count_ones(occupation_map)
-        offset_to_self = 8 + header_length + occupied_count_before_self * 8
+        occupied_count_before_self = self._rank_one(index_header)
+        offset_to_self = 8 + len(index_header) + occupied_count_before_self * 8
         return offset_to_self
 
     @property
@@ -59,16 +75,20 @@ class MSK_VersionedAdress(MSK_Address):
     def update_version(self) -> int:
         current_version = self.version
         if current_version == 0:
-            header_length = struct.unpack("<Q", MSKFS_OnRamData.veradress_bin[0:8])[0]
             flag_chunk = (MSKFS_OnRamData.veradress_bin[8 + self.slot_pos // 8])
-            flag_chunk ^= (1 << (8 - self.slot_pos % 8))
+            flag_chunk ^= (1 << (7 - self.slot_pos % 8))
             MSKFS_OnRamData.veradress_bin[8 + self.slot_pos // 8] = flag_chunk
             self_chunk_offset = self.self_chunk_offset
-            MSKFS_OnRamData.veradress_bin[self_chunk_offset : self_chunk_offset] = struct.pack("<Q", current_version + 1)
+            if self_chunk_offset == -1:
+                return 0
+            current_version += 1
+            MSKFS_OnRamData.veradress_bin[self_chunk_offset : self_chunk_offset] = struct.pack("<Q", current_version)
         else:
             self_chunk_offset = self.self_chunk_offset
-            MSKFS_OnRamData.veradress_bin[self_chunk_offset : self_chunk_offset] = struct.pack("<Q", current_version + 1)
+            current_version += 1
+            MSKFS_OnRamData.veradress_bin[self_chunk_offset : self_chunk_offset + 8] = struct.pack("<Q", current_version)
         self._write_binaries()
+        return current_version
 
     def _write_binaries(self) -> None:
         with open(self.veradress_bin_file, "wb") as f:

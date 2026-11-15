@@ -24,7 +24,7 @@ class MSK_Address:
 
         if adress_type is not None and adress_value is not None:
             self.adress_index = MSK_HexIndex(
-                value=adress_value,
+                value=f"{adress_type.type_name}::{adress_value}",
                 do_make=True
             )
             self.type : MSK_Type = adress_type
