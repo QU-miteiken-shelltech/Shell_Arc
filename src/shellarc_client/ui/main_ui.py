@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("ShellArc 2027")
-        self.setFixedSize(350,800)
+        self.setMinimumSize(350,800)
         # self.showMaximized()
 
         self.tab_widget = QTabWidget()

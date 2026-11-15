@@ -1,278 +1,54 @@
-from typing import Optional
-from ast import literal_eval
-import math
-
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QTableWidget, QTableWidgetItem,
-    QComboBox, QPushButton, QAbstractItemView,
-    QDialog, QLineEdit, QSpinBox, 
+    QLabel, QComboBox, QPushButton, 
+    QMessageBox
 )
-from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import (
-    QPainter, QPen, QBrush, 
-    QColor, QPolygonF)
 
-from shellarc_client.ui.table_ops.table_cells import (
-    TableCell, CellEditDialog, HeaderEditDialog,
-    BuildAbstEdgeDialog
-)
+
+from shellarc_client.ui.table_ops.table_cells import TableCell
+from shellarc_client.ui.table_ops.table_view import MSK_TableView
 
 from shellarc_msk.mskob.field_obj import MSK_Field
-from shellarc_msk.mskob.property_obj import MSK_Property
-from shellarc_msk.mskdn.abstract_edge import MSKDN_AbstEdge
-from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
-from shellarc_msk.mskdn.metanode import MSKDN_Metanode
-
-
-
-class MSK_TableView(QTableWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.itemDoubleClicked.connect(self.item_double_clicked)
-        self.horizontalHeader().sectionDoubleClicked.connect(self.hor_header_double_clicked)
-        self.verticalHeader().sectionDoubleClicked.connect(self.vert_header_double_clicked)
-
-        self.setRowCount(1)
-        self.setColumnCount(1)
-        for row in range(self.rowCount()):
-            for col in range(self.columnCount()):
-                self.setItem(row, col, TableCell())
-
-        self._arrow_info = []
-
-    def change_row_num(self, new_num: int):
-        original_num = self.rowCount() 
-        self.setRowCount(new_num)
-
-
-    def change_col_num(self, new_num: int):
-        original_num = self.columnCount() 
-        self.setColumnCount(new_num)
-
-
-    def item_double_clicked(self, clicked_item):
-        print(clicked_item)
-        cell_edit_dialog = CellEditDialog(cell=clicked_item)
-        cell_edit_dialog.exec()
-        cell_edit_dialog.set_display_nodes()
-
-    def vert_header_double_clicked(self, logical_index):
-        HeaderEditDialog(
-            logical_index=logical_index,
-            is_vertical=True,
-            table=self,
-            parent=self
-        ).exec()
-
-    def hor_header_double_clicked(self, logical_index):
-        HeaderEditDialog(
-            logical_index=logical_index,
-            is_vertical=False,
-            table=self,
-            parent=self
-        ).exec()
-
-    def _cell_at(self, pos):
-        index = self.indexAt(pos)
-        if not index.isValid():
-            return None
-        return index.column(), index.row()
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            pos = event.position().toPoint()
-            cell = self._cell_at(pos)
-            if cell is not None:
-                self._arrow_info.append(
-                    (pos, pos, cell)
-                )
-        super().mousePressEvent(event)  
-
-    def mouseMoveEvent(self, event):
-        if self._arrow_info:
-            self._arrow_info[-1] = (
-                self._arrow_info[-1][0],
-                event.position().toPoint(),
-                self._arrow_info[-1][2]
-            )
-            self.viewport().update()  
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton and self._arrow_info:
-            start_cell = self._arrow_info[-1][2]
-            end_cell = self._cell_at(event.position().toPoint())
-            is_sameendpos = (
-                end_cell == self._cell_at(self._arrow_info[len(self._arrow_info) - 2][1])
-                if len(self._arrow_info) > 1 
-                else True
-            )
-            is_samestartpos = (
-                start_cell == self._cell_at(self._arrow_info[len(self._arrow_info) - 2][0])
-                if len(self._arrow_info) > 1 
-                else False
-            )
-            if (end_cell is None or 
-                start_cell == end_cell or 
-                not is_sameendpos or
-                is_samestartpos):
-                self._arrow_info.pop(-1)
-                self.viewport().update()
-        super().mouseReleaseEvent(event)
-
-    def link_table_cell(self,
-                        arrow_info: dict[str, list]
-                        ) -> None:
-        def link_cell(target_prop: MSK_Property, 
-                      upstream_cells: list[tuple[int, int]],
-                      derivitive_cell: tuple[int, int],
-                      max_metanode_num: int,
-                      display_nodes: Optional[list[int]]=None
-                      ):
-            abst_edge = hypergraph.get_abstract_edge(
-                upstream_metanodes=[
-                    self.item(p[1], p[0]).metanode 
-                    for p in upstream_cells 
-                    if p is not None],
-                target_prop=target_prop,
-                max_count=10
-            )
-            self.setItem(
-                derivitive_cell[1],
-                derivitive_cell[0],
-                TableCell(
-                    field_name=field_name, 
-                    metanode=abst_edge.derivitive,
-                    upstream_cells=upstream_cells,
-                    derived_property=target_prop,
-                    max_metanode_num=max_metanode_num,
-                    display_nodes=display_nodes
-                )
-            )
-
-        field_name = self.parentWidget().field_name
-        hypergraph = MSKDN_Hypergraph(field_name=field_name)
-        if len(arrow_info["upstreams"]) > 1:
-            build_abst_edge_dialog = BuildAbstEdgeDialog(self)
-            result = build_abst_edge_dialog.exec()
-            if result == QDialog.DialogCode.Accepted:
-                target_prop = build_abst_edge_dialog.get_abst_edge()
-                max_metanode_num = build_abst_edge_dialog.get_max_length()
-                link_cell(
-                    target_prop=target_prop, 
-                    upstream_cells=arrow_info["upstreams"],
-                    derivitive_cell=arrow_info["derivitive"][0],
-                    max_metanode_num=max_metanode_num
-                )
-        elif len(arrow_info["upstreams"]) == 1:
-            if arrow_info["upstreams"][0] is None:
-                return
-            original_item = self.item(
-                arrow_info["upstreams"][0][1],
-                arrow_info["upstreams"][0][0]
-            )
-            target_prop = original_item.derived_property
-            upstream_cells = original_item.upstream_cells
-            max_metanode_num = original_item.max_metanode_num
-            display_nodes = original_item.display_nodes
-            if target_prop is None or upstream_cells is None:
-                return
-            c1, c2 = arrow_info["upstreams"][0][0], arrow_info["derivitive"][0][0]
-            r1, r2 = arrow_info["upstreams"][0][1], arrow_info["derivitive"][0][1]
-            for col in range(min(c1, c2), max(c1, c2) + 1):
-                for row in range(min(r1, r2), max(r1, r2) + 1):
-                    my_upstream_cells = [
-                        (
-                            cell[0] if cell[0] != arrow_info["upstreams"][0][0] else col,
-                            cell[1] if cell[1] != arrow_info["upstreams"][0][1] else row,
-                        ) for cell in upstream_cells
-                    ]
-                    try:
-                        link_cell(
-                            target_prop=target_prop, 
-                            upstream_cells=my_upstream_cells,
-                            derivitive_cell=(col, row),
-                            max_metanode_num=max_metanode_num,
-                            display_nodes=display_nodes
-                        )
-                    except Exception as e:
-                        print(f"Link cell failed : col{col} row{row} due to error : {e}")
-                        continue
-        else:
-            return
-
-        
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Return and self._arrow_info:
-            arrow_info = {
-                "upstreams" : [], # list[tuple[int, int]]
-                "derivitive" : [] # list[tuple[int, int]]
-            }
-            for arrow in self._arrow_info:
-                arrow_info["upstreams"].append(arrow[2])
-            arrow_info["derivitive"].append(self._cell_at(self._arrow_info[-1][1]))
-            
-            self.link_table_cell(arrow_info=arrow_info)
-
-            self._arrow_info.clear()
-            self.viewport().update()
-            # try:
-            #     self.link_table_cell(arrow_info=arrow_info)
-            # except Exception as e:
-            #     print(e)
-            # finally:
-            #     self._arrow_info.clear()
-            #     self.viewport().update()
-            #     super().keyPressEvent(event)
-        elif event.key() == Qt.Key.Key_Escape and self._arrow_info:
-            self._arrow_info.clear()
-            self.viewport().update()
-        super().keyPressEvent(event)
-
-    def paintEvent(self, event):
-        super().paintEvent(event) 
-        if not self._arrow_info:
-            return
-
-        for arrow in self._arrow_info:
-            p1 = QPointF(arrow[0])
-            p2 = QPointF(arrow[1])
-            if p1 == p2:
-                return
-
-            painter = QPainter(self.viewport())
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            color = QColor("blue")
-            painter.setPen(QPen(color, 2))
-            painter.setBrush(QBrush(color))
-
-            painter.drawLine(p1, p2)
-            angle = math.atan2(p2.y() - p1.y(), p2.x() - p1.x())
-            size = 12
-            left = QPointF(p2.x() - size * math.cos(angle - math.pi / 6),
-                        p2.y() - size * math.sin(angle - math.pi / 6))
-            right = QPointF(p2.x() - size * math.cos(angle + math.pi / 6),
-                            p2.y() - size * math.sin(angle + math.pi / 6))
-            painter.drawPolygon(QPolygonF([p2, left, right]))
-            painter.end()
 
 
 class TableOpsUi(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.lo = QVBoxLayout(self)
+        field_lo = QHBoxLayout()
+        field_lo.addWidget(QLabel("Field : "))
         self.field_combo = QComboBox()
         self.field_combo.clear()
         self.field_combo.addItems(MSK_Field.field_names())
         self.field_combo.currentIndexChanged.connect(self.switch_field)
+        self.field_combo.setFixedWidth(150)
         self.switch_field()
-        self.lo.addWidget(self.field_combo)
+        field_lo.addWidget(self.field_combo)
+        field_lo.addStretch()
+        self.lo.addLayout(field_lo)
 
         self.msk_table_view = MSK_TableView()
         self.lo.addWidget(self.msk_table_view)
+
+        btn_lo = QHBoxLayout()
+        fit_vert_btn = QPushButton("Fit Vertical")
+        fit_vert_btn.clicked.connect(self.fit_table_vert)
+        btn_lo.addWidget(fit_vert_btn)
+        fit_hor_btn = QPushButton("Fit Horizantal")
+        fit_hor_btn.clicked.connect(self.fit_table_hor)
+        btn_lo.addWidget(fit_hor_btn)
+        fix_width_btn = QPushButton("Fix Width")
+        fix_width_btn.clicked.connect(self.fix_cell_width)
+        btn_lo.addWidget(fix_width_btn)
+        fix_height_btn = QPushButton("Fix Height")
+        fix_height_btn.clicked.connect(self.fix_cell_height)
+        btn_lo.addWidget(fix_height_btn)
+        self.lo.addLayout(btn_lo)
+
+        clear_all_btn = QPushButton("Clear All")
+        clear_all_btn.clicked.connect(self.clear_all_cells)
+        self.lo.addWidget(clear_all_btn)
+
         self.setLayout(self.lo)
 
     def switch_field(self):
@@ -280,6 +56,39 @@ class TableOpsUi(QWidget):
         current_field = MSK_Field(field_name=new_field_name)
         self.field_members = [p for p in current_field.field_ls]
         self.field_name = new_field_name
+
+    def fit_table_vert(self):
+        for row in range(self.msk_table_view.rowCount()):
+            fitted_row_height = self.msk_table_view.sizeHintForRow(row)
+            self.msk_table_view.setRowHeight(row, fitted_row_height)
+
+    def fit_table_hor(self):
+        for col in range(self.msk_table_view.columnCount()):
+            fitted_col_width = self.msk_table_view.sizeHintForColumn(col)
+            self.msk_table_view.setColumnWidth(col, fitted_col_width)
+
+    def fix_cell_width(self):
+        standard_width = self.msk_table_view.columnWidth(0)
+        for col in range(1, self.msk_table_view.columnCount()):
+            self.msk_table_view.setColumnWidth(col, standard_width)
+
+    def fix_cell_height(self):
+        standard_height = self.msk_table_view.rowHeight(0)
+        for row in range(1, self.msk_table_view.rowCount()):
+            self.msk_table_view.setRowHeight(row, standard_height)
+
+    def clear_all_cells(self):
+        confirmation = QMessageBox.question(
+            self, 
+            "Confirmation", 
+            "Are you sure that you want to clear this table?", 
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if confirmation == QMessageBox.StandardButton.Yes:
+            self.msk_table_view.clear()
+            self.msk_table_view.setRowCount(1)
+            self.msk_table_view.setColumnCount(1)
+            self.msk_table_view.setItem(0, 0, TableCell())
 
     def change_row_num(self, new_val):
         self.msk_table_view.change_row_num(new_num=new_val)
