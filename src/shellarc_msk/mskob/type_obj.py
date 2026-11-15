@@ -8,7 +8,8 @@ from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 class MSK_Type:
     def __init__(self,
                  type_index: MSK_HexIndex | None=None,
-                 type_name: str | None=None
+                 type_name: str | None=None,
+                 allow_make: bool=False
                  ) -> None:
         if type_index is None and type_name is None:
             raise ValueError("MSK_Type cannot be made from None")
@@ -26,7 +27,7 @@ class MSK_Type:
             )
             self.type_index = type_index
             self.type_name = type_name
-            allow_make = True
+            allow_make = allow_make
         else:
             allow_make = False
 

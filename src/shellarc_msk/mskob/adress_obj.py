@@ -75,6 +75,7 @@ class MSK_Address:
         adress_index_int = int(target_adress_index, 0)
         prim_offset_pos = adress_index_int % (120000 - 1)
         do_hit = False
+        page_found = 0
         # The probe does not stop at an empty slot (original method): for every position, every page
         # is looked at. The positions wrap around the page end; one full cycle at most.
         for _ in range(0, 120000 - 1):
@@ -88,6 +89,7 @@ class MSK_Address:
                 current_adress_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.adress_bin[chunk_offset : chunk_offset + 16])
                 if current_adress_index == target_adress_index:
                     do_hit = True
+                    page_found = page
                     break
             if do_hit:
                 break
@@ -99,7 +101,7 @@ class MSK_Address:
             current_type = MSK_Type(type_index=current_type_index)
             value_len = struct.unpack("<Q", MSKFS_OnRamData.adress_bin[chunk_offset + 32 : chunk_offset + 40])[0]
             current_value = MSKFS_OnRamData.adress_bin[chunk_offset + 40 : chunk_offset + 40 + value_len].decode("utf-8")
-            self._set_slot_pos(slot_pos=prim_offset_pos)
+            self._set_slot_pos(slot_pos=120000 * page_found + prim_offset_pos)
             return (current_adress_index, current_type, current_value)
 
         if (allow_make and 
@@ -129,6 +131,7 @@ class MSK_Address:
         adress_index_int = int(self.adress_index, 0)
         prim_offset_pos = adress_index_int % (120000 - 1)
         is_empty = False
+        page_found = 0
         for _ in range(0, 120000 - 1):  # positions wrap around the page end; one full cycle at most
             for page in range(0, num_pages):
                 offset_start = page * (120000 * 8) + 8
@@ -136,6 +139,7 @@ class MSK_Address:
                 chunk_offset_bytes = MSKFS_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8]
                 if chunk_offset_bytes == b'\x00' * 8:
                     is_empty = True
+                    page_found = page
                     break
             if is_empty:
                 break
@@ -154,7 +158,7 @@ class MSK_Address:
             appended_adress_bytes=new_adress_bytes,
             offset_bin=MSKFS_OnRamData.adress_offset_bin
         )
-        self._set_slot_pos(slot_pos=prim_offset_pos)
+        self._set_slot_pos(slot_pos=120000 * page_found + prim_offset_pos)
 
     def _set_slot_pos(self, slot_pos: int):
         ...

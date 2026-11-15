@@ -10,6 +10,10 @@ class MSKDN_VNode:
         self.entity = entity
 
     @property
+    def container_index(self):
+        return self.entity.container_index
+
+    @property
     def prop(self):
         return self.entity.prop
 

@@ -10,7 +10,8 @@ class MSK_Property:
     def __init__(self,
                  prop_index: MSK_HexIndex | None=None,
                  prop_type: MSK_Type | None=None,
-                 prop_name: str | None=None
+                 prop_name: str | None=None,
+                 allow_make: bool=False
                  ) -> None:
         if prop_index is None and (prop_type is None or prop_name is None):
             raise ValueError("MSK_Property cannot be made from None")
@@ -30,7 +31,7 @@ class MSK_Property:
             )
             self.prop_type = prop_type
             self.prop_name = prop_name
-            allow_make = True
+            allow_make = allow_make
         else:
             allow_make = False
 
