@@ -33,6 +33,7 @@ class MSK_TableView(QTableWidget):
             for col in range(self.columnCount()):
                 self.setItem(row, col, TableCell())
 
+        self.header_pos = {"rows": [], "cols": []}
         self._arrow_info = []
 
     def item_double_clicked(self, clicked_item):
@@ -105,47 +106,50 @@ class MSK_TableView(QTableWidget):
                 self.viewport().update()
         super().mouseReleaseEvent(event)
 
-    def link_table_cell(self,
-                        arrow_info: dict[str, list]
-                        ) -> None:
-        def link_cell(target_prop: MSK_Property, 
-                      upstream_cells: list[tuple[int, int]],
-                      derivitive_cell: tuple[int, int],
-                      max_metanode_num: int,
-                      display_form: Optional[str]=None,
-                      display_nodes: Optional[str]=None
-                      ):
-            abst_edge = hypergraph.get_abstract_edge(
-                upstream_metanodes=[
-                    self.item(p[1], p[0]).metanode 
-                    for p in upstream_cells 
-                    if p is not None],
-                target_prop=target_prop,
-                max_count=10
-            )
-            self.setItem(
-                derivitive_cell[1],
-                derivitive_cell[0],
-                TableCell(
-                    field_name=field_name, 
-                    metanode=abst_edge.derivitive,
-                    upstream_cells=upstream_cells,
-                    derived_property=target_prop,
-                    max_metanode_num=max_metanode_num,
-                    display_form=display_form,
-                    display_nodes=display_nodes
-                )
-            )
-
-        field_name = self.parentWidget().field_name
+    def link_cell(self,
+                  field_name: str,
+                  target_prop: MSK_Property, 
+                  upstream_cells: list[tuple[int, int]],
+                  derivitive_cell: tuple[int, int],
+                  max_metanode_num: int,
+                  display_form: Optional[str]=None,
+                  display_nodes: Optional[str]=None
+                  ) -> None:
         hypergraph = MSKDN_Hypergraph(field_name=field_name)
+        abst_edge = hypergraph.get_abstract_edge(
+            upstream_metanodes=[
+                self.item(p[1], p[0]).metanode 
+                for p in upstream_cells 
+                if p is not None],
+            target_prop=target_prop,
+            max_count=10
+        )
+        self.setItem(
+            derivitive_cell[1],
+            derivitive_cell[0],
+            TableCell(
+                field_name=field_name, 
+                metanode=abst_edge.derivitive,
+                upstream_cells=upstream_cells,
+                derived_property=target_prop,
+                max_metanode_num=max_metanode_num,
+                display_form=display_form,
+                display_nodes=display_nodes
+            )
+        )
+
+    def link_table_cells(self,
+                         arrow_info: dict[str, list]
+                         ) -> None:
+        field_name = self.parentWidget().field_name
         if len(arrow_info["upstreams"]) > 1:
             build_abst_edge_dialog = BuildAbstEdgeDialog(self)
             result = build_abst_edge_dialog.exec()
             if result == QDialog.DialogCode.Accepted:
                 target_prop = build_abst_edge_dialog.get_abst_edge()
                 max_metanode_num = build_abst_edge_dialog.get_max_length()
-                link_cell(
+                self.link_cell(
+                    field_name= field_name,
                     target_prop=target_prop, 
                     upstream_cells=arrow_info["upstreams"],
                     derivitive_cell=arrow_info["derivitive"][0],
@@ -167,16 +171,32 @@ class MSK_TableView(QTableWidget):
                 return
             c1, c2 = arrow_info["upstreams"][0][0], arrow_info["derivitive"][0][0]
             r1, r2 = arrow_info["upstreams"][0][1], arrow_info["derivitive"][0][1]
+
             for col in range(min(c1, c2), max(c1, c2) + 1):
                 for row in range(min(r1, r2), max(r1, r2) + 1):
-                    my_upstream_cells = [
-                        (
-                            cell[0] if cell[0] != arrow_info["upstreams"][0][0] else col,
-                            cell[1] if cell[1] != arrow_info["upstreams"][0][1] else row,
-                        ) for cell in upstream_cells
-                    ]
+                    my_upstream_cells = []
+                    for upstream_cell in upstream_cells:
+                        if (upstream_cell[0] in self.header_pos["cols"] and
+                            upstream_cell[1] in self.header_pos["rows"]):
+                            raise ValueError("Upstream cell is inside overlapping headers")
+                        if upstream_cell[0] in self.header_pos["cols"]:
+                            my_upstream_col = upstream_cell[0]
+                            row_offset = upstream_cell[1] - arrow_info["upstreams"][0][1]
+                            my_upstream_row = row + row_offset
+                        if upstream_cell[1] in self.header_pos["rows"]:
+                            my_upstream_row = upstream_cell[1]
+                            col_offset = upstream_cell[0] - arrow_info["upstreams"][0][0]
+                            my_upstream_col = col + col_offset
+                        my_upstream_cells.append((my_upstream_col, my_upstream_row))
+                    # my_upstream_cells = [
+                    #     (
+                    #         cell[0] if cell[0] != arrow_info["upstreams"][0][0] else col,
+                    #         cell[1] if cell[1] != arrow_info["upstreams"][0][1] else row,
+                    #     ) for cell in upstream_cells
+                    # ]
                     try:
-                        link_cell(
+                        self.link_cell(
+                            field_name=field_name,
                             target_prop=target_prop, 
                             upstream_cells=my_upstream_cells,
                             derivitive_cell=(col, row),
@@ -201,7 +221,7 @@ class MSK_TableView(QTableWidget):
                 arrow_info["upstreams"].append(arrow[2])
             arrow_info["derivitive"].append(self._cell_at(self._arrow_info[-1][1]))
             try:
-                self.link_table_cell(arrow_info=arrow_info)
+                self.link_table_cells(arrow_info=arrow_info)
             except Exception as e:
                 print(e)
             finally:

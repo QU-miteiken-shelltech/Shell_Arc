@@ -109,34 +109,36 @@ class CellEditDialog(QDialog):
         self.mutable_checkbox.stateChanged.connect(self.init_items_view)
         self.dialog_lo.addWidget(self.mutable_checkbox)
 
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_widget = QWidget()
+        self.scroll_lo = QVBoxLayout(scroll_widget)
         self.init_items_view()
+        scroll_area.setWidget(scroll_widget)
+        self.dialog_lo.addWidget(scroll_area)
 
         self.setLayout(self.dialog_lo)
 
     def init_items_view(self):
-        while self.dialog_lo.count():
-            widget = self.dialog_lo.takeAt(0).widget()
+        while self.scroll_lo.count():
+            widget = self.scroll_lo.takeAt(0).widget()
             if widget is not None:
                 widget.deleteLater()
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_widget = QWidget()
-        scroll_lo = QVBoxLayout(scroll_widget)
-
-        for i,node in enumerate(self.cell.metanode):
-            scroll_lo.addWidget(QSplitter(Qt.Orientation.Vertical))
-            scroll_lo.addWidget(QLabel(f"Container : {node.container_index}"))
-            scroll_lo.addWidget(QLabel(f"Node index : {i}"))
-            scroll_lo.addWidget(QLabel(f"Property : {node.prop.prop_name}"))
-            scroll_lo.addWidget(QLabel(f"Type : {node.address.type.type_name}"))
+        for i, node in enumerate(self.cell.metanode):
+            self.scroll_lo.setSpacing(4)
+            self.scroll_lo.addWidget(QSplitter(Qt.Orientation.Vertical))
+            self.scroll_lo.addWidget(QLabel(f"Container : {node.container_index}"))
+            self.scroll_lo.addWidget(QLabel(f"Node index : {i}"))
+            self.scroll_lo.addWidget(QLabel(f"Property : {node.prop.prop_name}"))
+            self.scroll_lo.addWidget(QLabel(f"Type : {node.address.type.type_name}"))
             if not self.mutable_checkbox.isChecked():
-                scroll_lo.addWidget(QLabel(f"Value : {node.address.value}"))
+                self.scroll_lo.addWidget(QLabel(f"Value : {node.address.value}"))
             else:
                 value_edit_lo = QHBoxLayout()
                 value_edit_lo.addWidget(QLabel("Value : "))
-                value_input = QLineEdit(node.address.value)
-                value_edit_lo.addWidget(value_input)
+                self.value_edit_input = QLineEdit(node.address.value)
+                value_edit_lo.addWidget(self.value_edit_input)
                 value_apply_btn = QPushButton("Apply")
                 value_apply_btn.setMaximumWidth(65)
                 value_apply_btn.clicked.connect(
@@ -144,32 +146,35 @@ class CellEditDialog(QDialog):
                         self.edit_value,
                         container_index=node.container_index,
                         prop=node.prop,
-                        address=node.address
+                        cell_index_in_metanode=i
                     )
                 )
                 value_edit_lo.addWidget(value_apply_btn)
-                scroll_lo.addLayout(value_edit_lo)
+                self.scroll_lo.addLayout(value_edit_lo)
 
-        scroll_area.setWidget(scroll_widget)
-        self.dialog_lo.addWidget(scroll_area)
 
-    def edit_value(self, 
-                   container_index : MSK_HexIndex,
+    def edit_value(self,
+                   container_index: MSK_HexIndex,
                    prop: MSK_Property,
-                   address: MSK_Address
+                   cell_index_in_metanode: int
                    ) -> None:
-        print(f"container_index = {container_index}"
-              f"property = {prop.prop_name}"
-              f"address = {address.value}"
+        coll = MSK_ContainerCollection(field_name=self.cell.field_name)
+        address = MSK_Address(
+            adress_type=prop.prop_type,
+            adress_value=self.value_edit_input.text()
         )
-        return
-        coll = MSK_ContainerCollection(field_name=self.field_name)
+        print(self.value_edit_input.text() + " new")
         new_entity = coll.write_entity(
             container_index=container_index,
             prop=prop,
             adress=address,
             do_override=True
         )
+        self.cell.metanode[cell_index_in_metanode].entity = new_entity
+        print(f"container_index = {new_entity.container_index}"
+              f"property = {new_entity.prop.prop_name}"
+              f"address = {new_entity.address.value}")
+        self.init_items_view()
 
 
     def set_display_nodes(self) -> None:
@@ -220,6 +225,12 @@ class HeaderEditDialog(QDialog):
         self.max_count_input = QLineEdit("")
         self.max_count_input.setValidator(QIntValidator(bottom=1))
         iterator_lo.addWidget(self.max_count_input, 3, 1)
+
+        step_label = QLabel("Step : ")
+        iterator_lo.addWidget(step_label, 4, 0)
+        self.step_input = QLineEdit("1")
+        self.step_input.setValidator(QIntValidator(bottom=1))
+        iterator_lo.addWidget(self.step_input, 4, 1)
         dialog_lo.addLayout(iterator_lo)
 
         self.sort_by_num_checkbox = QCheckBox("Sort by numbers if found")
@@ -263,32 +274,35 @@ class HeaderEditDialog(QDialog):
             max_count = int(self.max_count_input.text())
             iterator = iterator[: max_count] if max_count <= len(iterator) else iterator
 
+        step = int(self.step_input.text()) if self.step_input.text() else 1
         if self.is_vertical:
             current_col_num = self.table.columnCount()
             if current_col_num < start_pos + len(iterator):
-                self.table.setColumnCount(start_pos + len(iterator))
-                for col in range(start_pos, start_pos + len(iterator)):
+                self.table.setColumnCount(start_pos + len(iterator) * step)
+                for col in range(0, len(iterator)):
                     metanode = MSKDN_Metanode(
-                        iterable=[MSKDN_VNode(entity=iterator[col - start_pos])]
+                        iterable=[MSKDN_VNode(entity=iterator[col])]
                     )
                     cell = TableCell(
                         field_name=self.field_name,
                         metanode=metanode
                     )
-                    self.table.setItem(header_pos, col, cell)
+                    self.table.setItem(header_pos, start_pos + (col * step), cell)
+            self.table.header_pos["rows"].append(header_pos)
         else:
             current_row_num = self.table.rowCount()
             if current_row_num < start_pos + len(iterator):
-                self.table.setRowCount(start_pos + len(iterator))
-                for row in range(start_pos, start_pos + len(iterator)):
+                self.table.setRowCount(start_pos + len(iterator) * step)
+                for row in range(0, len(iterator)):
                     metanode = MSKDN_Metanode(
-                        iterable=[MSKDN_VNode(entity=iterator[row - start_pos])]
+                        iterable=[MSKDN_VNode(entity=iterator[row])]
                     )
                     cell = TableCell(
                         field_name=self.field_name,
                         metanode=metanode
                     )
-                    self.table.setItem(row, header_pos, cell)
+                    self.table.setItem(start_pos + (row * step), header_pos, cell)
+            self.table.header_pos["cols"].append(header_pos)
         self.accept()
 
 class BuildAbstEdgeDialog(QDialog):
