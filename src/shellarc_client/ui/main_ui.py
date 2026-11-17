@@ -27,20 +27,29 @@ class MainWindow(QMainWindow):
         self._init_tabs()
 
     def _init_tabs(self):
+        print("CALL")
         call_ops_tab = CallOpsUi()
         self.tab_widget.addTab(call_ops_tab, "Call")
 
+        print("TASK")
         task_ops_tab = TaskOpsUi()
         self.tab_widget.addTab(task_ops_tab, "Task")
 
+        print("CHAT")
         task_ops_tab = ChatOpsUi()
         self.tab_widget.addTab(task_ops_tab, "Chat")
 
+        print("TABLE")
         table_ops_tab = TableOpsUi()
         self.tab_widget.addTab(table_ops_tab, "Table")
 
+        print("GRAPH")
         graph_ops_tab = GraphOpsUi()
         self.tab_widget.addTab(graph_ops_tab, "Graph")
 
+        print("PACKAGE")
         package_ops_tab = PackageOpsUi()
         self.tab_widget.addTab(package_ops_tab, "Package")
+
+        print("START")
+

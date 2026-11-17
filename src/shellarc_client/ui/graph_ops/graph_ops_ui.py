@@ -9,11 +9,10 @@ from PySide6.QtWidgets import (
 )
 
 from shellarc_client.ui.graph_ops.node_editor import MSKDN_NodeScene
+from shellarc_client.engine.mskio import read_msk
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.property_obj import MSK_Property
-from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
 from shellarc_msk.mskdn.metanode import MSKDN_Metanode
-from shellarc_msk.mskdn.node import MSKDN_VNode
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 
 class GraphOpsUi(QWidget):
@@ -56,6 +55,7 @@ class GraphOpsUi(QWidget):
         self.pivot_property_combo.currentIndexChanged.connect(self.switch_pivot_property)
         self.pivot_value_combo.currentIndexChanged.connect(self.switch_pivot_value)
         self.display_property_combo.currentIndexChanged.connect(self.switch_display_property)
+
         self.switch_field()
         self.switch_display_property()
 
@@ -77,25 +77,22 @@ class GraphOpsUi(QWidget):
         self.pivot_property_combo.clear()
         self.display_property_combo.clear()
         for field_item in current_field.field_ls:
+            field_item_first = field_item[0]
             self.pivot_property_combo.addItem(
-                field_item[0].prop_name,  field_item[0]
+                field_item_first.prop_name,  field_item_first
             )
             self.display_property_combo.addItem(
-                field_item[0].prop_name,  field_item[0]
+                field_item_first.prop_name,  field_item_first
             )
 
     def switch_pivot_property(self):
         pivot_property : MSK_Property = self.pivot_property_combo.currentData()
         self.pivot_property = pivot_property
-        values = []
-        appeared = []
-        for container in MSK_ContainerCollection(field_name=self.field_name).container_iter():
-            entity = container.request_entity(requesting_prop=pivot_property)
-            entity_value = entity.address.value
-            if entity_value in appeared:
-                continue
-            values.append(entity)
-            appeared.append(entity_value)
+        values = read_msk.get_values_by_property(
+            target_field_name=self.field_name,
+            requested_property=pivot_property,
+            eluminate_duplication=True
+        )
         values.sort(
             key=lambda x : x.address.value
         )
@@ -108,15 +105,15 @@ class GraphOpsUi(QWidget):
     def switch_pivot_value(self):
         pivot_property : MSK_Property = self.pivot_property_combo.currentData()
         pivot_value_entity = self.pivot_value_combo.currentData()
-        self.available_metanodes: list[MSKDN_Metanode] = []
-        for container in MSK_ContainerCollection(field_name=self.field_name).container_iter():
-            entity = container.request_entity(requesting_prop=pivot_property)
-            if entity.address.value == pivot_value_entity.address.value:
-                self.available_metanodes.append(
-                    MSKDN_Metanode.container_to_metanode(
-                        container=container
-                    )
-                )
+        self.available_metanodes: list[MSKDN_Metanode] = [
+            MSKDN_Metanode.container_to_metanode(
+                container=container
+            ) for container in read_msk.filter_container_by_entity(
+                target_field_name=self.field_name,
+                filter_property=pivot_property,
+                filter_entity=pivot_value_entity
+            )
+        ]
 
     def switch_display_property(self):
         if not self.available_metanodes:

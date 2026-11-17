@@ -16,6 +16,7 @@ from shellarc_client.ui.table_ops.table_cells import (
 
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
+from shellarc_client.engine.mskio import read_msk
 
 
 class MSK_TableView(QTableWidget):
@@ -115,8 +116,8 @@ class MSK_TableView(QTableWidget):
                   display_form: Optional[str]=None,
                   display_nodes: Optional[str]=None
                   ) -> None:
-        hypergraph = MSKDN_Hypergraph(field_name=field_name)
-        abst_edge = hypergraph.get_abstract_edge(
+        abst_edge = read_msk.solve_abst_edge(
+            field_name=field_name,
             upstream_metanodes=[
                 self.item(p[1], p[0]).metanode 
                 for p in upstream_cells 

@@ -25,7 +25,7 @@ class FileHyperline(QLabel):
         super().mouseDoubleClickEvent(event)
 
 
-class TaskDisplayChip(QWidget):
+class TaskDisplayItem(QWidget):
     class TaskDisplayType(StrEnum):
         STAGED_ZONE = "staged_zone"
         DETECTED_ZONE = "detected_zone"
@@ -35,6 +35,7 @@ class TaskDisplayChip(QWidget):
     def __init__(self, 
                  affiliated_container: MSK_Container,
                  display_type: TaskDisplayType,
+                 allow_custom_tag: bool=True,
                  parent=None):
         super().__init__(parent=parent)
         self.affiliated_container = affiliated_container
@@ -45,19 +46,23 @@ class TaskDisplayChip(QWidget):
 
         chip_lo = QVBoxLayout(container_frame)
 
+        operation_lo = self.switch_ui(display_type=display_type)
+        chip_lo.addLayout(operation_lo)
+
+        if allow_custom_tag:
+            custom_tag_lo = QHBoxLayout()
+            chip_lo.addLayout(custom_tag_lo)
+
+        self.setLayout(chip_lo)
+
+    def switch_ui(self, display_type: TaskDisplayType) -> QHBoxLayout:
         if display_type == self.TaskDisplayType.STAGED_ZONE:
             operation_lo = self.build_tracking_ui()
         elif display_type == self.TaskDisplayType.DETECTED_ZONE:
             operation_lo = self.build_detected_ui()
         elif display_type == self.TaskDisplayType.UNSTAGED_ZONE:
             operation_lo = self.build_unstaged_ui()
-
-        chip_lo.addLayout(operation_lo)
-
-        custom_tag_lo = QHBoxLayout()
-        chip_lo.addLayout(custom_tag_lo)
-
-        self.setLayout(chip_lo)
+        return operation_lo
 
     def build_tracking_ui(self) -> QHBoxLayout:
         operation_lo = QHBoxLayout()
