@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 
 from shellarc_client.ui.task_ops.task_display_chip import TaskDisplayItem
 from shellarc_client.ui.task_ops.task_register import RegisterTaskDialog
-from shellarc_client.engine.mount import file_manager
+from shellarc_client.engine.mount import mount_file_manager
 
 
 class TaskOpsUi(QWidget):
@@ -30,7 +30,7 @@ class TaskOpsUi(QWidget):
         self.setLayout(widget_lo)
 
     def scan_mount_dir(self):
-        mount_dir_info = file_manager.scan_mounted_dir()
+        mount_dir_info = mount_file_manager.scan_mounted_dir()
         RegisterTaskDialog(mount_info=mount_dir_info, parent=self).exec()
 
 
