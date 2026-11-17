@@ -11,11 +11,12 @@ from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 if TYPE_CHECKING:
     from shellarc_msk.mskob.container_obj import MSK_Container
 
-class MSK_ContainerCollection(MSK_Field):
+class MSK_ContainerCollection:
     def __init__(self,
                  field_name: str
                  ) -> None:
-        super().__init__(field_name=field_name)
+        # super().__init__(field_name=field_name)
+        self.field_name = field_name
 
         mskfs_pathsolver = MSKFS_PathSolver()
         self.field_bin_file = mskfs_pathsolver.mskfs_config / f".msk_container_{field_name}"

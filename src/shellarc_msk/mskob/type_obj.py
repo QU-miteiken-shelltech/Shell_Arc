@@ -1,9 +1,11 @@
 import struct 
+import hashlib
 from typing import Optional
 
 from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
+from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
 
 class MSK_Type:
     def __init__(self,
@@ -56,7 +58,7 @@ class MSK_Type:
         self.type_index = my_type[0]
         self.type_name = my_type[1]
 
-        
+    @mskcc_object_cache(source_bin=MSKFS_OnRamData.type_bin)
     def _search_target_type(self,
                             target_type_index: MSK_HexIndex,
                             allow_make: bool=False
@@ -103,3 +105,10 @@ class MSK_Type:
             f.write(record_bytes)
         with open(self.type_offset_file, "ab") as f:
             f.write(offset_bytes)
+
+    def __str__(self):
+        rtn_str = f" \
+            type_index : {self.type_index} \n \
+            type_name : {self.type_name} \n \
+        " 
+        return rtn_str

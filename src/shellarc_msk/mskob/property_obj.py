@@ -1,10 +1,12 @@
 import struct
+import hashlib
 from typing import Optional
 
 from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type
+from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
 
 class MSK_Property:
     def __init__(self,
@@ -55,14 +57,14 @@ class MSK_Property:
 
         my_prop = self._search_target_prop(
             # when made from (type, name) the index to look for is the computed one
-            target_prop_index=self.prop_index if allow_make else prop_index,
+            target_prop_index=self.prop_index if prop_index is None else prop_index,
             allow_make=allow_make
         )
         self.prop_index : MSK_HexIndex = my_prop[0]
         self.prop_type : MSK_Type = my_prop[1]
         self.prop_name : str = my_prop[2]
-        
 
+    @mskcc_object_cache(source_bin=MSKFS_OnRamData.property_bin)
     def _search_target_prop(self,
                             target_prop_index: MSK_HexIndex,
                             allow_make: bool=False
@@ -113,3 +115,11 @@ class MSK_Property:
             f.write(record_bytes)
         with open(self.property_offset_file, "ab") as f:
             f.write(offset_bytes)
+
+    def __str__(self):
+        rtn_str = f" \
+            property_index : {self.prop_index} \n \
+            property_name : {self.prop_name} \n \
+            property_type : {self.prop_type.type_name} \
+        " 
+        return rtn_str

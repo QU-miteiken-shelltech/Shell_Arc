@@ -12,10 +12,12 @@ class MSK_Field:
     field_offset_bin = None
 
     def __init__(self,
-                 field_name: str
+                 field_name: str,
+                 allow_make: bool=False
                  ) -> None:
         mskfs_pathsolver = MSKFS_PathSolver()
 
+        self.allow_make = allow_make
         self.field_offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
         if not self.field_offset_file.exists():
             with open(self.field_offset_file, "wb") as f:
@@ -94,7 +96,10 @@ class MSK_Field:
                 return rtn
 
         self.pos_index = num_chunks
-        self._declear_field(field_name=target_field_name)
+        if self.allow_make:
+            self._declear_field(field_name=target_field_name)
+        else:
+            raise ValueError(f"Requested MSK_Field with name {target_field_name} not exist")
         return []
 
     def _declear_field(self, 

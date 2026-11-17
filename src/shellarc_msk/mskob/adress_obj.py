@@ -1,10 +1,12 @@
 import struct
+import hashlib
 from typing import Optional
 
 from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
-from shellarc_msk.mskob.type_obj import MSK_Type
+from shellarc_msk.mskob.type_obj import MSK_Type 
+from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
 
 class MSK_Address:
     def __init__(self,
@@ -58,14 +60,15 @@ class MSK_Address:
   
 
         my_adress = self._search_target_adress(
-            target_adress_index=self.adress_index if allow_make else adress_index,
+            target_adress_index=self.adress_index if adress_index is None else adress_index,
             allow_make=allow_make
         )
         self.adress_index = my_adress[0]
         self.type = my_adress[1]
         self.value = my_adress[2]
-        
 
+
+    @mskcc_object_cache(source_bin=MSKFS_OnRamData.adress_bin)
     def _search_target_adress(self,
                               target_adress_index: MSK_HexIndex,
                               allow_make: bool=False
@@ -179,3 +182,11 @@ class MSK_Address:
             f.write(appended_adress_bytes)
         with open(self.adress_offset_file, "wb") as f:
             f.write(offset_bin)
+
+    def __str__(self):
+        rtn_str = f" \
+            address_index : {self.adress_index} \n \
+            address_type : {self.type.type_name} \n \
+            address_value : {self.value} \
+        " 
+        return rtn_str

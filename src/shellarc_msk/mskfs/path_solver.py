@@ -11,7 +11,17 @@ class MSKFS_PathSolver:
 
     @property
     def mskfs_config(self) -> Path:
+        space_root_dir = self.root_dir / MSKFS_PathSolver.space_root
+        if not space_root_dir.exists():
+            space_root_dir.mkdir(parents=True, exist_ok=False)
         return self.root_dir / MSKFS_PathSolver.space_root
+
+    @property
+    def mskfs_client(self) -> Path:
+        client_root_dir = self.root_dir / "client"
+        if not client_root_dir.exists():
+            client_root_dir.mkdir(parents=True, exist_ok=False)
+        return client_root_dir
 
     def mskfs_ref(self, ref: str) -> Path:
         return

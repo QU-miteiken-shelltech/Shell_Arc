@@ -31,6 +31,7 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                                 offset_counts: list[int]
                                 ) -> list[MSK_Entity]:
         entities = []
+        # print(f"length : {offset_counts}")
         for c in offset_counts:
             entities.append(
                 MSK_Entity(
