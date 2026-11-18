@@ -1,6 +1,6 @@
 import struct
 import hashlib
-from typing import Optional
+from typing import Optional, Self
 
 from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
 from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
@@ -63,6 +63,30 @@ class MSK_Property:
         self.prop_index : MSK_HexIndex = my_prop[0]
         self.prop_type : MSK_Type = my_prop[1]
         self.prop_name : str = my_prop[2]
+
+    @classmethod
+    def list_properties(cls) -> list[Self]:
+        num_chunks = len(MSKFS_OnRamData.property_offset_bin) // 8
+        property_list = []
+        for i in range(0, num_chunks):
+            offset_pos = i * 8
+            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos : offset_pos + 8])[0]
+            if i == num_chunks - 1:
+                chunk_next_offset = len(MSKFS_OnRamData.property_bin)
+            else:
+                chunk_next_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+            current_prop_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset : chunk_offset + 16])
+            current_type_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset + 16 : chunk_offset + 32])
+            current_type = MSK_Type(type_index=current_type_index)
+            current_prop_name = MSKFS_OnRamData.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
+            property_list.append(
+                MSK_Property(
+                    prop_index=current_prop_index,
+                    prop_type=current_type,
+                    prop_name=current_prop_name
+                )
+            )
+        return property_list
 
     @mskcc_object_cache(source_bin=MSKFS_OnRamData.property_bin)
     def _search_target_prop(self,

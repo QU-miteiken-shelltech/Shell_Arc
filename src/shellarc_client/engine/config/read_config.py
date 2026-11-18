@@ -20,6 +20,8 @@ class ReadClientConfig:
 
     @classmethod
     def get_config_item(cls, *args) -> Any:
+        with open(cls.client_config_path, "r", encoding="utf-8") as f:
+            cls.CLIENT_CONFIG = json.load(f, object_hook=lambda d: defaultdict(_recursive_defaultdict, d))
         current_checking = cls.CLIENT_CONFIG
         for key in args:
             if not isinstance(current_checking, dict):

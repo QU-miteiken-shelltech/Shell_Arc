@@ -11,6 +11,7 @@ from shellarc_client.ui.chat_ops.chat_ops_ui import ChatOpsUi
 from shellarc_client.ui.table_ops.table_ops_ui import TableOpsUi
 from shellarc_client.ui.graph_ops.graph_ops_ui import GraphOpsUi
 from shellarc_client.ui.package_ops.package_ops_ui import PackageOpsUi
+from shellarc_client.ui.data_ops.data_ops_ui import DataOpsUi
 
 
 class MainWindow(QMainWindow):
@@ -27,6 +28,10 @@ class MainWindow(QMainWindow):
         self._init_tabs()
 
     def _init_tabs(self):
+        data_ops_tab = DataOpsUi()
+        self.tab_widget.addTab(data_ops_tab, "Data")
+        return
+
         print("CALL")
         call_ops_tab = CallOpsUi()
         self.tab_widget.addTab(call_ops_tab, "Call")
