@@ -3,7 +3,7 @@ import re
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QDialog,
     QWidget, QLabel, QComboBox,
-    QPushButton
+    QPushButton, QMessageBox, QScrollArea
 )
 from PySide6.QtCore import QEvent
 
@@ -39,13 +39,17 @@ class RegisterFileItem(QWidget):
                 )
             linkage_setting_lo.addWidget(linkage_combo)
             self.combo_dict[link_prop] = linkage_combo
+        linkage_setting_lo.addStretch()
         track_btn = QPushButton("Track")
+        track_btn.setFixedWidth(65)
         track_btn.clicked.connect(self.track_file)
         linkage_setting_lo.addWidget(track_btn)
         untrack_btn = QPushButton("Untrack")
+        untrack_btn.setFixedWidth(65)
         untrack_btn.clicked.connect(self.untrack_file)
         linkage_setting_lo.addWidget(untrack_btn)
         hold_btn = QPushButton("Hold")
+        hold_btn.setFixedWidth(65)
         hold_btn.clicked.connect(self.hold_file)
         linkage_setting_lo.addWidget(hold_btn)
         item_lo.addLayout(linkage_setting_lo)
@@ -68,10 +72,24 @@ class RegisterFileItem(QWidget):
             conditions=conditions,
             max_count=1
         )
-        affiliated_container_index = affiliated_containers[0].container_index
-        self.parentWidget().task_settings_info["tracked"].append(
-            (self.file_path, str(affiliated_container_index))
+        affiliated_container_index = str(affiliated_containers[0].container_index)
+        duplicated_file_path = mount_file_manager.check_container_duplication(
+            container_index=affiliated_container_index,
+            extra_source=self.parentWidget().task_settings_info["tracked"]
         )
+        if duplicated_file_path is not None:
+            container_info = " ".join([f"{c[0].prop_name} : {c[1].value}" for c in conditions])
+            reply = QMessageBox.question(
+                self, 
+                "Confirmation", 
+                (f"File affiliated to {container_info} already exist ({duplicated_file_path}).\n"
+                 "Are you sure that you want to overwrite it?"),
+                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+        self.parentWidget().task_settings_info["tracked"].setdefault(
+            self.file_path, {}).setdefault("affiliation", affiliated_container_index)
         self.remove_self()
 
     def untrack_file(self):
@@ -88,12 +106,16 @@ class RegisterTaskDialog(QDialog):
                  parent=None):
         super().__init__(parent=parent)
         self.task_settings_info: dict[str, list] = {
-            "tracked": [],
+            "tracked": {},
             "untracked": [],
             "detected": []
         }
-
         dialog_lo = QVBoxLayout()
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_widget = QWidget()
+        scroll_lo = QVBoxLayout(scroll_widget)
         filter_elements = ReadClientConfig.get_config_item("file_linkage", "filter_property")
         # element = [prop, type]
         linkage_settings = {}
@@ -120,10 +142,13 @@ class RegisterTaskDialog(QDialog):
                 file_path=file_path,
                 linkage_settings=linkage_settings
             )
-            dialog_lo.addWidget(item)
+            scroll_lo.addWidget(item)
+        scroll_lo.addStretch()
+        scroll_area.setWidget(scroll_widget)
+        dialog_lo.addWidget(scroll_area)
 
         close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.close_dialog)
+        close_btn.clicked.connect(lambda: self.close_dialog(do_accept=True))
         dialog_lo.addWidget(close_btn)
         self.setLayout(dialog_lo)
 
@@ -139,7 +164,10 @@ class RegisterTaskDialog(QDialog):
         remaining_items = self.findChildren(RegisterFileItem)
         for remaining_item in remaining_items:
             self.task_settings_info["detected"].append(remaining_item.file_path)
-        print(self.task_settings_info)
+        mount_file_manager.update_scanned_time()
+        mount_file_manager.write_file_status(
+            info=self.task_settings_info
+        )
         if do_accept:
             self.accept()
 
