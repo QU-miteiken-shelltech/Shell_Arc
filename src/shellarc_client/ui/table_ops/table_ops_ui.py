@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 
 from shellarc_client.ui.table_ops.table_cells import TableCell
 from shellarc_client.ui.table_ops.table_view import MSK_TableView
+from shellarc_client.ui.table_ops.build_table_from_file import TableBuilder
 
 from shellarc_msk.mskob.field_obj import MSK_Field
 
@@ -22,10 +23,13 @@ class TableOpsUi(QWidget):
         self.field_combo.addItems(MSK_Field.field_names())
         self.field_combo.currentIndexChanged.connect(self.switch_field)
         self.field_combo.setFixedWidth(150)
-        self.switch_field()
         field_lo.addWidget(self.field_combo)
         field_lo.addStretch()
         self.lo.addLayout(field_lo)
+
+        build_table_btn = QPushButton("Build table from file")
+        build_table_btn.clicked.connect(self.build_table_from_file)
+        self.lo.addWidget(build_table_btn)
 
         self.msk_table_view = MSK_TableView()
         self.lo.addWidget(self.msk_table_view)
@@ -49,13 +53,24 @@ class TableOpsUi(QWidget):
         clear_all_btn.clicked.connect(self.clear_all_cells)
         self.lo.addWidget(clear_all_btn)
 
+        self.switch_field()
+
         self.setLayout(self.lo)
 
     def switch_field(self):
+        if hasattr(self, "msk_table_view"):
+            do_clear = self.clear_all_cells()
+            if not do_clear:
+                raise ValueError("Switch rejected")
         new_field_name = self.field_combo.currentText()
         current_field = MSK_Field(field_name=new_field_name)
         self.field_members = [p for p in current_field.field_ls]
         self.field_name = new_field_name
+
+    def build_table_from_file(self):
+        table_builder = TableBuilder(table=self.msk_table_view)
+        self.field_combo.setCurrentText(table_builder.field_name)
+        table_builder.build_table_from_file()
 
     def fit_table_vert(self):
         for row in range(self.msk_table_view.rowCount()):
@@ -77,18 +92,21 @@ class TableOpsUi(QWidget):
         for row in range(1, self.msk_table_view.rowCount()):
             self.msk_table_view.setRowHeight(row, standard_height)
 
-    def clear_all_cells(self):
-        confirmation = QMessageBox.question(
-            self, 
-            "Confirmation", 
-            "Are you sure that you want to clear this table?", 
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No)
-        if confirmation == QMessageBox.StandardButton.Yes:
-            self.msk_table_view.clear()
-            self.msk_table_view.setRowCount(1)
-            self.msk_table_view.setColumnCount(1)
-            self.msk_table_view.setItem(0, 0, TableCell())
+    def clear_all_cells(self) -> bool:
+        if self.msk_table_view.rowCount() > 1 or self.msk_table_view.columnCount() > 1:
+            confirmation = QMessageBox.question(
+                self, 
+                "Confirmation", 
+                "Are you sure that you want to clear this table?", 
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No)
+            if confirmation == QMessageBox.StandardButton.No:
+                return False
+        self.msk_table_view.clear()
+        self.msk_table_view.setRowCount(1)
+        self.msk_table_view.setColumnCount(1)
+        self.msk_table_view.setItem(0, 0, TableCell())
+        return True
 
     def change_row_num(self, new_val):
         self.msk_table_view.change_row_num(new_num=new_val)

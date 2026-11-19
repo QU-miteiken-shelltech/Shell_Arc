@@ -10,9 +10,9 @@ from PySide6.QtGui import (
     QColor, QPolygonF)
 
 from shellarc_client.ui.table_ops.table_cells import (
-    TableCell, CellEditDialog, HeaderEditDialog,
-    BuildAbstEdgeDialog
+    TableCell, CellEditDialog,BuildAbstEdgeDialog
 )
+from shellarc_client.ui.table_ops.table_header import HeaderEditDialog
 
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
@@ -41,7 +41,7 @@ class MSK_TableView(QTableWidget):
         print(clicked_item)
         cell_edit_dialog = CellEditDialog(cell=clicked_item)
         cell_edit_dialog.exec()
-        cell_edit_dialog.set_display_nodes()
+        cell_edit_dialog.set_nodes_display()
 
     def vert_header_double_clicked(self, logical_index):
         HeaderEditDialog(
@@ -75,6 +75,27 @@ class MSK_TableView(QTableWidget):
                 )
         super().mousePressEvent(event)  
 
+    def link_table_cells(self,
+                         arrow_info: dict[str, list]
+                         ) -> None:
+        if len(arrow_info["upstreams"]) <= 0:
+            return
+        cells_setter = SetCells(
+            table=self, arrow_info=arrow_info
+        )
+        if len(arrow_info["upstreams"]) > 1:
+            build_abst_edge_dialog = BuildAbstEdgeDialog(self)
+            result = build_abst_edge_dialog.exec()
+            if result == QDialog.DialogCode.Accepted:
+                target_prop = build_abst_edge_dialog.get_derived_property()
+                max_metanode_num = build_abst_edge_dialog.get_max_length()
+                cells_setter.resolve_cell(
+                    target_prop=target_prop,
+                    max_metanode_num=max_metanode_num
+                )
+        elif len(arrow_info["upstreams"]) == 1:
+            cells_setter.expand_cell_solution()
+
     def mouseMoveEvent(self, event):
         if self._arrow_info:
             self._arrow_info[-1] = (
@@ -107,117 +128,12 @@ class MSK_TableView(QTableWidget):
                 self.viewport().update()
         super().mouseReleaseEvent(event)
 
-    def link_cell(self,
-                  field_name: str,
-                  target_prop: MSK_Property, 
-                  upstream_cells: list[tuple[int, int]],
-                  derivitive_cell: tuple[int, int],
-                  max_metanode_num: int,
-                  display_form: Optional[str]=None,
-                  display_nodes: Optional[str]=None
-                  ) -> None:
-        abst_edge = read_msk.solve_abst_edge(
-            field_name=field_name,
-            upstream_metanodes=[
-                self.item(p[1], p[0]).metanode 
-                for p in upstream_cells 
-                if p is not None],
-            target_prop=target_prop,
-            max_count=10
-        )
-        self.setItem(
-            derivitive_cell[1],
-            derivitive_cell[0],
-            TableCell(
-                field_name=field_name, 
-                metanode=abst_edge.derivitive,
-                upstream_cells=upstream_cells,
-                derived_property=target_prop,
-                max_metanode_num=max_metanode_num,
-                display_form=display_form,
-                display_nodes=display_nodes
-            )
-        )
-
-    def link_table_cells(self,
-                         arrow_info: dict[str, list]
-                         ) -> None:
-        field_name = self.parentWidget().field_name
-        if len(arrow_info["upstreams"]) > 1:
-            build_abst_edge_dialog = BuildAbstEdgeDialog(self)
-            result = build_abst_edge_dialog.exec()
-            if result == QDialog.DialogCode.Accepted:
-                target_prop = build_abst_edge_dialog.get_abst_edge()
-                max_metanode_num = build_abst_edge_dialog.get_max_length()
-                self.link_cell(
-                    field_name= field_name,
-                    target_prop=target_prop, 
-                    upstream_cells=arrow_info["upstreams"],
-                    derivitive_cell=arrow_info["derivitive"][0],
-                    max_metanode_num=max_metanode_num
-                )
-        elif len(arrow_info["upstreams"]) == 1:
-            if arrow_info["upstreams"][0] is None:
-                return
-            original_item = self.item(
-                arrow_info["upstreams"][0][1],
-                arrow_info["upstreams"][0][0]
-            )
-            target_prop = original_item.derived_property
-            upstream_cells = original_item.upstream_cells
-            max_metanode_num = original_item.max_metanode_num
-            display_nodes = original_item.display_nodes
-            display_form = original_item.display_form
-            if target_prop is None or upstream_cells is None:
-                return
-            c1, c2 = arrow_info["upstreams"][0][0], arrow_info["derivitive"][0][0]
-            r1, r2 = arrow_info["upstreams"][0][1], arrow_info["derivitive"][0][1]
-
-            for col in range(min(c1, c2), max(c1, c2) + 1):
-                for row in range(min(r1, r2), max(r1, r2) + 1):
-                    my_upstream_cells = []
-                    for upstream_cell in upstream_cells:
-                        if (upstream_cell[0] in self.header_pos["cols"] and
-                            upstream_cell[1] in self.header_pos["rows"]):
-                            raise ValueError("Upstream cell is inside overlapping headers")
-                        if upstream_cell[0] in self.header_pos["cols"]:
-                            my_upstream_col = upstream_cell[0]
-                            row_offset = upstream_cell[1] - arrow_info["upstreams"][0][1]
-                            my_upstream_row = row + row_offset
-                        if upstream_cell[1] in self.header_pos["rows"]:
-                            my_upstream_row = upstream_cell[1]
-                            col_offset = upstream_cell[0] - arrow_info["upstreams"][0][0]
-                            my_upstream_col = col + col_offset
-                        my_upstream_cells.append((my_upstream_col, my_upstream_row))
-                    # my_upstream_cells = [
-                    #     (
-                    #         cell[0] if cell[0] != arrow_info["upstreams"][0][0] else col,
-                    #         cell[1] if cell[1] != arrow_info["upstreams"][0][1] else row,
-                    #     ) for cell in upstream_cells
-                    # ]
-                    try:
-                        self.link_cell(
-                            field_name=field_name,
-                            target_prop=target_prop, 
-                            upstream_cells=my_upstream_cells,
-                            derivitive_cell=(col, row),
-                            max_metanode_num=max_metanode_num,
-                            display_form=display_form,
-                            display_nodes=display_nodes
-                        )
-                    except Exception as e:
-                        print(f"Link cell failed : col{col} row{row} due to error : {e}")
-                        continue
-        else:
-            return
-
-        
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Return and self._arrow_info:
             arrow_info = {
                 "upstreams" : [], # list[tuple[int, int]]
                 "derivitive" : [] # list[tuple[int, int]]
-            }
+            } # order: (col, row)
             for arrow in self._arrow_info:
                 arrow_info["upstreams"].append(arrow[2])
             arrow_info["derivitive"].append(self._cell_at(self._arrow_info[-1][1]))
@@ -261,3 +177,103 @@ class MSK_TableView(QTableWidget):
                             p2.y() - size * math.sin(angle + math.pi / 6))
             painter.drawPolygon(QPolygonF([p2, left, right]))
             painter.end()
+
+
+class SetCells:
+    def __init__(self, 
+                 arrow_info: dict[str, list],
+                 table: MSK_TableView):
+        self.table = table
+        self.arrow_info = arrow_info
+
+    def link_cell(self,
+                  field_name: str,
+                  target_prop: MSK_Property, 
+                  upstream_cells: list[tuple[int, int]],
+                  derivitive_cell: tuple[int, int],
+                  max_metanode_num: int,
+                  item_display: Optional[str]=None,
+                  nodes_display: Optional[str]=None
+                  ) -> None:
+        abst_edge = read_msk.solve_abst_edge(
+            field_name=field_name,
+            upstream_metanodes=[
+                self.table.item(p[1], p[0]).metanode 
+                for p in upstream_cells 
+                if p is not None],
+            target_prop=target_prop,
+            max_count=10
+        )
+        self.table.setItem(
+            derivitive_cell[1],
+            derivitive_cell[0],
+            TableCell(
+                field_name=field_name, 
+                metanode=abst_edge.derivitive,
+                upstream_cells=upstream_cells,
+                derived_property=target_prop,
+                max_metanode_num=max_metanode_num,
+                item_display=item_display,
+                nodes_display=nodes_display
+            )
+        )
+
+    def resolve_cell(self,
+                     target_prop: MSK_Property,
+                     max_metanode_num: int=1):
+        field_name = self.table.parentWidget().field_name
+        self.link_cell(
+            field_name= field_name,
+            target_prop=target_prop, 
+            upstream_cells=self.arrow_info["upstreams"],
+            derivitive_cell=self.arrow_info["derivitive"][0],
+            max_metanode_num=max_metanode_num
+        )
+
+    def expand_cell_solution(self):
+        field_name = self.table.parentWidget().field_name
+        if self.arrow_info["upstreams"][0] is None:
+            return
+        original_item = self.table.item(
+            self.arrow_info["upstreams"][0][1],
+            self.arrow_info["upstreams"][0][0]
+        )
+        target_prop = original_item.derived_property
+        upstream_cells = original_item.upstream_cells
+        max_metanode_num = original_item.max_metanode_num
+        nodes_display = original_item.nodes_display
+        item_display = original_item.item_display
+        if target_prop is None or upstream_cells is None:
+            return
+        c1, c2 = self.arrow_info["upstreams"][0][0], self.arrow_info["derivitive"][0][0]
+        r1, r2 = self.arrow_info["upstreams"][0][1], self.arrow_info["derivitive"][0][1]
+
+        for col in range(min(c1, c2), max(c1, c2) + 1):
+            for row in range(min(r1, r2), max(r1, r2) + 1):
+                my_upstream_cells = []
+                for upstream_cell in upstream_cells:
+                    if (upstream_cell[0] in self.table.header_pos["cols"] and
+                        upstream_cell[1] in self.table.header_pos["rows"]):
+                        raise ValueError("Upstream cell is inside overlapping headers")
+                    if upstream_cell[0] in self.table.header_pos["cols"]:
+                        my_upstream_col = upstream_cell[0]
+                        row_offset = upstream_cell[1] - self.arrow_info["upstreams"][0][1]
+                        my_upstream_row = row + row_offset
+                    if upstream_cell[1] in self.table.header_pos["rows"]:
+                        my_upstream_row = upstream_cell[1]
+                        col_offset = upstream_cell[0] - self.arrow_info["upstreams"][0][0]
+                        my_upstream_col = col + col_offset
+                    my_upstream_cells.append((my_upstream_col, my_upstream_row))
+                try:
+                    self.link_cell(
+                        field_name=field_name,
+                        target_prop=target_prop, 
+                        upstream_cells=my_upstream_cells,
+                        derivitive_cell=(col, row),
+                        max_metanode_num=max_metanode_num,
+                        item_display=item_display,
+                        nodes_display=nodes_display
+                    )
+                except Exception as e:
+                    print(f"Link cell failed : col{col} row{row} due to error : {e}")
+                    continue
