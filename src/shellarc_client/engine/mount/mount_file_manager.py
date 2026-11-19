@@ -36,6 +36,25 @@ def update_scanned_time():
     for tracking_file in managed_files_info["tracking"]:
         ReadClientConfig.write_config_item(str(time.time()), "managed_files", "tracking", tracking_file, "last_scanned")
 
+def get_tag_info(file_path) -> Optional[dict[str, str]]:
+    tag_info = ReadClientConfig.get_config_item("managed_files", "tracking", file_path, "custom_tags")
+    return tag_info
+
+def write_tag_info(file_path: str, new_tag_title: str, new_tag_expression: str):
+    ReadClientConfig.write_config_item(
+        new_tag_expression,
+        "managed_files", "tracking", file_path, "custom_tags", new_tag_title
+    )
+
+def delete_tag_info(file_path: str, tag_title: str):
+    current_tag_info = get_tag_info(file_path=file_path)
+    if tag_title in current_tag_info:
+        del current_tag_info[tag_title]
+    ReadClientConfig.write_config_item(
+        current_tag_info,
+        "managed_files", "tracking", file_path, "custom_tags"
+    )
+
 def check_container_duplication(
         container_index: str,
         extra_source: Optional[dict]=None

@@ -1,23 +1,43 @@
-from pathlib import Path
+import sys
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QApplication, QColorDialog, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 
-def test():
-    txt_dict = {}
-    for entity in MSK_ContainerCollection(field_name="Cut").entities_iter():
-        if entity.container_index in txt_dict:
-            txt_dict[entity.container_index].append(f"{entity.prop.prop_name} = {entity.address.value}")
-        else:
-            txt_dict[entity.container_index] = [f"{entity.prop.prop_name} = {entity.address.value}"]
+class ColorPickerApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("PySide カラーピッカー")
+        self.resize(300, 160)
 
-    write_txt = ""
-    for k,v in txt_dict.items():
-        write_txt += "\n".join(v)
-        write_txt += "\n\n"
+        self.label = QLabel("選択された色: なし")
+        self.btn = QPushButton("色を選ぶ")
+        self.btn.clicked.connect(self.open_color_dialog)
 
-    with open(Path(__file__).resolve().parent / "test_ascii.txt", "w", encoding="utf-8") as f:
-        f.write(write_txt)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+        layout.addWidget(self.btn)
 
-    print("END")
+    def open_color_dialog(self):
+        # 初期色を指定してダイアログを開く（アルファ値も扱いたい場合は ShowAlphaChannel を指定）
+        color: QColor = QColorDialog.getColor(
+            QColor("#3498db"),
+            self,
+            "カラーピッカー",
+            QColorDialog.ColorDialogOption.ShowAlphaChannel,
+        )
 
-test()
+        # キャンセルされた場合は isValid() が False になる
+        if color.isValid():
+            hex_code = color.name(QColor.NameFormat.HexArgb)  # 例: "#ff3498db"
+            rgba = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+            self.label.setText(f"HEX: {hex_code}\nRGBA: {rgba}")
+            self.label.setStyleSheet(
+                f"background-color: {rgba}; color: white; padding: 8px; border-radius: 4px;"
+            )
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = ColorPickerApp()
+    window.show()
+    sys.exit(app.exec())

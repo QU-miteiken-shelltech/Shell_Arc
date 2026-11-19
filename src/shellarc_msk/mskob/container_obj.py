@@ -5,6 +5,7 @@ from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
+from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 
 class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
@@ -77,3 +78,42 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                           requesting_prop.prop_index.to_bytes() +
                           null.to_bytes())
         )
+
+    def request_entity_from_str(self,
+                                prop_name: str,
+                                type_name: str
+                                ) -> MSK_Entity:
+        for entity in self:
+            if (entity.prop.prop_name == prop_name and
+                entity.prop.prop_type.type_name == type_name):
+                return entity
+
+        prop = MSK_Property(
+            prop_name=prop_name,
+            prop_type=MSK_Type(type_name=type_name)
+        )
+        null = MSK_HexIndex(value=None)
+        container_index = self.container_index if self.container_index is not None else null
+        return MSK_Entity(
+            entity_chunk=(container_index.to_bytes() +
+                          prop.prop_index.to_bytes() +
+                          null.to_bytes())
+        )
+
+    def request_property_from_name(self, prop_name: str) -> list[MSK_Property]:
+        existing_properties = [
+            entity.prop for entity in self 
+            if entity.prop.prop_name == prop_name
+        ]
+        return existing_properties
+
+    def get_existing_properties(
+            self, 
+            get_name: bool=False
+            ) -> list[MSK_Property] | list[str]:
+        existing_properties = [
+            entity.prop for entity in self
+        ] if not get_name else [
+            entity.prop.prop_name for entity in self
+        ]
+        return existing_properties

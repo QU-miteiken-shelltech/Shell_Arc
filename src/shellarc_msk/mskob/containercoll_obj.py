@@ -175,7 +175,8 @@ class MSK_ContainerCollection:
                      adress: MSK_Address,
                      do_override: bool=False
                      ) -> MSK_Entity:
-        if (prop, prop.prop_type) not in self.field_ls and not do_override:
+        field_ls = MSK_Field(field_name=self.field_name).field_ls
+        if (prop, prop.prop_type) not in field_ls and not do_override:
             raise ValueError("Properties undefined in Field shall only be defined as overrides")
         if prop.prop_type != adress.type:
             raise ValueError("Type unmatch")

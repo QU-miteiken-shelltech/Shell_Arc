@@ -19,10 +19,11 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("ShellArc 2027")
-        self.setMinimumSize(350,800)
+        self.setMinimumSize(950,650)
         # self.showMaximized()
 
         self.tab_widget = QTabWidget()
+        self.tab_widget.currentChanged.connect(self.on_tab_changed)
         self.setCentralWidget(self.tab_widget)
 
         self._init_tabs()
@@ -30,15 +31,14 @@ class MainWindow(QMainWindow):
     def _init_tabs(self):
         data_ops_tab = DataOpsUi()
         self.tab_widget.addTab(data_ops_tab, "Data")
-        return
 
         print("CALL")
         call_ops_tab = CallOpsUi()
         self.tab_widget.addTab(call_ops_tab, "Call")
 
         print("TASK")
-        task_ops_tab = TaskOpsUi()
-        self.tab_widget.addTab(task_ops_tab, "Task")
+        self.task_ops_tab = TaskOpsUi()
+        self.tab_widget.addTab(self.task_ops_tab, "Task")
 
         print("CHAT")
         task_ops_tab = ChatOpsUi()
@@ -57,4 +57,9 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(package_ops_tab, "Package")
 
         print("START")
+
+    def on_tab_changed(self, index: int):
+        current_tab_widget = self.tab_widget.widget(index)
+        if current_tab_widget == self.task_ops_tab:
+            self.task_ops_tab.build_ui()
 

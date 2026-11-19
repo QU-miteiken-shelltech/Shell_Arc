@@ -222,7 +222,7 @@ class BuildAbstEdgeDialog(QDialog):
 
         self.setLayout(dialog_lo)
 
-    def get_abst_edge(self) -> MSK_Property:
+    def get_derived_property(self) -> MSK_Property:
         target_property = self.parentWidget().parentWidget().field_members[self.property_combo.currentIndex()][0]
         return target_property
 

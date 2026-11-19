@@ -88,18 +88,18 @@ class GraphOpsUi(QWidget):
     def switch_pivot_property(self):
         pivot_property : MSK_Property = self.pivot_property_combo.currentData()
         self.pivot_property = pivot_property
-        values = read_msk.get_values_by_property(
+        entities = read_msk.get_entities_by_property(
             target_field_name=self.field_name,
             requested_property=pivot_property,
             eluminate_duplication=True
         )
-        values.sort(
+        entities.sort(
             key=lambda x : x.address.value
         )
         self.pivot_value_combo.clear()
-        for v in values:
+        for e in entities:
             self.pivot_value_combo.addItem(
-                v.address.value, v
+                e.address.value, e
             )
 
     def switch_pivot_value(self):

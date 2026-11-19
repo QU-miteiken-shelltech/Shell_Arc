@@ -1,3 +1,5 @@
+import re
+
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.property_obj import MSK_Property
@@ -9,12 +11,16 @@ from shellarc_msk.mskdn.abstract_edge import MSKDN_AbstEdge
 
 COUNTER = 0
 
-def get_values_by_property(
+def get_entities_by_property(
         target_field_name: str,
         requested_property: MSK_Property,
-        eluminate_duplication: bool=True
+        eluminate_duplication: bool=True,
+        eluminate_none: bool=True,
+        sort_flag: int=1 #0: no-sort 1: sort-by-str 2: sort-by-num
         ) -> list[MSK_Entity]:
-    values = []
+    assert sort_flag in [0, 1, 2], "sort flag can only be 0(no-sort), 1(sort-as-str), or 2(sort-as-num-if-found)"
+    
+    entities = []
     appeared = []
     global COUNTER
     for container in MSK_ContainerCollection(field_name=target_field_name).container_iter():
@@ -24,9 +30,25 @@ def get_values_by_property(
         entity_value = entity.address.value
         if eluminate_duplication and entity_value in appeared:
             continue
-        values.append(entity)
+        if eluminate_none and entity.address.value is None:
+            continue
+        entities.append(entity)
         appeared.append(entity_value)
-    return values
+    if sort_flag == 0:
+        return entities
+    
+    def extract_number(x: str) -> str:
+        numbers = re.findall(r"\d+", x)
+        return int(numbers[0]) if len(numbers) == 1 else x
+    if sort_flag == 1:
+        entities.sort(
+            key=lambda x : x.address.value
+        )
+    elif sort_flag == 2:
+        entities.sort(
+            key=lambda x : extract_number(x.address.value)
+        )
+    return entities
 
 def filter_container_by_entity(
         target_field_name: str,
