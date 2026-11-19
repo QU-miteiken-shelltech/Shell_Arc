@@ -20,7 +20,6 @@ class TaskOpsUi(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.lo = QVBoxLayout(self)
-        self.build_ui()
         self.setLayout(self.lo)
 
     def build_ui(self):
@@ -64,7 +63,8 @@ class TaskOpsUi(QWidget):
                     container_index=MSK_HexIndex(file_info.get("affiliation", None))
                 ),
                 display_type=TaskDisplayChip.TaskDisplayType.STAGED_ZONE,
-                allow_custom_tag=True
+                allow_custom_tag=True,
+                master_ui_widget=self
             )
             tracking_gp_lo.addWidget(task_display_item)
             task_display_item.mount_status_changed_sig.connect(self.mount_status_changed)

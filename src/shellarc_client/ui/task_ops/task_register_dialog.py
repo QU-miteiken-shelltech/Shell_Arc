@@ -73,9 +73,14 @@ class RegisterFileItem(QWidget):
             max_count=1
         )
         affiliated_container_index = str(affiliated_containers[0].container_index)
+        parent_widget = self.parentWidget()
+        while parent_widget is not None:
+            if isinstance(parent_widget, QDialog):
+                break
+            parent_widget = parent_widget.parentWidget()
         duplicated_file_path = mount_file_manager.check_container_duplication(
             container_index=affiliated_container_index,
-            extra_source=self.parentWidget().task_settings_info["tracked"]
+            extra_source=parent_widget.task_settings_info["tracked"]
         )
         if duplicated_file_path is not None:
             container_info = " ".join([f"{c[0].prop_name} : {c[1].value}" for c in conditions])
@@ -88,7 +93,7 @@ class RegisterFileItem(QWidget):
             )
             if reply == QMessageBox.StandardButton.No:
                 return
-        self.parentWidget().task_settings_info["tracked"].setdefault(
+        parent_widget.task_settings_info["tracked"].setdefault(
             self.file_path, {}).setdefault("affiliation", affiliated_container_index)
         self.remove_self()
 
@@ -121,7 +126,7 @@ class RegisterTaskDialog(QDialog):
         linkage_settings = {}
         for e in filter_elements:
             filter_property_name, filter_type_name = e[0], e[1]
-            entities = read_msk.get_values_by_property(
+            entities = read_msk.get_entities_by_property(
                 target_field_name=ReadClientConfig.get_config_item("file_linkage", "record_field"),
                 requested_property=MSK_Property(
                     prop_type=MSK_Type(type_name=filter_type_name),
@@ -140,7 +145,8 @@ class RegisterTaskDialog(QDialog):
         for file_path in mount_info["detected"]:
             item = RegisterFileItem(
                 file_path=file_path,
-                linkage_settings=linkage_settings
+                linkage_settings=linkage_settings,
+                parent=self
             )
             scroll_lo.addWidget(item)
         scroll_lo.addStretch()

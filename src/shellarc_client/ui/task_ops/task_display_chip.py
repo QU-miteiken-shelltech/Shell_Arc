@@ -1,19 +1,21 @@
-from typing import Optional
 from enum import StrEnum
 
 from PySide6.QtWidgets import (
     QWidget, QFrame, QHBoxLayout,
     QVBoxLayout, QLabel, QPushButton,
-    QFileDialog
+    QFileDialog, QDialog
 )
 from PySide6.QtGui import QMouseEvent, QDesktopServices
-from PySide6.QtCore import Signal, Qt, QUrl, Slot
+from PySide6.QtCore import (
+    Signal, Qt, QUrl
+)
 
 from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_client.engine.config.read_config import ReadClientConfig
 from shellarc_client.engine.mount import mount_file_manager
+from shellarc_client.ui.task_ops.tag_creator import TagCreatorDialog, CustomTag
 
 class FileHyperline(QLabel):
     file_hyperlink_clicked = Signal(str)
@@ -28,7 +30,7 @@ class FileHyperline(QLabel):
             self.file_hyperlink_clicked.emit(self.file_path)
         super().mouseDoubleClickEvent(event)
 
-
+        
 class TaskDisplayChip(QWidget):
     mount_status_changed_sig = Signal(str, str, object) 
     # Operation(= CALL, TRACK, UNTRACK, REMOVE), file_path, affiliation
@@ -44,10 +46,12 @@ class TaskDisplayChip(QWidget):
                  affiliated_container: MSK_Container | None,
                  display_type: TaskDisplayType,
                  allow_custom_tag: bool=True,
+                 master_ui_widget=None,
                  parent=None):
         super().__init__(parent=parent)
         self.affiliated_container = affiliated_container
         self.file_path = file_path
+        self.master_ui_widget = master_ui_widget
         if affiliated_container is None and display_type == self.TaskDisplayType.STAGED_ZONE:
             raise ValueError("An affiliated container must be designated in order to build a staged zone chip")
         
@@ -61,7 +65,7 @@ class TaskDisplayChip(QWidget):
         operation_lo = self.switch_ui(display_type=display_type)
         chip_lo.addLayout(operation_lo)
 
-        if allow_custom_tag:
+        if allow_custom_tag and self.affiliated_container is not None:
             self.custom_tag_lo = QHBoxLayout()
             add_custom_tag_btn = QPushButton("Tag >") 
             add_custom_tag_btn.setFixedWidth(55)
@@ -73,6 +77,18 @@ class TaskDisplayChip(QWidget):
                 }
             """)
             self.custom_tag_lo.addWidget(add_custom_tag_btn)
+            add_custom_tag_btn.clicked.connect(self.add_tag)
+            tag_info = mount_file_manager.get_tag_info(file_path=self.file_path)
+            if tag_info:
+                self.custom_tag_lo.addSpacing(8)
+                for tag_title, tag_expression in mount_file_manager.get_tag_info(file_path=self.file_path).items():
+                    new_tag = CustomTag(
+                        title=tag_title,
+                        expression=tag_expression,
+                        parent=self
+                    )
+                    self.custom_tag_lo.addWidget(new_tag)
+            self.custom_tag_lo.addStretch()
             chip_lo.addLayout(self.custom_tag_lo)
 
         self.setLayout(chip_lo)
@@ -172,6 +188,13 @@ class TaskDisplayChip(QWidget):
         filename, _ = QFileDialog.getOpenFileName(self, "Open", "", "All files (*)")
         if filename:
             pass
+
+    def add_tag(self):
+        result = TagCreatorDialog(parent=self).exec()
+        if result == QDialog.DialogCode.Accepted:
+            if self.master_ui_widget is None:
+                return
+            self.master_ui_widget.build_ui()
     
     def file_hyperlink_clicked_callback(self, file_path: str):
         local_url = QUrl.fromLocalFile(file_path)
