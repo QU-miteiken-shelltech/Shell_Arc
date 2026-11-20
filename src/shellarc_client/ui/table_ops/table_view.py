@@ -17,6 +17,7 @@ from shellarc_client.ui.table_ops.table_header import HeaderEditDialog
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
 from shellarc_client.engine.mskio import read_msk
+from shellarc_client.engine.tables import table_capture
 
 
 class MSK_TableView(QTableWidget):
@@ -93,8 +94,14 @@ class MSK_TableView(QTableWidget):
                     target_prop=target_prop,
                     max_metanode_num=max_metanode_num
                 )
+                table_capture.set_cell_setters(
+                    arror_info=arrow_info,
+                    max_metanode_num=max_metanode_num,
+                    target_property=target_prop.prop_name
+                )
         elif len(arrow_info["upstreams"]) == 1:
             cells_setter.expand_cell_solution()
+            table_capture.set_cell_expanders(arrow_info=arrow_info)
 
     def mouseMoveEvent(self, event):
         if self._arrow_info:

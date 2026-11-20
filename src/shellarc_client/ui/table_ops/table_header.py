@@ -13,6 +13,7 @@ from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_client.ui.table_ops.table_cells import TableCell
 from shellarc_client.engine.mskio import read_msk
+from shellarc_client.engine.tables import table_capture
 
 class HeaderEditDialog(QDialog):
     def __init__(self, 
@@ -82,6 +83,8 @@ class HeaderEditDialog(QDialog):
         start_pos = int(self.start_pos_input.text()) - 1 if self.start_pos_input.text() else 0
         max_count = int(self.max_count_input.text()) if self.max_count_input.text() else None
         key_property = self.parentWidget().parentWidget().field_members[self.property_combo.currentIndex()][0]
+        step = int(self.step_input.text()) if self.step_input.text() else 1
+        do_sort_by_num=self.sort_by_num_checkbox.isChecked()
         header_builder = BuildHeader(
             field_name=self.field_name,
             table=self.table,
@@ -90,16 +93,26 @@ class HeaderEditDialog(QDialog):
         iterator = header_builder.solve_header(
             key_property=key_property,
             max_count=max_count,
-            do_sort_by_num=self.sort_by_num_checkbox.isChecked()
+            do_sort_by_num=do_sort_by_num
         )
         for _ in range(repetition):
             next_start_pos = header_builder.write_header(
                 header_pos=self.logical_index,
                 start_pos=start_pos,
-                step=int(self.step_input.text()) if self.step_input.text() else 1,
+                step=step,
                 iterator=iterator
             )
             start_pos = next_start_pos
+        table_capture.set_header(
+            is_vertical=self.is_vertical,
+            header_pos=self.logical_index,
+            repetition=repetition,
+            start_pos=start_pos,
+            max_count=max_count,
+            step=step,
+            key_property=self.property_combo.currentText(),
+            do_sort_by_num=do_sort_by_num
+        )
         self.accept()
 
 class BuildHeader:

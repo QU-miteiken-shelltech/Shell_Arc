@@ -2,14 +2,18 @@ import json
 from typing import Optional, overload
 
 from shellarc_msk.mskob.field_obj import MSK_Field
+from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_client.ui.table_ops.table_header import BuildHeader
 from shellarc_client.ui.table_ops.table_view import SetCells
 
-table_file_path = "/Users/shiinaayame/Documents/test_sa2027/client/table_test.json"
 
 class TableBuilder:
-    def __init__(self, table):
+    def __init__(self, table_name, table):
         self.table = table
+        client_dir = MSKUT_PathSolver().mskfs_client
+        table_file_path = client_dir / f"table_{table_name}.json"
+        if not table_file_path.exists():
+            raise ValueError(f"Table file of {table_name} not found")
         with open(table_file_path, "r", encoding="utf-8") as f:
             self.table_solutions = json.load(f)
         self.field_name = self.table_solutions.get("field", None)

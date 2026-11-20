@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
 from shellarc_client.ui.table_ops.table_cells import TableCell
 from shellarc_client.ui.table_ops.table_view import MSK_TableView
 from shellarc_client.ui.table_ops.build_table_from_file import TableBuilder
-
+from shellarc_client.engine.config.read_config import ReadClientConfig
+from shellarc_client.engine.tables import table_capture
 from shellarc_msk.mskob.field_obj import MSK_Field
 
 
@@ -27,9 +28,24 @@ class TableOpsUi(QWidget):
         field_lo.addStretch()
         self.lo.addLayout(field_lo)
 
+        build_table_lo = QHBoxLayout()
+        build_table_label = QLabel("Table : ")
+        build_table_label.setMaximumWidth(90)
+        build_table_lo.addWidget(build_table_label)
+        self.build_table_combo = QComboBox()
+        self.build_table_combo.clear()
+        self.build_table_combo.addItems(
+            ReadClientConfig.get_config_item("tables")
+        )
+        build_table_lo.addWidget(self.build_table_combo)
         build_table_btn = QPushButton("Build table from file")
         build_table_btn.clicked.connect(self.build_table_from_file)
-        self.lo.addWidget(build_table_btn)
+        build_table_lo.addWidget(build_table_btn)
+        capture_table_btn = QPushButton("Capture table to disk")
+        capture_table_btn.clicked.connect(self.capture_table_to_disk)
+        build_table_lo.addWidget(capture_table_btn)
+        build_table_lo.addStretch()
+        self.lo.addLayout(build_table_lo)
 
         self.msk_table_view = MSK_TableView()
         self.lo.addWidget(self.msk_table_view)
@@ -68,9 +84,16 @@ class TableOpsUi(QWidget):
         self.field_name = new_field_name
 
     def build_table_from_file(self):
-        table_builder = TableBuilder(table=self.msk_table_view)
+        table_builder = TableBuilder(
+            table_name=self.build_table_combo.currentText(),
+            table=self.msk_table_view
+        )
         self.field_combo.setCurrentText(table_builder.field_name)
         table_builder.build_table_from_file()
+
+    def capture_table_to_disk(self):
+        table_capture.write_to_disk(table_name="test1")
+        ####
 
     def fit_table_vert(self):
         for row in range(self.msk_table_view.rowCount()):
