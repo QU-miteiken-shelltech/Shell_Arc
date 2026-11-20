@@ -5,13 +5,13 @@ from functools import reduce
 import operator
 import json
 
-from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
+from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
 def _recursive_defaultdict():
     return defaultdict(_recursive_defaultdict)
 
 class ReadClientConfig:
-    client_config_path = MSKFS_PathSolver().mskfs_client / "client_config.json"
+    client_config_path = MSKUT_PathSolver().mskfs_client / "client_config.json"
     if not client_config_path.exists():
         with open(client_config_path, "w", encoding="utf-8") as f:
             json.dump({}, f, ensure_ascii=False, indent=3)

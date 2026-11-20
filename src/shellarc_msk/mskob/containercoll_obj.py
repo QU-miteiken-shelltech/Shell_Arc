@@ -1,13 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData, MSKFS_OnRamMmap
+from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData, MSKUT_OnRamMmap
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
-from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
+from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 if TYPE_CHECKING:
     from shellarc_msk.mskob.container_obj import MSK_Container
 
@@ -18,18 +18,18 @@ class MSK_ContainerCollection:
         # super().__init__(field_name=field_name)
         self.field_name = field_name
 
-        mskfs_pathsolver = MSKFS_PathSolver()
+        mskfs_pathsolver = MSKUT_PathSolver()
         self.field_bin_file = mskfs_pathsolver.mskfs_config / f".msk_container_{field_name}"
-        if (MSKFS_OnRamMmap.container_bins is None or
-            field_name not in MSKFS_OnRamMmap.container_bins):
+        if (MSKUT_OnRamMmap.container_bins is None or
+            field_name not in MSKUT_OnRamMmap.container_bins):
             if not self.field_bin_file.exists():
                 with open(self.field_bin_file, "wb") as f:
                     f.write(b"")
-            MSKFS_OnRamMmap.register(
+            MSKUT_OnRamMmap.register(
                 field_name=field_name,
                 filepath=self.field_bin_file
             )
-        self.container_bin = MSKFS_OnRamMmap.container_bins[field_name]
+        self.container_bin = MSKUT_OnRamMmap.container_bins[field_name]
 
     def chunks_iter(self):
         entity_count = len(self.container_bin) // 48
@@ -83,9 +83,9 @@ class MSK_ContainerCollection:
     def _rows_of_container(self,
                            container_index: MSK_HexIndex
                            ) -> list[int]:
-        """Row numbers of a container, via MSKFS_OnRamData.container_index_table.
+        """Row numbers of a container, via MSKUT_OnRamData.container_index_table.
         Cached -> returned as is; not cached -> found by scanning and then cached."""
-        table = MSKFS_OnRamData.container_index_table
+        table = MSKUT_OnRamData.container_index_table
         id_bytes = container_index.to_bytes()
 
         rows = table.get(container_index)
@@ -195,14 +195,14 @@ class MSK_ContainerCollection:
             new_row = len(self.container_bin) // 48
             with open(self.field_bin_file, "ab") as f:
                 f.write(new_entity_binary)
-            cached_rows = MSKFS_OnRamData.container_index_table.get(container_index)
+            cached_rows = MSKUT_OnRamData.container_index_table.get(container_index)
             if cached_rows is not None:
                 cached_rows.append(new_row)
-            MSKFS_OnRamMmap.register(
+            MSKUT_OnRamMmap.register(
                 field_name=self.field_name,
                 filepath=self.field_bin_file
             )
-            self.container_bin = MSKFS_OnRamMmap.container_bins[self.field_name]
+            self.container_bin = MSKUT_OnRamMmap.container_bins[self.field_name]
         else:
             self.container_bin[pos : pos + 48] = new_entity_binary
             self._write_container_binaries()

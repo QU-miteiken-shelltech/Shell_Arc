@@ -2,14 +2,17 @@ import mimetypes
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 import requests
 
-API = "https://shellarc2027-communicate.shiinaayame3.workers.dev"
-
-class MSKEngine_FileTransfer:
+class FileTransfer:
     def __init__(self):
+        load_dotenv(str(Path(__file__).resolve().parents[4] / ".secret/.env"))
         TOKEN = os.environ["R2_API_TOKEN"]
         self.AUTH = {"Authorization" : f"Bearer {TOKEN}"}
+        self.API = os.environ["API_ENTRY_URL"]
+        print(TOKEN)
 
     def upload_file(self,
                     file_path: Path | str,
@@ -21,7 +24,7 @@ class MSKEngine_FileTransfer:
         ext = file_path.suffix.lstrip(".")
 
         resp = requests.post(
-            url=f"{API}/upload/presign",
+            url=f"{self.API}/upload/presign",
             headers=self.AUTH,
             json={
                 "contentType": content_type,
@@ -43,7 +46,7 @@ class MSKEngine_FileTransfer:
         put.raise_for_status()
 
         resp = requests.post(
-            f"{API}/upload/complete",
+            f"{self.API}/upload/complete",
             headers=self.AUTH,
             json={"key": info["key"]},
             timeout=30
@@ -62,7 +65,7 @@ class MSKEngine_FileTransfer:
         if local_destination_path.is_dir():
             raise ValueError("User cannot download a file as a folder")
         resp = requests.post(
-            url=f"{API}/download/presign",
+            url=f"{self.API}/download/presign",
             headers=self.AUTH,
             json={
                 "key": r2_key,
@@ -80,6 +83,7 @@ class MSKEngine_FileTransfer:
                     f.write(chunk)
 
         return local_destination_path
+
 
 
 

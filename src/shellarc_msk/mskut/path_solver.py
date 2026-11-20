@@ -1,6 +1,6 @@
 from pathlib import Path
 
-class MSKFS_PathSolver:
+class MSKUT_PathSolver:
     space_root = "msk"
 
     def __init__(self):
@@ -11,10 +11,10 @@ class MSKFS_PathSolver:
 
     @property
     def mskfs_config(self) -> Path:
-        space_root_dir = self.root_dir / MSKFS_PathSolver.space_root
+        space_root_dir = self.root_dir / MSKUT_PathSolver.space_root
         if not space_root_dir.exists():
             space_root_dir.mkdir(parents=True, exist_ok=False)
-        return self.root_dir / MSKFS_PathSolver.space_root
+        return self.root_dir / MSKUT_PathSolver.space_root
 
     @property
     def mskfs_client(self) -> Path:

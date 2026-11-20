@@ -5,7 +5,7 @@ from typing import Optional
 
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 
-class MSKFS_OnRamData:
+class MSKUT_OnRamData:
     # adress / property / type are append-only: kept as bytearray so that += does not copy
     adress_bin : Optional[bytearray] = None
     adress_offset_bin : Optional[bytearray] = None
@@ -20,7 +20,7 @@ class MSKFS_OnRamData:
     container_index_table : dict[MSK_HexIndex, list[int]] = {}
 
 
-class MSKFS_OnRamMmap:
+class MSKUT_OnRamMmap:
     container_bins: Optional[dict[str, mmap.mmap]] = None
 
     @classmethod

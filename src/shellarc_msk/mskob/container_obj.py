@@ -44,7 +44,7 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
     def _find_from_mskindex(self,
                             container_index: MSK_HexIndex
                             ) -> list[MSK_Entity]:
-        # cached in MSKFS_OnRamData.container_index_table; scanned (and cached) only on a miss
+        # cached in MSKUT_OnRamData.container_index_table; scanned (and cached) only on a miss
         return self._find_from_offset_count(
             offset_counts=self._rows_of_container(container_index)
         )

@@ -2,8 +2,8 @@ import struct
 import hashlib
 from typing import Optional, Self
 
-from shellarc_msk.mskfs.on_ram_data import MSKFS_OnRamData
-from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
+from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
+from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
@@ -37,23 +37,23 @@ class MSK_Property:
         else:
             allow_make = False
 
-        mskfs_pathsolver = MSKFS_PathSolver()
+        mskfs_pathsolver = MSKUT_PathSolver()
 
         self.property_bin_file = mskfs_pathsolver.mskfs_config / ".msk_property"
         if not self.property_bin_file.exists():
             with open(self.property_bin_file, "wb") as f:
                 f.write(b"")
-        if MSKFS_OnRamData.property_bin is None:
+        if MSKUT_OnRamData.property_bin is None:
             with open(self.property_bin_file, "rb") as f:
-                MSKFS_OnRamData.property_bin = bytearray(f.read())
+                MSKUT_OnRamData.property_bin = bytearray(f.read())
 
         self.property_offset_file = mskfs_pathsolver.mskfs_config / ".msk_property_offset"
         if not self.property_offset_file.exists():
             with open(self.property_offset_file, "wb") as f:
                 f.write(b"")
-        if MSKFS_OnRamData.property_offset_bin is None:
+        if MSKUT_OnRamData.property_offset_bin is None:
             with open(self.property_offset_file, "rb") as f:
-                MSKFS_OnRamData.property_offset_bin = bytearray(f.read())
+                MSKUT_OnRamData.property_offset_bin = bytearray(f.read())
 
         my_prop = self._search_target_prop(
             # when made from (type, name) the index to look for is the computed one
@@ -66,19 +66,19 @@ class MSK_Property:
 
     @classmethod
     def list_properties(cls) -> list[Self]:
-        num_chunks = len(MSKFS_OnRamData.property_offset_bin) // 8
+        num_chunks = len(MSKUT_OnRamData.property_offset_bin) // 8
         property_list = []
         for i in range(0, num_chunks):
             offset_pos = i * 8
-            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos : offset_pos + 8])[0]
+            chunk_offset = struct.unpack("<Q", MSKUT_OnRamData.property_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(MSKFS_OnRamData.property_bin)
+                chunk_next_offset = len(MSKUT_OnRamData.property_bin)
             else:
-                chunk_next_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
-            current_prop_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset : chunk_offset + 16])
-            current_type_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset + 16 : chunk_offset + 32])
+                chunk_next_offset = struct.unpack("<Q", MSKUT_OnRamData.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+            current_prop_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.property_bin[chunk_offset : chunk_offset + 16])
+            current_type_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.property_bin[chunk_offset + 16 : chunk_offset + 32])
             current_type = MSK_Type(type_index=current_type_index)
-            current_prop_name = MSKFS_OnRamData.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
+            current_prop_name = MSKUT_OnRamData.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
             property_list.append(
                 MSK_Property(
                     prop_index=current_prop_index,
@@ -88,26 +88,26 @@ class MSK_Property:
             )
         return property_list
 
-    @mskcc_object_cache(source_bin=MSKFS_OnRamData.property_bin)
+    @mskcc_object_cache(source_bin=MSKUT_OnRamData.property_bin)
     def _search_target_prop(self,
                             target_prop_index: MSK_HexIndex,
                             allow_make: bool=False
                             ) -> Optional[tuple[MSK_HexIndex, MSK_Type, str]]:
-        num_chunks = len(MSKFS_OnRamData.property_offset_bin) // 8
+        num_chunks = len(MSKUT_OnRamData.property_offset_bin) // 8
 
         for i in range(0, num_chunks):
             offset_pos = i * 8
-            chunk_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos : offset_pos + 8])[0]
+            chunk_offset = struct.unpack("<Q", MSKUT_OnRamData.property_offset_bin[offset_pos : offset_pos + 8])[0]
             if i == num_chunks - 1:
-                chunk_next_offset = len(MSKFS_OnRamData.property_bin)
+                chunk_next_offset = len(MSKUT_OnRamData.property_bin)
             else:
-                chunk_next_offset = struct.unpack("<Q", MSKFS_OnRamData.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
+                chunk_next_offset = struct.unpack("<Q", MSKUT_OnRamData.property_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
 
-            current_prop_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset : chunk_offset + 16])
+            current_prop_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.property_bin[chunk_offset : chunk_offset + 16])
             if current_prop_index == target_prop_index:
-                current_type_index = MSK_HexIndex.from_bytes(MSKFS_OnRamData.property_bin[chunk_offset + 16 : chunk_offset + 32])
+                current_type_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.property_bin[chunk_offset + 16 : chunk_offset + 32])
                 current_type = MSK_Type(type_index=current_type_index)
-                current_prop_name = MSKFS_OnRamData.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
+                current_prop_name = MSKUT_OnRamData.property_bin[chunk_offset + 32 : chunk_next_offset].decode("utf-8")
                 return (current_prop_index, current_type, current_prop_name)
 
         if (allow_make and 
@@ -120,9 +120,9 @@ class MSK_Property:
     def _make_new_type(self):
         new_type_bytes = self.prop_index.to_bytes() + self.prop_type.type_index.to_bytes() + self.prop_name.encode("utf-8")
         # the offset file holds the START position of each record
-        new_offset_bytes = len(MSKFS_OnRamData.property_bin).to_bytes(8, byteorder="little")
-        MSKFS_OnRamData.property_offset_bin += new_offset_bytes
-        MSKFS_OnRamData.property_bin += new_type_bytes
+        new_offset_bytes = len(MSKUT_OnRamData.property_bin).to_bytes(8, byteorder="little")
+        MSKUT_OnRamData.property_offset_bin += new_offset_bytes
+        MSKUT_OnRamData.property_bin += new_type_bytes
         self._append_binaries(new_type_bytes, new_offset_bytes)
 
     def __eq__(self, other):
