@@ -94,10 +94,14 @@ class MSK_TableView(QTableWidget):
                     target_prop=target_prop,
                     max_metanode_num=max_metanode_num
                 )
+                col, row = arrow_info["derivitive"][0][0], arrow_info["derivitive"][0][1]
+                derived_cell: TableCell = self.item(row, col)
                 table_capture.set_cell_setters(
                     arror_info=arrow_info,
                     max_metanode_num=max_metanode_num,
-                    target_property=target_prop.prop_name
+                    target_property=target_prop.prop_name,
+                    item_display=derived_cell.item_display,
+                    nodes_display=derived_cell.nodes_display
                 )
         elif len(arrow_info["upstreams"]) == 1:
             cells_setter.expand_cell_solution()

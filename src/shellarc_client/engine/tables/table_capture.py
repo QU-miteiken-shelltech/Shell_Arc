@@ -34,15 +34,15 @@ def set_header(is_vertical: bool,
 def set_cell_setters(arror_info: dict,
                      max_metanode_num: int,
                      target_property: str,
-                    #  item_display: str,
-                    #  nodes_display: str
+                     item_display: str,
+                     nodes_display: str
                      ):
     cell_setter = {
         "arrow_info": arror_info,
         "max_metanode_num": str(max_metanode_num),
         "target_property": target_property,
-        "item_display": "VAL",
-        "nodes_display": "0"
+        "item_display": item_display,
+        "nodes_display": nodes_display
     }
     cell_setters.append(cell_setter)
 
@@ -59,7 +59,7 @@ def clear_captures():
     cell_expanders = []
 
 def write_to_disk(table_name: str):
-    table_file_path = MSKUT_PathSolver.mskfs_client / f"table_{table_name}.json"
+    table_file_path = MSKUT_PathSolver().mskfs_client / f"table_{table_name}.json"
     table_dict = {
         "field": field_name,
         "headers": headers,

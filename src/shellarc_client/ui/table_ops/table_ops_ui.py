@@ -33,6 +33,9 @@ class TableOpsUi(QWidget):
         build_table_label.setMaximumWidth(90)
         build_table_lo.addWidget(build_table_label)
         self.build_table_combo = QComboBox()
+        self.build_table_combo.setEditable(True)
+        if self.build_table_combo.lineEdit():
+            self.build_table_combo.lineEdit().setPlaceholderText("Input or Select")
         self.build_table_combo.clear()
         self.build_table_combo.addItems(
             ReadClientConfig.get_config_item("tables")
@@ -92,8 +95,24 @@ class TableOpsUi(QWidget):
         table_builder.build_table_from_file()
 
     def capture_table_to_disk(self):
-        table_capture.write_to_disk(table_name="test1")
-        ####
+        table_name=self.build_table_combo.currentText()
+        if table_name in ReadClientConfig.get_config_item("tables"):
+            reply = QMessageBox.question(
+                self,
+                "Existing",
+                f"Are you sure that you want to overwrite table {table_name} ?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+        table_capture.write_to_disk(table_name=table_name)
+        self.build_table_combo.clear()
+        self.build_table_combo.addItems(
+            ReadClientConfig.get_config_item("tables")
+        )
+        QMessageBox.information(
+            self, "Success", "Table file saved."
+        )
 
     def fit_table_vert(self):
         for row in range(self.msk_table_view.rowCount()):
