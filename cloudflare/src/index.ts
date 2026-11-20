@@ -1,7 +1,9 @@
 import { AwsClient } from "aws4fetch";
+import { DurableObject } from "cloudflare:workers";
 
 interface Env {
   BUCKET: R2Bucket;
+  LOCK: DurableObjectNamespace<LockDO>;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   R2_ACCOUNT_ID: string;
@@ -82,6 +84,7 @@ export default {
     if (pathname === "/upload/presign") return uploadPresign(req, env, userId);
     if (pathname === "/upload/complete") return uploadComplete(req, env, userId);
     if (pathname === "/download/presign") return downloadPresign(req, env, userId);
+    if (pathname.startsWith("/lock/")) return lockHandler(req, env, userId, pathname.slice(6));
     return json(env, { error: "not found" }, 404);
   },
 };
@@ -156,4 +159,133 @@ async function downloadPresign(req: Request, env: Env, userId: string): Promise<
     method: "GET",
     expiresIn: GET_EXPIRES_SEC,
   });
+}
+
+// DO
+
+interface LockRecord {
+  token: string;
+  owner: string;
+  acquiredAt: number;
+  expiresAt: number;
+  metadata: Record<string, unknown>;
+}
+
+type PublicLock = Omit<LockRecord, "token">;
+
+export class LockDO extends DurableObject<Env> {
+  // 期限切れなら削除して null を返す (Alarm が遅れても正しく動く)
+  private async current(): Promise<LockRecord | null> {
+    const rec = await this.ctx.storage.get<LockRecord>("lock");
+    if (!rec) return null;
+    if (rec.expiresAt <= Date.now()) {
+      await this.ctx.storage.delete("lock");
+      return null;
+    }
+    return rec;
+  }
+
+  private toPublic(rec: LockRecord): PublicLock {
+    const { token: _t, ...rest } = rec;
+    return rest;
+  }
+
+  // ロックをかける
+  async acquire(owner: string, ttlSec: number, metadata: Record<string, unknown>) {
+    const cur = await this.current();
+    if (cur) return { ok: false as const, holder: this.toPublic(cur) };
+
+    const now = Date.now();
+    const rec: LockRecord = {
+      token: crypto.randomUUID(),
+      owner,
+      acquiredAt: now,
+      expiresAt: now + ttlSec * 1000,
+      metadata,
+    };
+    await this.ctx.storage.put("lock", rec);
+    await this.ctx.storage.setAlarm(rec.expiresAt); // 失効予約
+    return { ok: true as const, token: rec.token, lock: this.toPublic(rec) };
+  }
+
+  // ロックの有無
+  async status() {
+    return { locked: (await this.current()) !== null };
+  }
+
+  // メタデータ取得
+  async info() {
+    const cur = await this.current();
+    if (!cur) return { locked: false as const };
+    return {
+      locked: true as const,
+      ...this.toPublic(cur),
+      remainingMs: cur.expiresAt - Date.now(),
+    };
+  }
+
+  // ロックを外す (token 一致が必要)
+  async release(token: string) {
+    const cur = await this.current();
+    if (!cur) return { ok: true as const, released: false }; // 既に無い = 冪等に成功
+    if (cur.token !== token) return { ok: false as const };
+    await this.ctx.storage.delete("lock");
+    await this.ctx.storage.deleteAlarm();
+    return { ok: true as const, released: true };
+  }
+
+  // 一定時間後の失効
+  async alarm() {
+    const rec = await this.ctx.storage.get<LockRecord>("lock");
+    if (!rec) return;
+    if (rec.expiresAt <= Date.now()) {
+      await this.ctx.storage.delete("lock");
+    } else {
+      await this.ctx.storage.setAlarm(rec.expiresAt); // 早く起きた場合は再予約
+    }
+  }
+}
+
+const LOCK_NAME_RE = /^[A-Za-z0-9._:-]{1,128}$/;
+const MAX_META_BYTES = 4096;
+
+async function lockHandler(
+  req: Request, env: Env, userId: string, action: string
+): Promise<Response> {
+  const body = await req
+    .json<{
+      name?: string;
+      ttlSec?: number;
+      metadata?: Record<string, unknown>;
+      token?: string;
+    }>()
+    .catch(() => null);
+
+  const name = body?.name ?? "";
+  if (!LOCK_NAME_RE.test(name)) return json(env, { error: "invalid name" }, 400);
+
+  const stub = env.LOCK.get(env.LOCK.idFromName(name));
+
+  switch (action) {
+    case "acquire": {
+      const ttl = Math.min(Math.max(Math.floor(body?.ttlSec ?? 60), 1), 3600);
+      const metadata = body?.metadata ?? {};
+      if (JSON.stringify(metadata).length > MAX_META_BYTES) {
+        return json(env, { error: "metadata too large" }, 400);
+      }
+      const r = await stub.acquire(userId, ttl, metadata);
+      return r.ok ? json(env, r) : json(env, { error: "locked", holder: r.holder }, 409);
+    }
+    case "status":
+      return json(env, await stub.status());
+    case "info":
+      return json(env, await stub.info());
+    case "release": {
+      if (!body?.token) return json(env, { error: "token required" }, 400);
+      const r = await stub.release(body.token);
+      return r.ok ? json(env, r) : json(env, { error: "invalid token" }, 403);
+    }
+    default:
+      return json(env, { error: "not found" }, 404);
+  }
 }
