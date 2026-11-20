@@ -5,7 +5,7 @@ A small viewer/editor for one MSK Field: one row per container, one column per p
 
     python msk_table_editor.py --root <dir that contains "msk/"> [--pkg-parent <dir that contains "shellarc_msk/">] [--field Main]
 
-* --root       : data root. MSKFS_PathSolver.root_dir is replaced by this path *in this process only*
+* --root       : data root. MSKUT_PathSolver.root_dir is replaced by this path *in this process only*
                  (the implementation's own hard-coded path is not touched). Without --root the
                  implementation's default root is used.
 * --pkg-parent : directory that contains the `shellarc_msk` package (searched automatically
@@ -31,7 +31,7 @@ from pathlib import Path
 
 # --------------------------------------------------------------------------- bootstrap
 def bootstrap(root, pkg_parent):
-    """Make `shellarc_msk` importable and (optionally) point MSKFS_PathSolver at `root`."""
+    """Make `shellarc_msk` importable and (optionally) point MSKUT_PathSolver at `root`."""
     here = Path(__file__).resolve().parent
     if pkg_parent:
         sys.path.insert(0, str(Path(pkg_parent).expanduser().resolve()))
@@ -40,7 +40,7 @@ def bootstrap(root, pkg_parent):
             if (cand / "shellarc_msk").is_dir():
                 sys.path.insert(0, str(cand))
                 break
-    from shellarc_msk.mskfs.path_solver import MSKFS_PathSolver
+    from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
     if root:
         root_path = Path(root).expanduser().resolve()
@@ -48,8 +48,8 @@ def bootstrap(root, pkg_parent):
         def _init(self):
             self.root_dir = root_path
 
-        MSKFS_PathSolver.__init__ = _init
-    cfg = MSKFS_PathSolver().mskfs_config
+        MSKUT_PathSolver.__init__ = _init
+    cfg = MSKUT_PathSolver().mskfs_config
     # the implementation creates missing files on access: refuse to run on a wrong directory
     if not cfg.is_dir():
         raise SystemExit(f"'{cfg}' does not exist (is --root the directory that CONTAINS 'msk/'?)")
