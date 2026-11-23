@@ -6,22 +6,24 @@ from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
-if TYPE_CHECKING:
-    from shellarc_msk.mskob.adress_obj import MSK_Address
+from shellarc_msk.mskex.msk_objerror import MSKObject_NoneCreationError
 
 class MSK_Type:
     def __init__(self,
                  type_index: MSK_HexIndex | None=None,
                  type_name: str | None=None,
-                 type_literals: list[MSK_Address] | None=None,
+                 type_literals: list[str] | None=None,
                  allow_make: bool=False
                  ) -> None:
+        from shellarc_msk.mskob.adress_obj import MSK_Address
         if type_index is None and type_name is None:
-            raise ValueError("MSK_Type cannot be made from None")
+            raise MSKObject_NoneCreationError(
+                msg="MSK_Type cannot be made from None"
+            )
 
         self.type_index : MSK_HexIndex = MSK_HexIndex(value=None)
         self.type_name : Optional[str] = None
-        self.type_literals: list[MSK_HexIndex] = []
+        self.type_literals: list[MSK_HexIndex] | None = None
 
         if type_index == MSK_HexIndex(value=None):
             return
@@ -33,7 +35,10 @@ class MSK_Type:
             )
             self.type_index = type_index
             self.type_name = type_name
-            self.type_literals = [a.adress_index for a in type_literals]
+            self.type_literals = [
+                MSK_Address(adress_type=self, adress_value=a).adress_index 
+                for a in type_literals
+            ] if type_literals is not None else None
             allow_make = allow_make
         else:
             allow_make = False
@@ -85,7 +90,7 @@ class MSK_Type:
             )
         return type_list
 
-    @mskcc_object_cache(source=MSKUT_OnRamData.type_bin)
+    @mskcc_object_cache(source=lambda self: MSKUT_OnRamData.type_bin)
     def _search_target_type(self,
                             target_type_index: MSK_HexIndex,
                             allow_make: bool=False
@@ -109,26 +114,27 @@ class MSK_Type:
                 current_type_literals_raw = MSKUT_OnRamData.type_bin[chunk_next_offset + 24 + current_type_name_len : chunk_next_offset]
                 current_type_literals = [
                     MSK_HexIndex.from_bytes(
-                        current_type_literals_raw[i : i + 16]
+                        current_type_literals_raw[i * 16 : i * 16 + 16]
                     ) for i in range(0, (chunk_next_offset - (chunk_next_offset + 24 + current_type_name_len)) // 16)
                 ]
+                current_type_literals = current_type_literals if current_type_literals else None
                 return (current_type_index, current_type_name, current_type_literals)
 
         if allow_make and (self.type_index is not None and self.type_name is not None):
             self._make_new_type()
-            return(self.type_index, self.type_name)
+            return(self.type_index, self.type_name, self.type_literals)
         else:
-            return (MSK_HexIndex(value=None), None)
+            return (MSK_HexIndex(value=None), None, None)
 
     def _make_new_type(self):
         type_name_bytes = self.type_name.encode("utf-8")
         new_type_bytes = (
             self.type_index.to_bytes() + 
-            struct.pack(">Q", len(type_name_bytes)) +
+            struct.pack("<Q", len(type_name_bytes)) +
             type_name_bytes 
         )
         if self.type_literals is not None:
-            new_offset_bytes += b"".join(hexixndex.to_bytes(8, "little") for hexixndex in self.type_literals)
+            new_type_bytes += b"".join(hexixndex.to_bytes() for hexixndex in self.type_literals)
         new_offset_bytes = len(MSKUT_OnRamData.type_bin).to_bytes(8, byteorder="little")
         MSKUT_OnRamData.type_offset_bin += new_offset_bytes
         MSKUT_OnRamData.type_bin += new_type_bytes

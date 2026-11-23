@@ -8,6 +8,7 @@ from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
+from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError, MSKObject_ValidationError
 if TYPE_CHECKING:
     from shellarc_msk.mskob.container_obj import MSK_Container
 
@@ -67,10 +68,14 @@ class MSK_ContainerCollection:
         """Row numbers whose bytes [compare_range[0]:compare_range[1]] equal the same bytes
         of the 48-byte pattern `unit_comparer` (the other bytes of the pattern are ignored)."""
         if len(unit_comparer) != 48:
-            raise ValueError("unit_comparer must be of length 48 bytes")
+            raise MSKObject_FormatError(
+                msg="unit_comparer must be of length 48 bytes"
+            )
         start, end = compare_range
         if start < 0 or end > 48 or start >= end:
-            raise ValueError("Compare range out of range 48")
+            raise MSKObject_FormatError(
+                msg="Compare range exceeded a range 48"
+            )
 
         target = unit_comparer[start : end]
         with memoryview(self.container_bin) as mv:
@@ -177,11 +182,14 @@ class MSK_ContainerCollection:
                      ) -> MSK_Entity:
         field_ls = MSK_Field(field_name=self.field_name).field_ls
         if (prop, prop.prop_type) not in field_ls and not do_override:
-            raise ValueError("Properties undefined in Field shall only be defined as overrides")
+            raise MSKObject_ValidationError(
+                msg="Properties undefined in Field shall only be defined as overrides"
+            )
         if prop.prop_type != adress.type:
-            raise ValueError("Type unmatch")
-        if adress.adress_index not in prop.prop_type.type_literals:
-            raise ValueError("Type Literals Validation Failed")
+            raise MSKObject_ValidationError(msg="Type unmatch")
+        if (prop.prop_type.type_literals is not None and 
+            adress.adress_index not in prop.prop_type.type_literals):
+            raise MSKObject_ValidationError(msg="Type Literals Validation Failed")
         
         new_entity_binary = (
             container_index.to_bytes() + 
@@ -189,7 +197,9 @@ class MSK_ContainerCollection:
             adress.adress_index.to_bytes()
         )
         if len(new_entity_binary) != 48:
-            raise ValueError("An entiny of a container must be of length 48 bytes")
+            raise MSKObject_FormatError(
+                msg="An entiny of a container must be of length 48 bytes"
+            )
         pos = self.request_position(
             container_index=container_index,
             requesting_prop=prop
