@@ -71,6 +71,17 @@ class MSK_Type:
 
     @classmethod
     def list_types(cls) -> list[Self]:
+        if MSKUT_OnRamData.type_bin is None or MSKUT_OnRamData.type_offset_bin is None:
+            mskfs_pathsolver = MSKUT_PathSolver()
+            type_bin_file = mskfs_pathsolver.mskfs_space / ".msk_type"
+            type_offset_file = mskfs_pathsolver.mskfs_space / ".msk_type_offset"
+            if not (type_bin_file.exists() and type_offset_file.exists()):
+                return []
+            if MSKUT_OnRamData.type_bin is None:
+                MSKUT_OnRamData.type_bin = bytearray(type_bin_file.read_bytes())
+            if MSKUT_OnRamData.type_offset_bin is None:
+                MSKUT_OnRamData.type_offset_bin = bytearray(type_offset_file.read_bytes())
+
         num_chunks = len(MSKUT_OnRamData.type_offset_bin) // 8
         type_list = []
         for i in range(0, num_chunks):
@@ -81,13 +92,7 @@ class MSK_Type:
             else:
                 chunk_next_offset = struct.unpack("<Q", MSKUT_OnRamData.type_offset_bin[offset_pos + 8 : offset_pos + 16])[0]
             current_type_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.type_bin[chunk_offset : chunk_offset + 16])
-            current_type_name = MSKUT_OnRamData.type_bin[chunk_offset + 16 : chunk_next_offset].decode("utf-8")
-            type_list.append(
-                MSK_Type(
-                    type_index=current_type_index,
-                    type_name=current_type_name
-                )
-            )
+            type_list.append(MSK_Type(type_index=current_type_index))
         return type_list
 
     @mskcc_object_cache(source=lambda self: MSKUT_OnRamData.type_bin)
@@ -110,12 +115,12 @@ class MSK_Type:
                 current_type_name_len = struct.unpack(
                     "<Q", MSKUT_OnRamData.type_bin[chunk_offset + 16 : chunk_offset + 24]
                 )[0]
-                current_type_name = MSKUT_OnRamData.type_bin[chunk_offset + 24 : chunk_next_offset + 24 + current_type_name_len].decode("utf-8")
-                current_type_literals_raw = MSKUT_OnRamData.type_bin[chunk_next_offset + 24 + current_type_name_len : chunk_next_offset]
+                current_type_name = MSKUT_OnRamData.type_bin[chunk_offset + 24 : chunk_offset + 24 + current_type_name_len].decode("utf-8")
+                current_type_literals_raw = MSKUT_OnRamData.type_bin[chunk_offset + 24 + current_type_name_len : chunk_next_offset]
                 current_type_literals = [
                     MSK_HexIndex.from_bytes(
-                        current_type_literals_raw[i * 16 : i * 16 + 16]
-                    ) for i in range(0, (chunk_next_offset - (chunk_next_offset + 24 + current_type_name_len)) // 16)
+                        current_type_literals_raw[k * 16 : k * 16 + 16]
+                    ) for k in range(0, len(current_type_literals_raw) // 16)
                 ]
                 current_type_literals = current_type_literals if current_type_literals else None
                 return (current_type_index, current_type_name, current_type_literals)
@@ -149,7 +154,6 @@ class MSK_Type:
         return hash(self.type_index)
 
     def _append_binaries(self, record_bytes: bytes, offset_bytes: bytes):
-        # append only the new record (the files are never rewritten)
         with open(self.type_bin_file, "ab") as f:
             f.write(record_bytes)
         with open(self.type_offset_file, "ab") as f:
