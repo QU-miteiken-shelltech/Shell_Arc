@@ -6,6 +6,7 @@ from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
+from shellarc_msk.mskex.msk_objerror import MSKObject_NoneCreationError
 
 class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
     def __init__(self,
@@ -23,7 +24,9 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                 container_index=container_index
             )
         else:
-            raise ValueError("Container cannot be built from None")
+            raise MSKObject_NoneCreationError(
+                msg="Container cannot be built from None"
+            )
         super().__init__(member_entities)
         self.container_index = container_index
 

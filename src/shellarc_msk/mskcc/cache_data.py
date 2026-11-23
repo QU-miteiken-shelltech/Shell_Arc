@@ -1,11 +1,15 @@
 from collections import UserDict
 
+from shellarc_msk.mskex.msk_objerror import MSKObject_CachingError
+
 MSKCC_NULL = object()
 
 class MSKCC_CacheData(UserDict):
     def cache_data(self, callable_obj, index, rtn, source_hash):
         if not callable(callable_obj):
-            raise ValueError("Cache data must be linked to a callable")
+            raise MSKObject_CachingError(
+                msg="Cache data must be linked to a callable"
+            )
         self.setdefault(callable_obj, {})
         if source_hash != self[callable_obj].get("source_hash", ""):
             self[callable_obj]["source_hash"] = source_hash
@@ -14,7 +18,9 @@ class MSKCC_CacheData(UserDict):
 
     def find_cache(self, callable_obj, index, source_hash):
         if not callable(callable_obj):
-            raise ValueError("Cache data must be linked to a callable")
+            raise MSKObject_CachingError(
+                msg="Cache data must be linked to a callable"
+            )
         if callable_obj not in self:
             return MSKCC_NULL
         if source_hash != self[callable_obj].get("source_hash", ""):

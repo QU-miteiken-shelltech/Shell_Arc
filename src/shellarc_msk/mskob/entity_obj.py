@@ -4,6 +4,7 @@ from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
+from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError
 
 class MSK_Entity:
     container_index : MSK_HexIndex
@@ -19,7 +20,9 @@ class MSK_Entity:
             self.container_index = MSK_HexIndex(value=None)
             return
         if len(entity_chunk) != 48:
-            raise ValueError("Requested entity exceeded binary size")
+            raise MSKObject_FormatError(
+                msg="Requested entity fail to satisfy the required size of 48 bytes"
+            )
 
         self.container_index = MSK_HexIndex.from_bytes(entity_chunk[: 16])
 

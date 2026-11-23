@@ -6,6 +6,7 @@ from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type
+from shellarc_msk.mskex.msk_objerror import MSKObject_NoneCreationError
 from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
 
 class MSK_Property:
@@ -16,7 +17,9 @@ class MSK_Property:
                  allow_make: bool=False
                  ) -> None:
         if prop_index is None and (prop_type is None or prop_name is None):
-            raise ValueError("MSK_Property cannot be made from None")
+            raise MSKObject_NoneCreationError(
+                msg="MSK_Type cannot be made from None"
+            )
 
         self.prop_index : Optional[MSK_HexIndex] = MSK_HexIndex(value=None)
         self.prop_type : Optional[MSK_Type] = MSK_Type(type_index=MSK_HexIndex(value=None))
@@ -88,7 +91,7 @@ class MSK_Property:
             )
         return property_list
 
-    @mskcc_object_cache(source=MSKUT_OnRamData.property_bin)
+    @mskcc_object_cache(source=lambda self: MSKUT_OnRamData.property_bin)
     def _search_target_prop(self,
                             target_prop_index: MSK_HexIndex,
                             allow_make: bool=False

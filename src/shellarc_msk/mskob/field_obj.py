@@ -6,6 +6,7 @@ from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
+from shellarc_msk.mskex.msk_objerror import MSKObject_ExistenceError
 
 class MSK_Field:
     field_bin = None
@@ -99,7 +100,9 @@ class MSK_Field:
         if self.allow_make:
             self._declear_field(field_name=target_field_name)
         else:
-            raise ValueError(f"Requested MSK_Field with name {target_field_name} not exist")
+            raise MSKObject_ExistenceError(
+                f"Requested MSK_Field with name {target_field_name} not exist"
+            )
         return []
 
     def _declear_field(self, 

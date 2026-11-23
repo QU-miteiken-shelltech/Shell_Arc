@@ -7,6 +7,7 @@ from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.type_obj import MSK_Type 
 from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
+from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError, MSKObject_NoneCreationError
 
 class MSK_Address:
     def __init__(self,
@@ -17,7 +18,9 @@ class MSK_Address:
                  ) -> None:
         self.on_ram_data_cls = on_ram_data_cls
         if adress_index is None and (adress_type is None or adress_value is None):
-            raise ValueError("MSK_Address cannot be made from None")
+            raise MSKObject_NoneCreationError(
+                msg="MSK_Address cannot be made from None"
+            )
 
         self.adress_index : Optional[MSK_HexIndex] = MSK_HexIndex(value=None)
         self.type : Optional[MSK_Type] = MSK_Type(type_index=MSK_HexIndex(value=None))
@@ -56,8 +59,10 @@ class MSK_Address:
             with open(self.adress_offset_file, "rb") as f:
                 offset_bin = bytearray(f.read())
             if len(offset_bin) % (120000 * 8) != 0:
-                raise ValueError("'.msk_adress_offset' is not a whole number of pages "
-                                 "(made by an older format?)")
+                raise MSKObject_FormatError(
+                    msg="'.msk_adress_offset' is not a whole number of pages "
+                    "(made by an older format?)"
+                )
             self.on_ram_data_cls.adress_offset_bin = offset_bin
   
 

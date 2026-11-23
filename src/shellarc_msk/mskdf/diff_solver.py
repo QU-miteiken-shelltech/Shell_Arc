@@ -1,6 +1,11 @@
 import mmap
 from typing import Literal, Optional
 
+from shellarc_msk.mskex.msk_differror import (
+    MSKDiff_NonComparableError, MSKDiff_SettingsContradictionError
+)
+from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError
+
 class MSKDF_DiffSolver:
     def __init__(self, 
                  ours: bytearray | mmap.mmap, 
@@ -18,17 +23,19 @@ class MSKDF_DiffSolver:
             ignore_exceeding: Optional[Literal["ours", "theirs"]] = None
             ) -> list[tuple[bytes, bytes]]:
         if self.chunk_size is None:
-            raise ValueError("identical chunk size is required for parallel diff")
+            raise MSKDiff_NonComparableError(
+                msg="identical chunk size is required for parallel diff"
+            )
         
         our_len = len(self.ours)
         their_len = len(self.theirs)
         if our_len % self.chunk_size != 0 or their_len % self.chunk_size != 0:
-            raise ValueError("Binary data lengthb invalid")
+            raise MSKObject_FormatError("Binary data length invalid")
         if our_len != their_len:
             if (ignore_exceeding is None or
                 (our_len < their_len and ignore_exceeding == "ours") or
                 (our_len > their_len and ignore_exceeding == "theirs")):
-                raise ValueError("Ignoring policy offended")
+                raise MSKDiff_SettingsContradictionError(msg="Ignoring policy offended")
         iterable_len = min(our_len, their_len)
 
         mv_ours = memoryview(self.ours)[: iterable_len]
@@ -65,10 +72,14 @@ class MSKDF_DiffSolver:
         their_len = len(self.theirs)
         if (self.chunk_size is not None and
             (our_len % self.chunk_size != 0 or their_len % self.chunk_size != 0)):
-            raise ValueError("Binary data lengthb invalid")
+            raise MSKDiff_SettingsContradictionError(
+                msg="Binary data length not eqial while chunk size is fixed"
+            )
         if ((exceeding == "ours" and our_len < their_len) or
             (exceeding == "theirs" and their_len < our_len)):
-            raise ValueError("Exceeding target mismatch")
+            raise MSKDiff_SettingsContradictionError(
+                msg="Exceeding target mismatch"
+            )
         if our_len == their_len:
             return []
         

@@ -5,6 +5,7 @@ import time
 import sys, os
 
 from shellarc_msk.mskcc.cache_data import MSKCC_CACHE, MSKCC_NULL
+from shellarc_msk.mskex.msk_objerror import MSKObject_CachingError
 
 MASTER_COUNT = 0
 
@@ -30,18 +31,21 @@ def mskcc_object_cache(source: Callable[[Any], Any] | bytearray):
             source_bin = source(self) if callable(source) else source
             source_hash = xxhash.xxh3_64_hexdigest(source_bin) if source_bin is not None else "0" * 16
             index = None
-            for k, v in kwargs.items():
-                if k.endswith("_index"): 
-                    index = v
-            if index is None:
-                raise ValueError("None index is passed")
-            cached = MSKCC_CACHE.find_cache(
-                callable_obj=func,
-                index=index,
-                source_hash=source_hash
-            )
-            if cached is not MSKCC_NULL:
-                return cached
+            if not kwargs["allow_make"]:
+                for k, v in kwargs.items():
+                    if k.endswith("_index"): 
+                        index = v
+                if index is None:
+                    raise MSKObject_CachingError(
+                        msg="None index is passed for caching which is invalid"
+                    )
+                cached = MSKCC_CACHE.find_cache(
+                    callable_obj=func,
+                    index=index,
+                    source_hash=source_hash
+                )
+                if cached is not MSKCC_NULL:
+                    return cached
             data = func(self, *args, **kwargs)
             MSKCC_CACHE.cache_data(
                 callable_obj=func,

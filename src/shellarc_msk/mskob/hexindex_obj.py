@@ -1,6 +1,8 @@
 import hashlib
 import uuid
 
+from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError
+
 class MSK_HexIndex(str):
     def __new__(cls, 
                 value: str | None=None, 
@@ -15,22 +17,28 @@ class MSK_HexIndex(str):
             return super().__new__(cls, "0x00000000000000000000000000000000")
         
         if not isinstance(value, str):
-            raise TypeError("MSK_HexIndex must be a Python str based object")
+            raise MSKObject_FormatError(
+                msg="MSK_HexIndex must be a Python str based object"
+            )
         
         if not value.startswith("0x"):
-            raise ValueError("MSK_HexIndex must start with '0x'")
+            raise MSKObject_FormatError(
+                msg="MSK_HexIndex must start with '0x'"
+            )
         
         hex_part = value[2:]
         if len(hex_part) != 32:
-            raise ValueError("MSK_HexIndex must be a hexadecimal representation of a 128-bit binary")
+            raise MSKObject_FormatError(
+                msg="MSK_HexIndex must be a hexadecimal representation of a 128-bit binary"
+            )
         
         try:
             num = int(value, 16)
-        except ValueError:
-            raise ValueError("Invalid hexadecimal value")
+        except MSKObject_FormatError:
+            raise MSKObject_FormatError(msg="Invalid hexadecimal value")
         
         if not (0 <= num < 2**128):
-            raise ValueError("Value exceeding")
+            raise MSKObject_FormatError(msg="Value exceeding")
         
         return super().__new__(cls, value)
 
@@ -44,5 +52,7 @@ class MSK_HexIndex(str):
     @classmethod
     def from_bytes(cls, raw: bytes):
         if len(raw) != 16:
-            raise ValueError("MSK_HexIndex.from_bytes needs exactly 16 bytes")
+            raise MSKObject_FormatError(
+                msg="MSK_HexIndex.from_bytes needs exactly 16 bytes"
+            )
         return cls(value=f"0x{raw.hex()}")

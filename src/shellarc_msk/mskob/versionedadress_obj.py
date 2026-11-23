@@ -39,7 +39,7 @@ class MSK_VersionedAdress(MSK_Address):
 
     def _rank_one(self, bit_chunk: bytearray) -> int:
         if not hasattr(self, "slot_pos"):
-            raise RuntimeError("slot_pos attribute not found")
+            raise ValueError("slot_pos attribute not found")
         count_target = bit_chunk[0 : self.slot_pos // 8 + 1]
         bit_count = len(count_target) * 8
         if self.slot_pos <= 0:
@@ -54,7 +54,7 @@ class MSK_VersionedAdress(MSK_Address):
     @property
     def self_chunk_offset(self) -> int:
         if not hasattr(self, "slot_pos"):
-            raise RuntimeError("slot_pos attribute not found")
+            raise ValueError("slot_pos attribute not found")
         index_header_length = struct.unpack("<Q", MSKUT_OnRamData.veradress_bin[0:8])[0]
         required_header_len = (self.slot_pos // 8) + 1
         if index_header_length < required_header_len:
