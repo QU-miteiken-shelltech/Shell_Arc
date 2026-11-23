@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload, Optional
 
 from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData, MSKUT_OnRamMmap
 from shellarc_msk.mskob.field_obj import MSK_Field
@@ -8,7 +8,9 @@ from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
-from shellarc_msk.mskex.msk_objerror import MSKObject_FormatError, MSKObject_ValidationError
+from shellarc_msk.mskex.msk_objerror import (
+    MSKObject_FormatError, MSKObject_ValidationError, MSKObject_QueryLogicError
+)
 if TYPE_CHECKING:
     from shellarc_msk.mskob.container_obj import MSK_Container
 
@@ -174,37 +176,65 @@ class MSK_ContainerCollection:
 
         return -1
 
+    @overload
     def write_entity(self,
                      container_index: MSK_HexIndex,
                      prop: MSK_Property,
                      adress: MSK_Address,
                      do_override: bool=False
                      ) -> MSK_Entity:
+        ...
+
+    @overload
+    def write_entity(self,
+                     container_index: MSK_HexIndex,
+                     prop: MSK_Property,
+                     proceed_step: int,
+                     do_override: bool=False
+                     ) -> MSK_Entity:
+        ...
+
+    def write_entity(self,
+                     container_index: MSK_HexIndex,
+                     prop: MSK_Property,
+                     adress: Optional[MSK_Address]=None,
+                     proceed_step: Optional[int]=None,
+                     do_override: bool=False
+                     ) -> MSK_Entity:
+        if adress is None and proceed_step is None:
+            raise MSKObject_QueryLogicError(
+                msg="An address or an proceed_step is required for writing an entity"
+            )
         field_ls = MSK_Field(field_name=self.field_name).field_ls
         if (prop, prop.prop_type) not in field_ls and not do_override:
             raise MSKObject_ValidationError(
                 msg="Properties undefined in Field shall only be defined as overrides"
             )
-        if prop.prop_type != adress.type:
-            raise MSKObject_ValidationError(msg="Type unmatch")
-        if (prop.prop_type.type_literals is not None and 
-            adress.adress_index not in prop.prop_type.type_literals):
-            raise MSKObject_ValidationError(msg="Type Literals Validation Failed")
+        if adress is not None:
+            if prop.prop_type != adress.type:
+                raise MSKObject_ValidationError(msg="Type unmatch")
+            if (prop.prop_type.type_literals is not None and 
+                adress.adress_index not in prop.prop_type.type_literals):
+                raise MSKObject_ValidationError(msg="Type Literals Validation Failed")
         
-        new_entity_binary = (
-            container_index.to_bytes() + 
-            prop.prop_index.to_bytes() + 
-            adress.adress_index.to_bytes()
-        )
-        if len(new_entity_binary) != 48:
-            raise MSKObject_FormatError(
-                msg="An entiny of a container must be of length 48 bytes"
+            new_entity_binary = (
+                container_index.to_bytes() + 
+                prop.prop_index.to_bytes() + 
+                adress.adress_index.to_bytes()
             )
+            if len(new_entity_binary) != 48:
+                raise MSKObject_FormatError(
+                    msg="An entiny of a container must be of length 48 bytes"
+                )
         pos = self.request_position(
             container_index=container_index,
             requesting_prop=prop
         )
         if pos == -1:
+            if adress is None:
+                raise MSKObject_QueryLogicError(
+                    msg="There is no proceedable value (It is a new entity)"
+                )
             new_row = len(self.container_bin) // 48
             with open(self.field_bin_file, "ab") as f:
                 f.write(new_entity_binary)
@@ -217,6 +247,28 @@ class MSK_ContainerCollection:
             )
             self.container_bin = MSKUT_OnRamMmap.container_bins[self.field_name]
         else:
+            if proceed_step is not None:
+                type_literals = prop.prop_type.type_literals
+                current_entity = MSK_Entity(entity_chunk=self.container_bin[pos : pos + 48])
+                current_address_index = current_entity.address.adress_index
+                if not type_literals:
+                    raise MSKObject_QueryLogicError(
+                        msg=f"Requested property {prop.prop_name} of container {container_index} "
+                        f"is of type {prop.prop_type.type_name} which has no literals"
+                    )
+                current_literal_index = type_literals.index(current_address_index)
+                new_literal_index = current_literal_index + proceed_step
+                if new_literal_index >= len(type_literals) or new_literal_index < 0:
+                    raise MSKObject_QueryLogicError(
+                        msg=f"Literal out of range (literal at index {new_literal_index} is queried "
+                        f"but the literal list only has a length of {len(type_literals)})"
+                    )
+                adress = MSK_Address(adress_index=type_literals[new_literal_index]) 
+            new_entity_binary = (
+                container_index.to_bytes() + 
+                prop.prop_index.to_bytes() + 
+                adress.adress_index.to_bytes()
+             )
             self.container_bin[pos : pos + 48] = new_entity_binary
             self._write_container_binaries()
 
