@@ -205,6 +205,10 @@ class MSK_ContainerCollection:
             raise MSKObject_QueryLogicError(
                 msg="An address or an proceed_step is required for writing an entity"
             )
+        if adress is not None and proceed_step is not None:
+            raise MSKObject_QueryLogicError(
+                msg="Write entity by either using an address or by indicating a proceed_step, not both"
+            )
         field_ls = MSK_Field(field_name=self.field_name).field_ls
         if (prop, prop.prop_type) not in field_ls and not do_override:
             raise MSKObject_ValidationError(

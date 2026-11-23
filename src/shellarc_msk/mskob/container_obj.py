@@ -123,12 +123,14 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
 
     def write_entity(self,
                      prop: MSK_Property,
-                     adress: MSK_Address,
+                     adress: Optional[MSK_Address]=None,
+                     proceed_step: Optional[int]=None,
                      do_override: bool=False
                      ) -> MSK_Entity:
         super().write_entity(
             container_index=self.container_index,
             prop=prop,
             adress=adress,
+            proceed_step=proceed_step,
             do_override=do_override
         )
