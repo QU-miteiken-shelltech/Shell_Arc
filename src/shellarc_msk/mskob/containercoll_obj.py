@@ -180,11 +180,14 @@ class MSK_ContainerCollection:
             raise ValueError("Properties undefined in Field shall only be defined as overrides")
         if prop.prop_type != adress.type:
             raise ValueError("Type unmatch")
+        if adress.adress_index not in prop.prop_type.type_literals:
+            raise ValueError("Type Literals Validation Failed")
         
-        new_entity_binary = (container_index.to_bytes() + 
-                      prop.prop_index.to_bytes() + 
-                      adress.adress_index.to_bytes()
-                      )
+        new_entity_binary = (
+            container_index.to_bytes() + 
+            prop.prop_index.to_bytes() + 
+            adress.adress_index.to_bytes()
+        )
         if len(new_entity_binary) != 48:
             raise ValueError("An entiny of a container must be of length 48 bytes")
         pos = self.request_position(

@@ -1,16 +1,19 @@
 import struct 
 import hashlib
-from typing import Optional, Self
+from typing import Optional, Self, TYPE_CHECKING
 
 from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskcc.msk_objcache import mskcc_object_cache
+if TYPE_CHECKING:
+    from shellarc_msk.mskob.adress_obj import MSK_Address
 
 class MSK_Type:
     def __init__(self,
                  type_index: MSK_HexIndex | None=None,
                  type_name: str | None=None,
+                 type_literals: list[MSK_Address] | None=None,
                  allow_make: bool=False
                  ) -> None:
         if type_index is None and type_name is None:
@@ -18,6 +21,7 @@ class MSK_Type:
 
         self.type_index : MSK_HexIndex = MSK_HexIndex(value=None)
         self.type_name : Optional[str] = None
+        self.type_literals: list[MSK_HexIndex] = []
 
         if type_index == MSK_HexIndex(value=None):
             return
@@ -29,13 +33,14 @@ class MSK_Type:
             )
             self.type_index = type_index
             self.type_name = type_name
+            self.type_literals = [a.adress_index for a in type_literals]
             allow_make = allow_make
         else:
             allow_make = False
 
         mskfs_pathsolver = MSKUT_PathSolver()
 
-        self.type_bin_file = mskfs_pathsolver.mskfs_config / ".msk_type"
+        self.type_bin_file = mskfs_pathsolver.mskfs_space / ".msk_type"
         if not self.type_bin_file.exists():
             with open(self.type_bin_file, "wb") as f:
                 f.write(b"")
@@ -43,7 +48,7 @@ class MSK_Type:
             with open(self.type_bin_file, "rb") as f:
                 MSKUT_OnRamData.type_bin = bytearray(f.read())
 
-        self.type_offset_file = mskfs_pathsolver.mskfs_config / ".msk_type_offset"
+        self.type_offset_file = mskfs_pathsolver.mskfs_space / ".msk_type_offset"
         if not self.type_offset_file.exists():
             with open(self.type_offset_file, "wb") as f:
                 f.write(b"")
@@ -57,6 +62,7 @@ class MSK_Type:
         )
         self.type_index = my_type[0]
         self.type_name = my_type[1]
+        self.type_literals = my_type[2]
 
     @classmethod
     def list_types(cls) -> list[Self]:
@@ -83,7 +89,7 @@ class MSK_Type:
     def _search_target_type(self,
                             target_type_index: MSK_HexIndex,
                             allow_make: bool=False
-                            ) -> Optional[tuple[MSK_HexIndex, str]]:
+                            ) -> Optional[tuple[MSK_HexIndex, str, list[MSK_HexIndex]]]:
         num_chunks = len(MSKUT_OnRamData.type_offset_bin) // 8
 
         for i in range(0, num_chunks):
@@ -96,8 +102,17 @@ class MSK_Type:
 
             current_type_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.type_bin[chunk_offset : chunk_offset + 16])
             if current_type_index == target_type_index:
-                current_type_name = MSKUT_OnRamData.type_bin[chunk_offset + 16 : chunk_next_offset].decode("utf-8")
-                return (current_type_index, current_type_name)
+                current_type_name_len = struct.unpack(
+                    "<Q", MSKUT_OnRamData.type_bin[chunk_offset + 16 : chunk_offset + 24]
+                )[0]
+                current_type_name = MSKUT_OnRamData.type_bin[chunk_offset + 24 : chunk_next_offset + 24 + current_type_name_len].decode("utf-8")
+                current_type_literals_raw = MSKUT_OnRamData.type_bin[chunk_next_offset + 24 + current_type_name_len : chunk_next_offset]
+                current_type_literals = [
+                    MSK_HexIndex.from_bytes(
+                        current_type_literals_raw[i : i + 16]
+                    ) for i in range(0, (chunk_next_offset - (chunk_next_offset + 24 + current_type_name_len)) // 16)
+                ]
+                return (current_type_index, current_type_name, current_type_literals)
 
         if allow_make and (self.type_index is not None and self.type_name is not None):
             self._make_new_type()
@@ -106,7 +121,14 @@ class MSK_Type:
             return (MSK_HexIndex(value=None), None)
 
     def _make_new_type(self):
-        new_type_bytes = self.type_index.to_bytes() + self.type_name.encode("utf-8")
+        type_name_bytes = self.type_name.encode("utf-8")
+        new_type_bytes = (
+            self.type_index.to_bytes() + 
+            struct.pack(">Q", len(type_name_bytes)) +
+            type_name_bytes 
+        )
+        if self.type_literals is not None:
+            new_offset_bytes += b"".join(hexixndex.to_bytes(8, "little") for hexixndex in self.type_literals)
         new_offset_bytes = len(MSKUT_OnRamData.type_bin).to_bytes(8, byteorder="little")
         MSKUT_OnRamData.type_offset_bin += new_offset_bytes
         MSKUT_OnRamData.type_bin += new_type_bytes
@@ -128,8 +150,8 @@ class MSK_Type:
             f.write(offset_bytes)
 
     def __str__(self):
-        rtn_str = f" \
-            type_index : {self.type_index} \n \
-            type_name : {self.type_name} \n \
-        " 
+        rtn_str = (
+            f"type_index : {self.type_index} \n"
+            f"type_name : {self.type_name}"
+        )
         return rtn_str
