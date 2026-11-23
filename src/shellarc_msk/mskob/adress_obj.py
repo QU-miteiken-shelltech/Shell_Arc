@@ -12,8 +12,10 @@ class MSK_Address:
     def __init__(self,
                  adress_index: MSK_HexIndex | None=None,
                  adress_type: MSK_Type | None=None,
-                 adress_value: str | None=None
+                 adress_value: str | None=None,
+                 on_ram_data_cls=MSKUT_OnRamData
                  ) -> None:
+        self.on_ram_data_cls = on_ram_data_cls
         if adress_index is None and (adress_type is None or adress_value is None):
             raise ValueError("MSK_Address cannot be made from None")
 
@@ -41,22 +43,22 @@ class MSK_Address:
         if not self.adress_bin_file.exists():
             with open(self.adress_bin_file, "wb") as f:
                 f.write(b"")
-        if MSKUT_OnRamData.adress_bin is None:
+        if self.on_ram_data_cls.adress_bin is None:
             with open(self.adress_bin_file, "rb") as f:
-                MSKUT_OnRamData.adress_bin = bytearray(f.read())
+                self.on_ram_data_cls.adress_bin = bytearray(f.read())
 
         self.adress_offset_file = mskfs_pathsolver.mskfs_space / ".msk_adress_offset"
         if not self.adress_offset_file.exists() or self.adress_offset_file.stat().st_size == 0:
             with open(self.adress_offset_file, "wb") as f:
                 init_zeros = b'\x00' * (120000 * 8)
                 f.write(init_zeros)
-        if MSKUT_OnRamData.adress_offset_bin is None:
+        if self.on_ram_data_cls.adress_offset_bin is None:
             with open(self.adress_offset_file, "rb") as f:
                 offset_bin = bytearray(f.read())
             if len(offset_bin) % (120000 * 8) != 0:
                 raise ValueError("'.msk_adress_offset' is not a whole number of pages "
                                  "(made by an older format?)")
-            MSKUT_OnRamData.adress_offset_bin = offset_bin
+            self.on_ram_data_cls.adress_offset_bin = offset_bin
   
 
         my_adress = self._search_target_adress(
@@ -68,12 +70,12 @@ class MSK_Address:
         self.value = my_adress[2]
 
 
-    @mskcc_object_cache(source_bin=MSKUT_OnRamData.adress_bin)
+    @mskcc_object_cache(source=lambda self: self.on_ram_data_cls.adress_bin)
     def _search_target_adress(self,
                               target_adress_index: MSK_HexIndex,
                               allow_make: bool=False
                               ) -> Optional[tuple[MSK_HexIndex, MSK_Type, str]]:
-        num_pages = len(MSKUT_OnRamData.adress_offset_bin) // (120000 * 8)
+        num_pages = len(self.on_ram_data_cls.adress_offset_bin) // (120000 * 8)
 
         adress_index_int = int(target_adress_index, 0)
         prim_offset_pos = adress_index_int % (120000 - 1)
@@ -85,11 +87,11 @@ class MSK_Address:
             for page in range(0, num_pages):
                 offset_start = page * (120000 * 8) + 8
                 offset_pos = offset_start + prim_offset_pos * 8
-                slot = struct.unpack("<Q", MSKUT_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8])[0]
+                slot = struct.unpack("<Q", self.on_ram_data_cls.adress_offset_bin[offset_pos : offset_pos + 8])[0]
                 if slot == 0:
                     continue  # empty slot: not the target, and there is no record to read
                 chunk_offset = slot - 1  # a slot holds (record offset + 1)
-                current_adress_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.adress_bin[chunk_offset : chunk_offset + 16])
+                current_adress_index = MSK_HexIndex.from_bytes(self.on_ram_data_cls.adress_bin[chunk_offset : chunk_offset + 16])
                 if current_adress_index == target_adress_index:
                     do_hit = True
                     page_found = page
@@ -100,10 +102,10 @@ class MSK_Address:
 
         if do_hit:
             # record = index(16) + type(16) + value length(8, "<Q") + value
-            current_type_index = MSK_HexIndex.from_bytes(MSKUT_OnRamData.adress_bin[chunk_offset + 16 : chunk_offset + 32])
+            current_type_index = MSK_HexIndex.from_bytes(self.on_ram_data_cls.adress_bin[chunk_offset + 16 : chunk_offset + 32])
             current_type = MSK_Type(type_index=current_type_index)
-            value_len = struct.unpack("<Q", MSKUT_OnRamData.adress_bin[chunk_offset + 32 : chunk_offset + 40])[0]
-            current_value = MSKUT_OnRamData.adress_bin[chunk_offset + 40 : chunk_offset + 40 + value_len].decode("utf-8")
+            value_len = struct.unpack("<Q", self.on_ram_data_cls.adress_bin[chunk_offset + 32 : chunk_offset + 40])[0]
+            current_value = self.on_ram_data_cls.adress_bin[chunk_offset + 40 : chunk_offset + 40 + value_len].decode("utf-8")
             self._set_slot_pos(slot_pos=120000 * page_found + prim_offset_pos)
             return (current_adress_index, current_type, current_value)
 
@@ -119,15 +121,15 @@ class MSK_Address:
         value_bin = self.value.encode("utf-8")
         new_adress_bytes = (self.adress_index.to_bytes() + self.type.type_index.to_bytes() +
                             struct.pack("<Q", len(value_bin)) + value_bin)
-        new_offset_bytes = (len(MSKUT_OnRamData.adress_bin) + 1).to_bytes(8, byteorder="little")
+        new_offset_bytes = (len(self.on_ram_data_cls.adress_bin) + 1).to_bytes(8, byteorder="little")
 
-        num_pages = len(MSKUT_OnRamData.adress_offset_bin) // (120000 * 8)
+        num_pages = len(self.on_ram_data_cls.adress_offset_bin) // (120000 * 8)
         filled_nums = [
-            struct.unpack("<Q", MSKUT_OnRamData.adress_offset_bin[page * (120000 * 8) : page * (120000 * 8) + 8])[0]
+            struct.unpack("<Q", self.on_ram_data_cls.adress_offset_bin[page * (120000 * 8) : page * (120000 * 8) + 8])[0]
             for page in range(0, num_pages)
         ]
         if min(filled_nums) >= 80000:
-            MSKUT_OnRamData.adress_offset_bin += b'\x00' * (120000 * 8)
+            self.on_ram_data_cls.adress_offset_bin += b'\x00' * (120000 * 8)
             num_pages += 1
             filled_nums.append(0)
 
@@ -139,7 +141,7 @@ class MSK_Address:
             for page in range(0, num_pages):
                 offset_start = page * (120000 * 8) + 8
                 offset_pos = offset_start + prim_offset_pos * 8
-                chunk_offset_bytes = MSKUT_OnRamData.adress_offset_bin[offset_pos : offset_pos + 8]
+                chunk_offset_bytes = self.on_ram_data_cls.adress_offset_bin[offset_pos : offset_pos + 8]
                 if chunk_offset_bytes == b'\x00' * 8:
                     is_empty = True
                     page_found = page
@@ -150,16 +152,16 @@ class MSK_Address:
         if not is_empty:
             raise RuntimeError("adress table is full")
 
-        MSKUT_OnRamData.adress_bin += new_adress_bytes
-        MSKUT_OnRamData.adress_offset_bin = (MSKUT_OnRamData.adress_offset_bin[: offset_pos] +
+        self.on_ram_data_cls.adress_bin += new_adress_bytes
+        self.on_ram_data_cls.adress_offset_bin = (self.on_ram_data_cls.adress_offset_bin[: offset_pos] +
                                              new_offset_bytes +
-                                             MSKUT_OnRamData.adress_offset_bin[offset_pos + 8 :])
+                                             self.on_ram_data_cls.adress_offset_bin[offset_pos + 8 :])
         page_start = page * (120000 * 8)
-        MSKUT_OnRamData.adress_offset_bin[page_start : page_start + 8] = struct.pack("<Q", filled_nums[page] + 1)
+        self.on_ram_data_cls.adress_offset_bin[page_start : page_start + 8] = struct.pack("<Q", filled_nums[page] + 1)
 
         self._append_binaries(
             appended_adress_bytes=new_adress_bytes,
-            offset_bin=MSKUT_OnRamData.adress_offset_bin
+            offset_bin=self.on_ram_data_cls.adress_offset_bin
         )
         self._set_slot_pos(slot_pos=120000 * page_found + prim_offset_pos)
 

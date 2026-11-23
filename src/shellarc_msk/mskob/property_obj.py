@@ -39,7 +39,7 @@ class MSK_Property:
 
         mskfs_pathsolver = MSKUT_PathSolver()
 
-        self.property_bin_file = mskfs_pathsolver.mskfs_space / ".msk_property"
+        self.property_bin_file = mskfs_pathsolver.mskfs_config / ".msk_property"
         if not self.property_bin_file.exists():
             with open(self.property_bin_file, "wb") as f:
                 f.write(b"")
@@ -47,7 +47,7 @@ class MSK_Property:
             with open(self.property_bin_file, "rb") as f:
                 MSKUT_OnRamData.property_bin = bytearray(f.read())
 
-        self.property_offset_file = mskfs_pathsolver.mskfs_space / ".msk_property_offset"
+        self.property_offset_file = mskfs_pathsolver.mskfs_config / ".msk_property_offset"
         if not self.property_offset_file.exists():
             with open(self.property_offset_file, "wb") as f:
                 f.write(b"")
@@ -88,7 +88,7 @@ class MSK_Property:
             )
         return property_list
 
-    @mskcc_object_cache(source_bin=MSKUT_OnRamData.property_bin)
+    @mskcc_object_cache(source=MSKUT_OnRamData.property_bin)
     def _search_target_prop(self,
                             target_prop_index: MSK_HexIndex,
                             allow_make: bool=False

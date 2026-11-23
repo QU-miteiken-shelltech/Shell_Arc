@@ -20,6 +20,32 @@ class MSKUT_OnRamData:
     container_index_table : dict[MSK_HexIndex, list[int]] = {}
 
 
+class MSKUT_OnRamTmpData:
+    adress_bin : Optional[bytearray] = None
+    adress_offset_bin : Optional[bytearray] = None
+    field_bin : Optional[bytes] = None
+    field_offset_bin : Optional[bytes] = None
+    property_bin : Optional[bytearray] = None
+    property_offset_bin : Optional[bytearray] = None
+    type_bin : Optional[bytearray] = None
+    type_offset_bin : Optional[bytearray] = None
+    veradress_bin: Optional[bytearray] = None
+    container_index_table : dict[MSK_HexIndex, list[int]] = {}
+
+    @classmethod
+    def clear_all(cls) -> None:
+        cls.adress_bin = None
+        cls.adress_offset_bin = None
+        cls.field_bin = None
+        cls.field_offset_bin = None
+        cls.property_bin = None
+        cls.property_offset_bin = None
+        cls.type_bin = None
+        cls.type_offset_bin = None
+        cls.veradress_bin = None
+        cls.container_index_table = {}
+
+
 class MSKUT_OnRamMmap:
     container_bins: Optional[dict[str, mmap.mmap]] = None
 

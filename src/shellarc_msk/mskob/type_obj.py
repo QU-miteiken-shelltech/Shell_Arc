@@ -35,7 +35,7 @@ class MSK_Type:
 
         mskfs_pathsolver = MSKUT_PathSolver()
 
-        self.type_bin_file = mskfs_pathsolver.mskfs_space / ".msk_type"
+        self.type_bin_file = mskfs_pathsolver.mskfs_config / ".msk_type"
         if not self.type_bin_file.exists():
             with open(self.type_bin_file, "wb") as f:
                 f.write(b"")
@@ -43,7 +43,7 @@ class MSK_Type:
             with open(self.type_bin_file, "rb") as f:
                 MSKUT_OnRamData.type_bin = bytearray(f.read())
 
-        self.type_offset_file = mskfs_pathsolver.mskfs_space / ".msk_type_offset"
+        self.type_offset_file = mskfs_pathsolver.mskfs_config / ".msk_type_offset"
         if not self.type_offset_file.exists():
             with open(self.type_offset_file, "wb") as f:
                 f.write(b"")
@@ -79,7 +79,7 @@ class MSK_Type:
             )
         return type_list
 
-    @mskcc_object_cache(source_bin=MSKUT_OnRamData.type_bin)
+    @mskcc_object_cache(source=MSKUT_OnRamData.type_bin)
     def _search_target_type(self,
                             target_type_index: MSK_HexIndex,
                             allow_make: bool=False

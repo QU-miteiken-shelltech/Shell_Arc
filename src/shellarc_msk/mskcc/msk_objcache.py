@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Callable, Any
 import xxhash
 import time
 import sys, os
@@ -7,10 +8,10 @@ from shellarc_msk.mskcc.cache_data import MSKCC_CACHE, MSKCC_NULL
 
 MASTER_COUNT = 0
 
-def mskcc_object_cache(source_bin):
+def mskcc_object_cache(source: Callable[[Any], Any] | bytearray):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(self, *args, **kwargs):
             if __debug__:
                 ts = time.time()
                 global MASTER_COUNT
@@ -26,6 +27,7 @@ def mskcc_object_cache(source_bin):
                     frame = frame.f_back
                 called_from = " -> ".join(reversed(chain))
 
+            source_bin = source(self) if callable(source) else source
             source_hash = xxhash.xxh3_64_hexdigest(source_bin) if source_bin is not None else "0" * 16
             index = None
             for k, v in kwargs.items():
@@ -41,7 +43,7 @@ def mskcc_object_cache(source_bin):
             if cached is not MSKCC_NULL:
                 if __debug__: print(f"FOUND : {time.time() - ts} (accu : {MASTER_COUNT}) ({called_from})")
                 return cached
-            data = func(*args, **kwargs)
+            data = func(self, *args, **kwargs)
             MSKCC_CACHE.cache_data(
                 callable_obj=func,
                 index=index,
