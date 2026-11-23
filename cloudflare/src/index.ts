@@ -174,7 +174,7 @@ interface LockRecord {
 type PublicLock = Omit<LockRecord, "token">;
 
 export class LockDO extends DurableObject<Env> {
-  // 期限切れなら削除して null を返す (Alarm が遅れても正しく動く)
+
   private async current(): Promise<LockRecord | null> {
     const rec = await this.ctx.storage.get<LockRecord>("lock");
     if (!rec) return null;
@@ -222,6 +222,12 @@ export class LockDO extends DurableObject<Env> {
       ...this.toPublic(cur),
       remainingMs: cur.expiresAt - Date.now(),
     };
+  }
+
+  async token_match(token: string) {
+    const cur = await this.current();
+    if (!cur) return { matched: false as const };
+    return { matched: cur.token === token };
   }
 
   // ロックを外す (token 一致が必要)
@@ -284,6 +290,10 @@ async function lockHandler(
       if (!body?.token) return json(env, { error: "token required" }, 400);
       const r = await stub.release(body.token);
       return r.ok ? json(env, r) : json(env, { error: "invalid token" }, 403);
+    }
+    case "token_match": {
+      if (!body?.token) return json(env, { error: "token required" }, 400);
+      return json(env, await stub.token_match(body.token));
     }
     default:
       return json(env, { error: "not found" }, 404);

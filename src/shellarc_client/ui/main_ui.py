@@ -60,6 +60,8 @@ class MainWindow(QMainWindow):
 
     def on_tab_changed(self, index: int):
         current_tab_widget = self.tab_widget.widget(index)
+        if not hasattr(self, "task_ops_tab"):
+            return
         if current_tab_widget == self.task_ops_tab:
             self.task_ops_tab.build_ui()
 

@@ -183,7 +183,7 @@ class DataOpsUi(QWidget):
         # if not os.listdir('/your/path'):
         #     print("Not empty")
         #     return
-        msk_root = MSKUT_PathSolver().mskfs_config
+        msk_root = MSKUT_PathSolver().mskfs_space
         if os.listdir(str(msk_root)):
             print("Not empty" + str(msk_root))
             return

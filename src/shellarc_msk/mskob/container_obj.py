@@ -117,3 +117,15 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
             entity.prop.prop_name for entity in self
         ]
         return existing_properties
+
+    def write_entity(self,
+                     prop: MSK_Property,
+                     adress: MSK_Address,
+                     do_override: bool=False
+                     ) -> MSK_Entity:
+        super().write_entity(
+            container_index=self.container_index,
+            prop=prop,
+            adress=adress,
+            do_override=do_override
+        )

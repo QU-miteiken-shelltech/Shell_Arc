@@ -10,7 +10,7 @@ class MSKUT_PathSolver:
         return self.root_dir / "/".join(list(args))
 
     @property
-    def mskfs_config(self) -> Path:
+    def mskfs_space(self) -> Path:
         space_root_dir = self.root_dir / MSKUT_PathSolver.space_root
         if not space_root_dir.exists():
             space_root_dir.mkdir(parents=True, exist_ok=False)
@@ -22,6 +22,13 @@ class MSKUT_PathSolver:
         if not client_root_dir.exists():
             client_root_dir.mkdir(parents=True, exist_ok=False)
         return client_root_dir
+
+    @property
+    def mskfs_tmp(self) -> Path:
+        tmp_root_dir = self.root_dir / "tmp"
+        if not tmp_root_dir.exists():
+            tmp_root_dir.mkdir(parents=True, exist_ok=False)
+        return tmp_root_dir
 
     def mskfs_ref(self, ref: str) -> Path:
         return

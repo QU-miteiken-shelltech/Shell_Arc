@@ -18,7 +18,7 @@ class MSK_Field:
         mskfs_pathsolver = MSKUT_PathSolver()
 
         self.allow_make = allow_make
-        self.field_offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
+        self.field_offset_file = mskfs_pathsolver.mskfs_space / ".msk_field_offset"
         if not self.field_offset_file.exists():
             with open(self.field_offset_file, "wb") as f:
                 f.write(b"")
@@ -26,7 +26,7 @@ class MSK_Field:
             with open(self.field_offset_file, "rb") as f:
                 MSKUT_OnRamData.field_offset_bin = f.read()
 
-        self.field_file = mskfs_pathsolver.mskfs_config / ".msk_field"
+        self.field_file = mskfs_pathsolver.mskfs_space / ".msk_field"
         if not self.field_file.exists():
             with open(self.field_file, "wb") as f:
                 f.write(b"")
@@ -45,12 +45,12 @@ class MSK_Field:
         mskfs_pathsolver = MSKUT_PathSolver()
 
         if MSKUT_OnRamData.field_offset_bin is None:
-            offset_file = mskfs_pathsolver.mskfs_config / ".msk_field_offset"
+            offset_file = mskfs_pathsolver.mskfs_space / ".msk_field_offset"
             if not offset_file.exists():
                 return []
             MSKUT_OnRamData.field_offset_bin = offset_file.read_bytes()
         if MSKUT_OnRamData.field_bin is None:
-            field_file = mskfs_pathsolver.mskfs_config / ".msk_field"
+            field_file = mskfs_pathsolver.mskfs_space / ".msk_field"
             if not field_file.exists():
                 return []
             MSKUT_OnRamData.field_bin = field_file.read_bytes()

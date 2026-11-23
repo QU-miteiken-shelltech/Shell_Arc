@@ -22,7 +22,7 @@ class MSK_VersionedAdress(MSK_Address):
 
         mskfs_pathsolver = MSKUT_PathSolver()
 
-        self.veradress_bin_file = mskfs_pathsolver.mskfs_config / ".msk_ver_adress"
+        self.veradress_bin_file = mskfs_pathsolver.mskfs_space / ".msk_ver_adress"
         if not self.veradress_bin_file.exists():
             with open(self.veradress_bin_file, "wb") as f:
                 f.write(b"\x00" * 8)

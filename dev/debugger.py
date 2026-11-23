@@ -49,7 +49,7 @@ def bootstrap(root, pkg_parent):
             self.root_dir = root_path
 
         MSKUT_PathSolver.__init__ = _init
-    cfg = MSKUT_PathSolver().mskfs_config
+    cfg = MSKUT_PathSolver().mskfs_space
     # the implementation creates missing files on access: refuse to run on a wrong directory
     if not cfg.is_dir():
         raise SystemExit(f"'{cfg}' does not exist (is --root the directory that CONTAINS 'msk/'?)")

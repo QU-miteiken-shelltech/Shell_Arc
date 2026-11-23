@@ -1,18 +1,13 @@
 import mimetypes
-import os
 from pathlib import Path
-
-from dotenv import load_dotenv
 
 import requests
 
-class FileTransfer:
+from shellarc_client.engine.transfer.transfer_base import TransferBase
+
+class FileTransfer(TransferBase):
     def __init__(self):
-        load_dotenv(str(Path(__file__).resolve().parents[4] / ".secret/.env"))
-        TOKEN = os.environ["R2_API_TOKEN"]
-        self.AUTH = {"Authorization" : f"Bearer {TOKEN}"}
-        self.API = os.environ["API_ENTRY_URL"]
-        print(TOKEN)
+        super().__init__()
 
     def upload_file(self,
                     file_path: Path | str,
@@ -23,15 +18,13 @@ class FileTransfer:
         content_type = mimetypes.guess_type(file_path.name)[0] or "appliction/octet-stream"
         ext = file_path.suffix.lstrip(".")
 
-        resp = requests.post(
-            url=f"{self.API}/upload/presign",
-            headers=self.AUTH,
-            json={
+        resp = self.msk_post(
+            url_path="/upload/presign",
+            body={
                 "contentType": content_type,
                 "ext": ext,
                 "key": r2_key
-            },
-            timeout=30
+            }
         )
         resp.raise_for_status()
         info = resp.json()
@@ -45,11 +38,9 @@ class FileTransfer:
             )
         put.raise_for_status()
 
-        resp = requests.post(
-            f"{self.API}/upload/complete",
-            headers=self.AUTH,
-            json={"key": info["key"]},
-            timeout=30
+        resp = self.msk_post(
+            url_path="/upload/complete",
+            body={"key": info["key"]}
         )
         resp.raise_for_status()
 
@@ -64,14 +55,13 @@ class FileTransfer:
             local_destination_path = Path(local_destination_path)
         if local_destination_path.is_dir():
             raise ValueError("User cannot download a file as a folder")
-        resp = requests.post(
-            url=f"{self.API}/download/presign",
-            headers=self.AUTH,
-            json={
+
+        resp = self.msk_post(
+            url_path="/download/presign",
+            body={
                 "key": r2_key,
                 "filename": r2_filename
-            },
-            timeout=30
+            }
         )
         resp.raise_for_status()
         presigned_url = resp.json()["url"]

@@ -19,7 +19,7 @@ class MSK_ContainerCollection:
         self.field_name = field_name
 
         mskfs_pathsolver = MSKUT_PathSolver()
-        self.field_bin_file = mskfs_pathsolver.mskfs_config / f".msk_container_{field_name}"
+        self.field_bin_file = mskfs_pathsolver.mskfs_space / f".msk_container_{field_name}"
         if (MSKUT_OnRamMmap.container_bins is None or
             field_name not in MSKUT_OnRamMmap.container_bins):
             if not self.field_bin_file.exists():

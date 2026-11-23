@@ -37,7 +37,7 @@ class MSK_Address:
         
         mskfs_pathsolver = MSKUT_PathSolver()
 
-        self.adress_bin_file = mskfs_pathsolver.mskfs_config / ".msk_adress"
+        self.adress_bin_file = mskfs_pathsolver.mskfs_space / ".msk_adress"
         if not self.adress_bin_file.exists():
             with open(self.adress_bin_file, "wb") as f:
                 f.write(b"")
@@ -45,7 +45,7 @@ class MSK_Address:
             with open(self.adress_bin_file, "rb") as f:
                 MSKUT_OnRamData.adress_bin = bytearray(f.read())
 
-        self.adress_offset_file = mskfs_pathsolver.mskfs_config / ".msk_adress_offset"
+        self.adress_offset_file = mskfs_pathsolver.mskfs_space / ".msk_adress_offset"
         if not self.adress_offset_file.exists() or self.adress_offset_file.stat().st_size == 0:
             with open(self.adress_offset_file, "wb") as f:
                 init_zeros = b'\x00' * (120000 * 8)
