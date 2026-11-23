@@ -24,8 +24,8 @@ def get_entities_by_property(
     appeared = []
     global COUNTER
     for container in MSK_ContainerCollection(field_name=target_field_name).container_iter():
-        if __debug__: 
-            COUNTER += 1; print(f"loop : {COUNTER}")
+        # if __debug__: 
+        #     COUNTER += 1; print(f"loop : {COUNTER}")
         entity = container.request_entity(requesting_prop=requested_property)
         entity_value = entity.address.value
         if eluminate_duplication and entity_value in appeared:

@@ -12,20 +12,20 @@ def mskcc_object_cache(source: Callable[[Any], Any] | bytearray):
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            if __debug__:
-                ts = time.time()
-                global MASTER_COUNT
-                MASTER_COUNT += 1
+            # if __debug__:
+            #     ts = time.time()
+            #     global MASTER_COUNT
+            #     MASTER_COUNT += 1
 
-                chain = []
-                frame = sys._getframe(1)
+            #     chain = []
+            #     frame = sys._getframe(1)
                 
-                while frame:
-                    filename = os.path.basename(frame.f_code.co_filename)
-                    lineno = frame.f_lineno
-                    chain.append(f"{filename}:{lineno}")
-                    frame = frame.f_back
-                called_from = " -> ".join(reversed(chain))
+            #     while frame:
+            #         filename = os.path.basename(frame.f_code.co_filename)
+            #         lineno = frame.f_lineno
+            #         chain.append(f"{filename}:{lineno}")
+            #         frame = frame.f_back
+            #     called_from = " -> ".join(reversed(chain))
 
             source_bin = source(self) if callable(source) else source
             source_hash = xxhash.xxh3_64_hexdigest(source_bin) if source_bin is not None else "0" * 16
@@ -41,7 +41,6 @@ def mskcc_object_cache(source: Callable[[Any], Any] | bytearray):
                 source_hash=source_hash
             )
             if cached is not MSKCC_NULL:
-                if __debug__: print(f"FOUND : {time.time() - ts} (accu : {MASTER_COUNT}) ({called_from})")
                 return cached
             data = func(self, *args, **kwargs)
             MSKCC_CACHE.cache_data(
@@ -50,7 +49,6 @@ def mskcc_object_cache(source: Callable[[Any], Any] | bytearray):
                 rtn=data,
                 source_hash=source_hash
             )
-            if __debug__: print(f"NEW : {time.time() - ts} (accu : {MASTER_COUNT}) ({called_from})")
             return data
         return wrapper
     return decorator

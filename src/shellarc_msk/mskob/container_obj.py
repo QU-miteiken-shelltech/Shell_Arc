@@ -5,7 +5,6 @@ from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
-from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
 
 class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
@@ -83,6 +82,7 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                                 prop_name: str,
                                 type_name: str
                                 ) -> MSK_Entity:
+        from shellarc_msk.mskob.type_obj import MSK_Type
         for entity in self:
             if (entity.prop.prop_name == prop_name and
                 entity.prop.prop_type.type_name == type_name):

@@ -30,6 +30,13 @@ class MSKUT_PathSolver:
             tmp_root_dir.mkdir(parents=True, exist_ok=False)
         return tmp_root_dir
 
+    @property
+    def mskfs_backup(self) -> Path:
+        backup_root_dir = self.root_dir / "backup"
+        if not backup_root_dir.exists():
+            backup_root_dir.mkdir(parents=True, exist_ok=False)
+        return backup_root_dir
+
     def mskfs_ref(self, ref: str) -> Path:
         return
     

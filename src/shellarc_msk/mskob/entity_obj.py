@@ -3,14 +3,17 @@ from functools import cached_property
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
+from shellarc_msk.mskut.on_ram_data import MSKUT_OnRamData
 
 class MSK_Entity:
     container_index : MSK_HexIndex
 
     def __init__(self,
-                 entity_chunk: bytes | None
+                 entity_chunk: bytes | None,
+                 on_ram_data_cls=MSKUT_OnRamData
                  ) -> None:
         self.entity_chunk = entity_chunk
+        self.on_ram_data_cls = on_ram_data_cls
 
         if entity_chunk is None:
             self.container_index = MSK_HexIndex(value=None)
@@ -31,10 +34,16 @@ class MSK_Entity:
     @cached_property
     def address(self) -> MSK_Address:
         if self.entity_chunk is None:
-            return MSK_Address(adress_index=MSK_HexIndex(value=None))
+            return MSK_Address(
+                adress_index=MSK_HexIndex(value=None),
+                on_ram_data_cls=self.on_ram_data_cls
+            )
         else:
             adress_index = MSK_HexIndex.from_bytes(self.entity_chunk[32 :])
-            return MSK_Address(adress_index=adress_index)
+            return MSK_Address(
+                adress_index=adress_index,
+                on_ram_data_cls=self.on_ram_data_cls
+            )
 
 
     def __eq__(self, other):
