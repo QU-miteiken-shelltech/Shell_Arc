@@ -105,6 +105,7 @@ class TableOpsUi(QWidget):
             )
             if reply == QMessageBox.StandardButton.No:
                 return
+        table_capture.set_field(field_name=self.field_combo.currentText())
         table_capture.write_to_disk(table_name=table_name)
         self.build_table_combo.clear()
         self.build_table_combo.addItems(

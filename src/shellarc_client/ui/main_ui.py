@@ -15,9 +15,12 @@ from shellarc_client.ui.data_ops.data_ops_ui import DataOpsUi
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, is_clean_mode: bool):
+    def __init__(self, 
+                 is_clean_mode: bool=False,
+                 is_inspect_mode: bool=False):
         super().__init__()
         self.is_clean_mode = is_clean_mode
+        self.is_inspect_mode = is_inspect_mode
 
         self.setWindowTitle("ShellArc 2027")
         self.setMinimumSize(950,650)
@@ -30,6 +33,13 @@ class MainWindow(QMainWindow):
         self._init_tabs()
 
     def _init_tabs(self):
+        if self.is_inspect_mode:
+            from shellarc_client.ui.inspect_ops.inspect_ops_ui import InspectOpsUi
+            print("INSPECT")
+            inspect_ops_tab = InspectOpsUi()
+            self.tab_widget.addTab(inspect_ops_tab, "Inspect")
+            return
+
         print("DATA")
         data_ops_tab = DataOpsUi()
         self.tab_widget.addTab(data_ops_tab, "Data")

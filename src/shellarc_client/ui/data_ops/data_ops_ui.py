@@ -1,4 +1,6 @@
+import builtins
 import os
+import itertools
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -20,6 +22,15 @@ from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
 
 from shellarc_client.engine.mskio import create_msk
+
+_INIT_LIST_BUILTINS = {
+    name: getattr(builtins, name)
+    for name in (
+        "range", "len", "list", "tuple", "set", "dict", "int", "float", "str", "bool",
+        "abs", "min", "max", "sum", "sorted", "reversed", "zip", "enumerate", "map", "filter",
+        "round",
+    )
+}
 
 
 class DataOpsUi(QWidget):
@@ -70,6 +81,9 @@ class DataOpsUi(QWidget):
         self.type_input = QLineEdit("")
         self.type_input.setPlaceholderText("New Type")
         type_creator_lo.addWidget(self.type_input)
+        self.type_literal_input = QLineEdit("")
+        self.type_literal_input.setPlaceholderText("Type literals")
+        type_creator_lo.addWidget(self.type_literal_input)
         type_creator_btn = QPushButton("Create")
         type_creator_btn.clicked.connect(self.create_type)
         type_creator_lo.addWidget(type_creator_btn)
@@ -93,15 +107,23 @@ class DataOpsUi(QWidget):
         property_creator_lo.addStretch(1)
         element_editing_lo.addWidget(property_box)
 
-        # Definition of the field that is currently selected (read-only)
+        # Definition of the field that is currently selected
+        # (Property / Type are read-only, "Initialization list" is editable)
         def_box = QGroupBox("Field definition")
         def_lo = QVBoxLayout(def_box)
-        self.field_def_table = QTableWidget(0, 2)
-        self.field_def_table.setHorizontalHeaderLabels(["Property", "Type"])
+        self.field_def_table = QTableWidget(0, 3)
+        self.field_def_table.setHorizontalHeaderLabels(["Property", "Type", "Initialization list"])
         self.field_def_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.field_def_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.field_def_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked
+            | QAbstractItemView.EditTrigger.EditKeyPressed
+            | QAbstractItemView.EditTrigger.AnyKeyPressed
+        )
         self.field_def_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         def_lo.addWidget(self.field_def_table)
+        apply_init_btn = QPushButton("Apply Initialization")
+        apply_init_btn.clicked.connect(self.apply_init)
+        def_lo.addWidget(apply_init_btn)
         element_editing_lo.addWidget(def_box, 1)
 
         self.lo.addLayout(element_editing_lo)
@@ -155,8 +177,15 @@ class DataOpsUi(QWidget):
         """defs: list of (property name, type name)"""
         self.field_def_table.setRowCount(len(defs))
         for r, (prop, typ) in enumerate(defs):
-            self.field_def_table.setItem(r, 0, QTableWidgetItem(prop))
-            self.field_def_table.setItem(r, 1, QTableWidgetItem(typ))
+            self._set_field_def_row(r, prop, typ)
+
+    def _set_field_def_row(self, row, prop, typ, init_text=""):
+        """Fill one row of field_def_table. Property / Type are read-only, Initialization list is editable."""
+        for col, text in ((0, prop), (1, typ)):
+            item = QTableWidgetItem(text)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.field_def_table.setItem(row, col, item)
+        self.field_def_table.setItem(row, 2, QTableWidgetItem(init_text))
 
     def set_table(self, columns, rows):
         """columns: property column labels; rows: list of (container id, [cell texts])."""
@@ -200,14 +229,25 @@ class DataOpsUi(QWidget):
         self.field_combo.clear()
         self.field_combo.addItems(MSK_Field.field_names())
         self.field_combo.setCurrentText(new_field_name)
-        self.create_field_input.setText("")
 
     def create_type(self) -> MSK_Type:
         new_type_name = self.type_input.text()
         if not new_type_name:
             return
+        new_type_literals_str = self.type_literal_input.text()
+        if new_type_literals_str:
+            try:
+                new_type_literals = eval(new_type_literals_str, {"__builtins__": _INIT_LIST_BUILTINS})
+            except Exception:
+                raise ValueError("Invalid initialization list")
+            if not isinstance(new_type_literals, list):
+                raise ValueError("Invalid initialization list")
+        else:
+            new_type_literals = None
+
         new_type = create_msk.create_type(
-            type_name=new_type_name
+            type_name=new_type_name,
+            type_literals=new_type_literals
         )
         self.property_type_combo.clear()
         self.property_type_combo.addItems([t.type_name for t in MSK_Type.list_types()])
@@ -233,8 +273,44 @@ class DataOpsUi(QWidget):
         )
         row_count = self.field_def_table.rowCount() + 1
         self.field_def_table.setRowCount(row_count)
-        self.field_def_table.setItem(row_count - 1, 0, QTableWidgetItem(new_property.prop_name))
-        self.field_def_table.setItem(row_count - 1, 1, QTableWidgetItem(new_property.prop_type.type_name))
+        self._set_field_def_row(row_count - 1, new_property.prop_name, new_property.prop_type.type_name)
+
+    def apply_init(self):
+        # {(prop_name, type_name): python list compiled from the "Initialization list" cell}
+        init_lists = {}
+        for r in range(self.field_def_table.rowCount()):
+            prop_item = self.field_def_table.item(r, 0)
+            type_item = self.field_def_table.item(r, 1)
+            init_item = self.field_def_table.item(r, 2)
+            text = init_item.text().strip() if init_item is not None else ""
+            if not text:                # nothing entered for this property -> skip
+                continue
+            try:
+                # builtins are restricted; comprehensions work because only the globals dict is passed
+                init_list = eval(text, {"__builtins__": _INIT_LIST_BUILTINS})
+            except Exception:
+                raise ValueError("Invalid initialization list")
+            if not isinstance(init_list, list):
+                raise ValueError("Invalid initialization list")
+            prop_type = MSK_Type(type_name=type_item.text())
+            prop = MSK_Property(
+                prop_type=prop_type,
+                prop_name=prop_item.text()
+            )
+            init_lists[prop] = [MSK_Address(adress_type=prop_type, adress_value=v) for v in init_list]
+        new_field_name = self.create_field_input.text()
+        if not new_field_name:
+            return
+        condition_items = [
+            list(zip(init_lists.keys(), values))
+            for values in itertools.product(*init_lists.values())
+        ]
+        for conditions in condition_items:
+            create_msk.create_by_filter(
+                field_name=new_field_name,
+                conditions=conditions,
+                is_override=False
+            )
 
     def on_field_changed(self, text=None):
         if text is None:

@@ -20,8 +20,9 @@ def main():
         )
         atexit.register(recover_space)
 
-    parser = argparse.ArgumentParser(description="ツールの説明文をここに書きます")
+    parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--clean", action="store_true", help="Clean start")
+    parser.add_argument("-i", "--inspect", action="store_true", help="Clean start")
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
@@ -41,7 +42,7 @@ def main():
         Qt.GlobalColor.white
     )
 
-    window = MainWindow(is_clean_mode=args.clean)
+    window = MainWindow(is_clean_mode=args.clean, is_inspect_mode=args.inspect)
     window.show()
     splash.finish(window)
 

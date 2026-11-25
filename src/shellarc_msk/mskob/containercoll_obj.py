@@ -115,7 +115,8 @@ class MSK_ContainerCollection:
 
     def filter_container(self,
                          conditions: list[tuple[MSK_Property, MSK_Address]],
-                         max_count: int=1
+                         max_count: int=1,
+                         do_make: bool=False
                          ) -> list[MSK_Container]:
         # local import: container_obj imports this module (circular)
         from shellarc_msk.mskob.container_obj import MSK_Container
@@ -145,14 +146,26 @@ class MSK_ContainerCollection:
 
         # no condition: every container matches
         selected = [i for i in all_ids if matched_ids is None or i in matched_ids]
+        max_count = min(max_count, len(selected))
 
-        return [
-            MSK_Container(
-                field_name=self.field_name,
-                container_index=MSK_HexIndex.from_bytes(idx)
-            )
-            for idx in selected[: max_count]
-        ]
+        if selected:
+            return [
+                MSK_Container(
+                    field_name=self.field_name,
+                    container_index=MSK_HexIndex.from_bytes(idx)
+                )
+                for idx in selected[: max_count]
+            ]
+        else:
+            if do_make:
+                return [
+                    MSK_Container(
+                        field_name=self.field_name,
+                        container_index=MSK_HexIndex(do_make=True)
+                    )
+                ]
+            else:
+                return []
 
     def request_container(self,
                           container_index: MSK_HexIndex
@@ -201,6 +214,23 @@ class MSK_ContainerCollection:
                      proceed_step: Optional[int]=None,
                      do_override: bool=False
                      ) -> MSK_Entity:
+        self._internal_write_entity(
+            container_index=container_index,
+            prop=prop,
+            adress=adress,
+            proceed_step=proceed_step,
+            do_override=do_override,
+            force_append=False
+        )
+
+    def _internal_write_entity(self,
+                     container_index: MSK_HexIndex,
+                     prop: MSK_Property,
+                     adress: Optional[MSK_Address]=None,
+                     proceed_step: Optional[int]=None,
+                     do_override: bool=False,
+                     force_append: bool=False
+                     ) -> MSK_Entity:
         if adress is None and proceed_step is None:
             raise MSKObject_QueryLogicError(
                 msg="An address or an proceed_step is required for writing an entity"
@@ -233,7 +263,7 @@ class MSK_ContainerCollection:
         pos = self.request_position(
             container_index=container_index,
             requesting_prop=prop
-        )
+        ) if not force_append else -1
         if pos == -1:
             if adress is None:
                 raise MSKObject_QueryLogicError(

@@ -116,7 +116,8 @@ class GraphOpsUi(QWidget):
         ]
 
     def switch_display_property(self):
-        if not self.available_metanodes:
+        if not hasattr(self, "available_metanodes") or not self.available_metanodes:
+            print("available_metanodes not created")
             return
         self.display_property = self.display_property_combo.currentData()
         for metanode in self.available_metanodes:

@@ -127,10 +127,20 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                      proceed_step: Optional[int]=None,
                      do_override: bool=False
                      ) -> MSK_Entity:
-        super().write_entity(
-            container_index=self.container_index,
-            prop=prop,
-            adress=adress,
-            proceed_step=proceed_step,
-            do_override=do_override
-        )
+        if len(self) == 0:
+            super()._internal_write_entity(
+                container_index=self.container_index,
+                prop=prop,
+                adress=adress,
+                proceed_step=proceed_step,
+                do_override=do_override,
+                force_append=True
+            )
+        else:
+            super().write_entity(
+                container_index=self.container_index,
+                prop=prop,
+                adress=adress,
+                proceed_step=proceed_step,
+                do_override=do_override
+            )
