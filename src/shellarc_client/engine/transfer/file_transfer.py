@@ -3,20 +3,23 @@ from pathlib import Path
 
 import requests
 
-from shellarc_client.engine.transfer.transfer_base import TransferBase
+from shellarc_client.engine.transfer.transfer_base import TransferBase, RemoteKeyPrefix
 
 class FileTransfer(TransferBase):
     def __init__(self):
         super().__init__()
 
     def upload_file(self,
-                    file_path: Path | str,
-                    r2_key: str
+                    local_file_path: Path | str,
+                    r2_key_prefix: RemoteKeyPrefix,
+                    r2_filename: str,
                     ) -> str:
         if isinstance(file_path, str):
             file_path = Path(file_path)
         content_type = mimetypes.guess_type(file_path.name)[0] or "appliction/octet-stream"
         ext = file_path.suffix.lstrip(".")
+        r2_filename = r2_filename.lstrip("/")
+        r2_key = f"{r2_key_prefix}{r2_filename}"
 
         resp = self.msk_post(
             url_path="/upload/presign",
@@ -47,14 +50,16 @@ class FileTransfer(TransferBase):
         return info["key"]
 
     def download_file(self,
+                      r2_key_prefix: RemoteKeyPrefix,
                       r2_filename: str,
-                      r2_key: str,
                       local_destination_path: Path | str
                       ) -> Path:
         if isinstance(local_destination_path, str):
             local_destination_path = Path(local_destination_path)
         if local_destination_path.is_dir():
             raise ValueError("User cannot download a file as a folder")
+        r2_filename = r2_filename.lstrip("/")
+        r2_key = f"{r2_key_prefix}{r2_filename}"
 
         resp = self.msk_post(
             url_path="/download/presign",

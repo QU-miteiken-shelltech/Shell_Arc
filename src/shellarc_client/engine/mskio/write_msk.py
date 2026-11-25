@@ -52,4 +52,44 @@ def update_info(
                 adress_value=new_value
             )
         )
+
+@overload 
+def proceed_info(
+    prop: MSK_Property,
+    proceed_step: int,
+    container: MSK_Container
+    ) -> None:
+    ...
+
+@overload 
+def proceed_info(
+    prop: MSK_Property,
+    proceed_step: int,
+    field_name: str,
+    container_index: MSK_HexIndex
+    ) -> None:
+    ...
+
+def proceed_info(
+        prop: MSK_Property,
+        proceed_step: int,
+        container: MSK_Container | None=None,
+        field_name: str | None=None,
+        container_index: MSK_HexIndex | None=None
+        ) -> None:
+    if container is None:
+        coll = MSK_ContainerCollection(field_name=field_name)
+        coll.write_entity(
+            container_index=container_index,
+            prop=prop,
+            proceed_step=proceed_step
+        )
+    else:
+        container.write_entity(
+            prop=prop,
+            adress=MSK_Address(
+                adress_type=prop.prop_type,
+                proceed_step=proceed_step
+            )
+        )
     

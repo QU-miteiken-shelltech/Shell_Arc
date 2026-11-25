@@ -9,8 +9,8 @@ headers : dict[str, dict] = {"vertical": {}, "horizontal": {}}
 cell_setters : list[dict] = []
 cell_expanders : list[dict] = []
 
-def set_field(_field_name: str):
-    field_name = _field_name
+def set_field(field_name: str):
+    field_name = field_name
 
 def set_header(is_vertical: bool,
                header_pos: int,

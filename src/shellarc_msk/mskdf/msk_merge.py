@@ -12,17 +12,22 @@ def merge_container_coll(field_name: str,
                          incoming_address_bin: bytearray,
                          incoming_address_offset_bin: bytearray):
     mskfs_pathsolver = MSKUT_PathSolver()
-    field_bin_file = mskfs_pathsolver.mskfs_space / f".msk_container_{field_name}"
     backup_dir = mskfs_pathsolver.mskfs_backup
-    shutil.copy2(src=field_bin_file, dst=backup_dir)
-    MSKUT_OnRamTmpData.adress_bin = incoming_address_bin
-    MSKUT_OnRamTmpData.adress_offset_bin = incoming_address_offset_bin
+    for src_file in [mskfs_pathsolver.mskfs_space / f".msk_container_{field_name}",
+                     mskfs_pathsolver.mskfs_space / f".msk_adress",
+                     mskfs_pathsolver.mskfs_space / f".msk_adress_offset"]:
+           shutil.copy2(src=src_file, dst=backup_dir)
 
     container_bin_diff_solver = MSKDF_DiffSolver(
         ours=MSKUT_OnRamMmap.container_bins[field_name],
         theirs=incoming_container_bin,
         chunk_size=48
     )
+    if container_bin_diff_solver.identity_diff():
+        return
+    
+    MSKUT_OnRamTmpData.adress_bin = incoming_address_bin
+    MSKUT_OnRamTmpData.adress_offset_bin = incoming_address_offset_bin
     parallel_diffs = container_bin_diff_solver.parallel_diff(
         ignore_exceeding="theirs"
     )

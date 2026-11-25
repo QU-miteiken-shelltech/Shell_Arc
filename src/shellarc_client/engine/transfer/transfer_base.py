@@ -1,9 +1,15 @@
 import os
+from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 import requests
+
+class RemoteKeyPrefix(StrEnum):
+    PROJECT_FILE = "/production/stage/"
+    DATA_BINARY = "/production/data/"
 
 class TransferBase:
     def __init__(self):
