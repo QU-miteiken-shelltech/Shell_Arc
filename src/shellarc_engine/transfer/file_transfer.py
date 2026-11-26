@@ -3,7 +3,7 @@ from pathlib import Path
 
 import requests
 
-from shellarc_client.engine.transfer.transfer_base import TransferBase, RemoteKeyPrefix
+from shellarc_engine.transfer.transfer_base import TransferBase, RemoteKeyPrefix
 
 class FileTransfer(TransferBase):
     def __init__(self):

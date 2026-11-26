@@ -3,7 +3,7 @@ from typing import Optional
 import time
 import shutil
 
-from shellarc_client.engine.config.read_config import ReadClientConfig
+from shellarc_engine.config.read_config import ReadClientConfig
 
 mounted_dir = ReadClientConfig.get_mounted_dir()
 

@@ -13,8 +13,8 @@ from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_client.ui.task_ops.task_display_chip import TaskDisplayChip
 from shellarc_client.ui.task_ops.task_register_dialog import RegisterTaskDialog
 from shellarc_client.ui.task_ops.call_dialog import TaskCallDialog
-from shellarc_client.engine.mount import mount_file_manager
-from shellarc_client.engine.config.read_config import ReadClientConfig
+from shellarc_engine.mount import mount_file_manager
+from shellarc_engine.config.read_config import ReadClientConfig
 
 
 class TaskOpsUi(QWidget):

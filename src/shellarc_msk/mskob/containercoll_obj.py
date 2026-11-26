@@ -221,7 +221,7 @@ class MSK_ContainerCollection:
             prop=prop,
             adress=adress,
             proceed_step=proceed_step,
-            is_absolute_step = False,
+            is_absolute_step=is_absolute_step,
             do_override=do_override,
             force_append=False
         )
@@ -299,12 +299,12 @@ class MSK_ContainerCollection:
                 if is_absolute_step:
                     if current_literal_index == proceed_step:
                         return
+                    new_literal_index = proceed_step
                     if proceed_step >= len(type_literals):
                         raise MSKObject_QueryLogicError(
                             msg=f"Literal out of range (literal at index {new_literal_index} is requested "
                             f"but the literal list only has a length of {len(type_literals)})"
                         )
-                    new_literal_index = proceed_step
                 else:
                     new_literal_index = current_literal_index + proceed_step
                     if new_literal_index >= len(type_literals) or new_literal_index < 0:

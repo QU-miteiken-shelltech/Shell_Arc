@@ -2,7 +2,7 @@ import importlib
 import sys
 from pathlib import Path
 
-from shellarc_client.engine.config.read_config import ReadClientConfig
+from shellarc_engine.config.read_config import ReadClientConfig
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
 def available_actions() -> list[str]:

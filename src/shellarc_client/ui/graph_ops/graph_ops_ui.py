@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from shellarc_client.ui.graph_ops.node_editor import MSKDN_NodeScene
-from shellarc_client.engine.mskio import read_msk
+from shellarc_engine.mskio import read_msk
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskdn.metanode import MSKDN_Metanode

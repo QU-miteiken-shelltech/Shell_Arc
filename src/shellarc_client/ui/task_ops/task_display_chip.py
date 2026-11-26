@@ -13,8 +13,8 @@ from PySide6.QtCore import (
 from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.type_obj import MSK_Type
-from shellarc_client.engine.config.read_config import ReadClientConfig
-from shellarc_client.engine.mount import mount_file_manager
+from shellarc_engine.config.read_config import ReadClientConfig
+from shellarc_engine.mount import mount_file_manager
 from shellarc_client.ui.task_ops.tag_creator import TagCreatorDialog, CustomTag
 
 class FileHyperline(QLabel):

@@ -8,8 +8,8 @@ from PySide6.QtWidgets import (
 from shellarc_client.ui.table_ops.table_cells import TableCell
 from shellarc_client.ui.table_ops.table_view import MSK_TableView
 from shellarc_client.ui.table_ops.build_table_from_file import TableBuilder
-from shellarc_client.engine.config.read_config import ReadClientConfig
-from shellarc_client.engine.tables import table_capture
+from shellarc_engine.config.read_config import ReadClientConfig
+from shellarc_engine.tables import table_capture
 from shellarc_msk.mskob.field_obj import MSK_Field
 
 

@@ -19,7 +19,7 @@ from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
 
-from shellarc_client.engine.mskio import create_msk
+from shellarc_engine.mskio import create_msk
 
 _INIT_LIST_BUILTINS = {
     name: getattr(builtins, name)

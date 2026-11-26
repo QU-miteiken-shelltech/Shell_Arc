@@ -12,8 +12,8 @@ from shellarc_msk.mskdn.node import MSKDN_VNode
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_client.ui.table_ops.table_cells import TableCell
-from shellarc_client.engine.mskio import read_msk
-from shellarc_client.engine.tables import table_capture
+from shellarc_engine.mskio import read_msk
+from shellarc_engine.tables import table_capture
 
 class HeaderEditDialog(QDialog):
     def __init__(self, 

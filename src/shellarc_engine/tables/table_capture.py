@@ -2,7 +2,7 @@ from typing import Optional
 import json
 
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
-from shellarc_client.engine.config.read_config import ReadClientConfig
+from shellarc_engine.config.read_config import ReadClientConfig
 
 cls_field_name : str | None = None
 headers : dict[str, dict] = {"vertical": {}, "horizontal": {}}

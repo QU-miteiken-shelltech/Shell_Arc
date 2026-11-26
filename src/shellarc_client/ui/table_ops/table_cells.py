@@ -20,7 +20,7 @@ from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.entity_obj import MSK_Entity
-from shellarc_client.engine.mskio import read_msk
+from shellarc_engine.mskio import read_msk
 if TYPE_CHECKING:
     from shellarc_client.ui.table_ops.table_ops_ui import MSK_TableView
 

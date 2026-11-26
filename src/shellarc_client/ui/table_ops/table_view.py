@@ -16,8 +16,8 @@ from shellarc_client.ui.table_ops.table_header import HeaderEditDialog
 
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskdn.hypergraph import MSKDN_Hypergraph
-from shellarc_client.engine.mskio import read_msk
-from shellarc_client.engine.tables import table_capture
+from shellarc_engine.mskio import read_msk
+from shellarc_engine.tables import table_capture
 
 
 class MSK_TableView(QTableWidget):

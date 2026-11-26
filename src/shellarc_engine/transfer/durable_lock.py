@@ -1,6 +1,6 @@
 from typing import Optional
 
-from shellarc_client.engine.transfer.transfer_base import TransferBase
+from shellarc_engine.transfer.transfer_base import TransferBase
 
 class DurableLock(TransferBase):
     def __init__(self):
