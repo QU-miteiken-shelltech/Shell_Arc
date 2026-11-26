@@ -14,10 +14,10 @@ class FileTransfer(TransferBase):
                     r2_key_prefix: RemoteKeyPrefix,
                     r2_filename: str,
                     ) -> str:
-        if isinstance(file_path, str):
-            file_path = Path(file_path)
-        content_type = mimetypes.guess_type(file_path.name)[0] or "appliction/octet-stream"
-        ext = file_path.suffix.lstrip(".")
+        if isinstance(local_file_path, str):
+            local_file_path = Path(local_file_path)
+        content_type = mimetypes.guess_type(local_file_path.name)[0] or "appliction/octet-stream"
+        ext = local_file_path.suffix.lstrip(".")
         r2_filename = r2_filename.lstrip("/")
         r2_key = f"{r2_key_prefix}{r2_filename}"
 
@@ -32,7 +32,7 @@ class FileTransfer(TransferBase):
         resp.raise_for_status()
         info = resp.json()
 
-        with file_path.open("rb") as f:
+        with local_file_path.open("rb") as f:
             put = requests.put(
                 url=info["url"],
                 data=f,
@@ -60,6 +60,7 @@ class FileTransfer(TransferBase):
             raise ValueError("User cannot download a file as a folder")
         r2_filename = r2_filename.lstrip("/")
         r2_key = f"{r2_key_prefix}{r2_filename}"
+        print(r2_key)
 
         resp = self.msk_post(
             url_path="/download/presign",

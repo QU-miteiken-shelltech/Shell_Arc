@@ -1,6 +1,6 @@
 import base64
 import shutil
-from typing import Optional
+from typing import Optional, Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -16,6 +16,8 @@ from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_msk.mskdf.msk_merge import merge_container_coll
 
+MYNAME = "midukiみづき"
+
 def _encode_nonascii(string: str):
     if not string.isascii():
         rtn_str = base64.b64encode(string.encode("utf-8")).decode("ascii")
@@ -23,6 +25,7 @@ def _encode_nonascii(string: str):
     else:
         rtn_str = string
     rtn_str.replace("_", "+")
+    rtn_str.replace("/", "*")
     return rtn_str
 
 def r2_filename_factory(cut_num_indicator: str,
@@ -30,6 +33,7 @@ def r2_filename_factory(cut_num_indicator: str,
                         person: str,
                         ext: str
                         ):
+    print(f"@@{cut_num_indicator} / {component} / {person}")
     ext = ext.lstrip(".")
     r2_filename = (
         f"{_encode_nonascii(cut_num_indicator)}_"
@@ -40,7 +44,8 @@ def r2_filename_factory(cut_num_indicator: str,
     )
     return r2_filename
 
-def sync_data(field_name: str):
+def sync_data(field_name: str,
+              writing_operation: Optional[Callable]=None):
     if not NetworkUtils.check_url_connection():
         raise ValueError("Internet not connected")
     
@@ -58,17 +63,23 @@ def sync_data(field_name: str):
             local_destination_path=str(MSKUT_PathSolver().mskfs_tmp / bin_filename)   
             file_transfer.download_file(
                 r2_key_prefix=RemoteKeyPrefix.DATA_BINARY,
-                r2_filename=bin_filename,
+                r2_filename=bin_filename.lstrip("."),
                 local_destination_path=local_destination_path   
             )
             with open(local_destination_path, "rb") as f:
                 bin_dict[bin_filename] = bytearray(f.read())
-        merge_container_coll(
+        print("Start merge")
+        merge_result = merge_container_coll(
             field_name=field_name,
             incoming_container_bin=bin_dict[f".msk_container_{field_name}"],
             incoming_address_bin=bin_dict[".msk_adress"],
             incoming_address_offset_bin=bin_dict[".msk_adress_offset"]
         )
+
+        if writing_operation is None or not callable(writing_operation):
+            return
+        writing_operation()
+        print("Start overwrite")
         try:
             if (lock.durable_locker.match_token(token=lock.token) and
                 lock.durable_locker.query_lock_info().get("remainingMs", 0.0) > 20.0):
@@ -77,7 +88,7 @@ def sync_data(field_name: str):
                     file_transfer.upload_file(
                         local_file_path=local_path,
                         r2_key_prefix=RemoteKeyPrefix.DATA_BINARY,
-                        r2_filename=bin_filename
+                        r2_filename=bin_filename.lstrip(".")
                     )     
             else:
                 raise Exception
@@ -87,6 +98,7 @@ def sync_data(field_name: str):
                 backup_path = MSKUT_PathSolver().mskfs_backup / bin_filename
                 local_main_dir = MSKUT_PathSolver().mskfs_space
                 shutil.copy2(src=backup_path, dst=local_main_dir)
+                print("recovered")
             return
     
 def put_to_storage(affiliated_container: MSK_Container,
@@ -96,35 +108,44 @@ def put_to_storage(affiliated_container: MSK_Container,
     if not local_file_path.exists():
         raise ValueError(f"File to upload ({local_file_path}) not exist")
     field_name=affiliated_container.field_name
-    sync_data(field_name=field_name)
 
-    affiliated_container = MSK_Container(
-        field_name=field_name,
-        container_index=affiliated_container.container_index
-    )
     r2_filename = r2_filename_factory(
         cut_num_indicator=affiliated_container.request_entity(
-            MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "cut_num"))),
+            MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "cut_num"))).address.value,
         component=affiliated_container.request_entity(
-            MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "component"))),
-        person=affiliated_container.request_entity(
-            MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "person"))),
+            MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "work"))).address.value,
+        person=MYNAME,
         ext=local_file_path.suffix
     )
+    def write_on_pulled():
+        print("start_upload_file")
+        print(f"r2filename {r2_filename}")
+
+        write_msk.update_info(
+            prop=MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "person")),
+            new_value=MYNAME,
+            container=affiliated_container
+        )
+        print(132)
+        write_msk.update_info(
+            prop=MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "file")),
+            new_value=r2_filename,
+            container=affiliated_container
+        )
+        print(138)
+        write_msk.proceed_info(
+            prop=MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "progress")),
+            proceed_step=1,
+            container=affiliated_container
+        )
+
+    print("start_sync_data")
     FileTransfer().upload_file(
         local_file_path=local_file_path,
         r2_key_prefix=RemoteKeyPrefix.PROJECT_FILE,
         r2_filename=r2_filename
     )
-    write_msk.update_info(
-        prop=MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "file")),
-        new_value=r2_filename,
-        container=affiliated_container
-    )
-    write_msk.proceed_info(
-        prop=MSK_Property(prop_index=ReadClientConfig.get_config_item("indicators_settings", "progress")),
-        proceed_step=1
-    )
+    sync_data(field_name=field_name, writing_operation=write_on_pulled)
         
 def get_from_storage(affiliated_container: MSK_Container,
                      send_to_mount: bool=True,

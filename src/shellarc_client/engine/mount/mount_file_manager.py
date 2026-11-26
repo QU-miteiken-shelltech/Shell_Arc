@@ -40,9 +40,16 @@ def get_tag_info(file_path) -> Optional[dict[str, str]]:
     tag_info = ReadClientConfig.get_config_item("managed_files", "tracking", file_path, "custom_tags")
     return tag_info
 
-def write_tag_info(file_path: str, new_tag_title: str, new_tag_expression: str):
+def write_tag_info(
+        file_path: str, 
+        new_tag_title: str, 
+        new_tag_expression: str,
+        new_tag_basecolor: str):
     ReadClientConfig.write_config_item(
-        new_tag_expression,
+        {
+            "expression" : new_tag_expression,
+            "base_color" : new_tag_basecolor
+        },
         "managed_files", "tracking", file_path, "custom_tags", new_tag_title
     )
 

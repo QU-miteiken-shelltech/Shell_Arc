@@ -14,9 +14,6 @@ MAX_LINES = 20000   # a QLabel with a huge text freezes the UI; longer files are
 PAGE_SLOTS = 120000  # slots per page of '.msk_adress_offset' (8 bytes each)
 
 
-# ----------------------------------------------------------------------------------------------
-# Decoding (no Qt): bytes -> list of lines, each line = elements joined by a space
-# ----------------------------------------------------------------------------------------------
 def _hex(b: bytes) -> str:
     return "0x" + b.hex()
 

@@ -87,9 +87,6 @@ def proceed_info(
     else:
         container.write_entity(
             prop=prop,
-            adress=MSK_Address(
-                adress_type=prop.prop_type,
-                proceed_step=proceed_step
-            )
+            proceed_step=proceed_step
         )
     

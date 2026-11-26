@@ -12,7 +12,9 @@ from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.hexindex_obj import MSK_HexIndex
 from shellarc_client.ui.task_ops.task_display_chip import TaskDisplayChip
 from shellarc_client.ui.task_ops.task_register_dialog import RegisterTaskDialog
+from shellarc_client.ui.task_ops.call_dialog import TaskCallDialog
 from shellarc_client.engine.mount import mount_file_manager
+from shellarc_client.engine.transfer import workflows
 from shellarc_client.engine.config.read_config import ReadClientConfig
 
 
@@ -138,7 +140,7 @@ class TaskOpsUi(QWidget):
     def mount_status_changed(self, 
                              operation_type: str, 
                              file_path: str, 
-                             affiliation: str | None
+                             affiliation: MSK_Container | None
                              ) -> None:
         try:
             if operation_type == "TRACK":
@@ -159,7 +161,20 @@ class TaskOpsUi(QWidget):
                     info={"remove": [file_path]}
                 ) 
             elif operation_type == "CALL":
-                pass
+                TaskCallDialog(
+                    affiliation=affiliation,
+                    parent=self
+                ).exec()
+                return
+                if affiliation is None:
+                    raise ValueError(
+                        "Files without an affiliated MSK_Container is not callable "
+                    )
+                print("StartWF")
+                workflows.put_to_storage(
+                    affiliated_container=affiliation,
+                    local_file_path=file_path
+                )
             else:
                 raise ValueError("Unknown operation type")
         except Exception as e:

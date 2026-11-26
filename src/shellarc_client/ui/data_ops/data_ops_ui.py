@@ -13,11 +13,9 @@ from PySide6.QtWidgets import (
 
 from shellarc_msk.mskob.field_obj import MSK_Field
 from shellarc_msk.mskob.containercoll_obj import MSK_ContainerCollection
-from shellarc_msk.mskob.container_obj import MSK_Container
 from shellarc_msk.mskob.property_obj import MSK_Property
 from shellarc_msk.mskob.adress_obj import MSK_Address
 from shellarc_msk.mskob.type_obj import MSK_Type
-from shellarc_msk.mskob.entity_obj import MSK_Entity
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 
 

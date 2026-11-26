@@ -17,11 +17,15 @@ from shellarc_msk.mskob.type_obj import MSK_Type
 from shellarc_client.engine.mount import mount_file_manager
 
 class CustomTag(QLabel):
-    def __init__(self, title, expression, parent=None):
+    def __init__(self, 
+                 title: str, 
+                 base_color: Optional[str]="#16a085",
+                 expression: Optional[str]=None, 
+                 parent=None):
         super().__init__(parent=parent, text=title)
         self.setStyleSheet(
             "QLabel {"
-            "   background-color: #16a085;"
+            f"   background-color: {base_color};"
             "   color: white;"
             "   padding: 2px;"
             "   font-size: 14px;"
@@ -29,7 +33,9 @@ class CustomTag(QLabel):
         )
         self.title = title
         self.expression = expression
-        self.eval_expressions()
+        self.base_color = base_color
+        if self.expression is not None:
+            self.eval_expressions()
 
     def eval_expressions(self):
         working_expression = self.expression
@@ -54,13 +60,15 @@ class CustomTag(QLabel):
                 if working_expression:  
                     working_expression = working_expression.replace(func_name, f"self.{func_name}")
             exec(working_expression)
-            print(working_expression)
         except Exception as e:
-            QMessageBox.warning(
-                self,
-                "Expression invalid", 
-                f"The tag expression of tag {self.title} is invalid\nError : {e}"
-            )
+            pass
+            # QMessageBox.warning(
+            #     self,
+            #     "Expression invalid", 
+            #     f"The tag expression of tag {self.title} is invalid\nError : {e}"
+            # )
+        finally:
+            print(working_expression)
 
     def set_color(self, hex_code: str):
         self.setStyleSheet(
@@ -130,6 +138,7 @@ class TagCreatorDialog(QDialog):
         base_color_lo = QHBoxLayout()
         base_color_label = QLabel("Base color : ")
         base_color_lo.addWidget(base_color_label)
+        self.base_color = "#16a085"
         self.base_color_btn = QPushButton("Select")
         self.base_color_btn.clicked.connect(
             lambda: self.open_color_dialog(target_object=self.base_color_btn)
@@ -207,13 +216,14 @@ class TagCreatorDialog(QDialog):
 
     def open_color_dialog(self, target_object: Optional[Any] = None):
         color: QColor = QColorDialog.getColor(
-            QColor("#3498db"),
+            QColor("#16a085"),
             self,
             "Color picker"
         )
         if color.isValid():
             hex_code = color.name(QColor.NameFormat.HexArgb)
             if target_object is not None:
+                self.base_color = hex_code 
                 rgba = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
                 target_object.setText(hex_code)
                 target_object.setStyleSheet(
@@ -238,7 +248,8 @@ class TagCreatorDialog(QDialog):
         mount_file_manager.write_tag_info(
             file_path=self.parentWidget().file_path,
             new_tag_title=self.title,
-            new_tag_expression=self.expression
+            new_tag_expression=self.expression,
+            new_tag_basecolor=self.base_color
         )
         self.accept()
 

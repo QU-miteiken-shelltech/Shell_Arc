@@ -4,13 +4,14 @@ import json
 from shellarc_msk.mskut.path_solver import MSKUT_PathSolver
 from shellarc_client.engine.config.read_config import ReadClientConfig
 
-field_name : str | None = None
+cls_field_name : str | None = None
 headers : dict[str, dict] = {"vertical": {}, "horizontal": {}}
 cell_setters : list[dict] = []
 cell_expanders : list[dict] = []
 
 def set_field(field_name: str):
-    field_name = field_name
+    global cls_field_name
+    cls_field_name = field_name
 
 def set_header(is_vertical: bool,
                header_pos: int,
@@ -53,7 +54,8 @@ def set_cell_expanders(arrow_info: dict):
     cell_expanders.append(cell_expander)
 
 def clear_captures():
-    field_name = None
+    global cls_field_name, headers, cell_setters, cell_expanders
+    cls_field_name = None
     headers = {"vertical": {}, "horizontal": {}}
     cell_setters = []
     cell_expanders = []
@@ -61,7 +63,7 @@ def clear_captures():
 def write_to_disk(table_name: str):
     table_file_path = MSKUT_PathSolver().mskfs_client / f"table_{table_name}.json"
     table_dict = {
-        "field": field_name,
+        "field": cls_field_name,
         "headers": headers,
         "cell_setters": cell_setters,
         "cell_expanders": cell_expanders

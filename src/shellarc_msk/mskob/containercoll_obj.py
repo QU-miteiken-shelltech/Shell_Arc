@@ -214,7 +214,7 @@ class MSK_ContainerCollection:
                      proceed_step: Optional[int]=None,
                      do_override: bool=False
                      ) -> MSK_Entity:
-        self._internal_write_entity(
+        return self._internal_write_entity(
             container_index=container_index,
             prop=prop,
             adress=adress,
@@ -264,6 +264,7 @@ class MSK_ContainerCollection:
             container_index=container_index,
             requesting_prop=prop
         ) if not force_append else -1
+        
         if pos == -1:
             if adress is None:
                 raise MSKObject_QueryLogicError(
@@ -305,7 +306,7 @@ class MSK_ContainerCollection:
              )
             self.container_bin[pos : pos + 48] = new_entity_binary
             self._write_container_binaries()
-
+            
         return MSK_Entity(entity_chunk=new_entity_binary)
 
     def _write_container_binaries(self):

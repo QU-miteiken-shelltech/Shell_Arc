@@ -81,10 +81,11 @@ class TaskDisplayChip(QWidget):
             tag_info = mount_file_manager.get_tag_info(file_path=self.file_path)
             if tag_info:
                 self.custom_tag_lo.addSpacing(8)
-                for tag_title, tag_expression in mount_file_manager.get_tag_info(file_path=self.file_path).items():
+                for tag_title, tag_config in mount_file_manager.get_tag_info(file_path=self.file_path).items():
                     new_tag = CustomTag(
                         title=tag_title,
-                        expression=tag_expression,
+                        base_color = tag_config.get("base_color", "#16a085"),
+                        expression=tag_config.get("expression", None),
                         parent=self
                     )
                     self.custom_tag_lo.addWidget(new_tag)
@@ -181,7 +182,7 @@ class TaskDisplayChip(QWidget):
         self.mount_status_changed_sig.emit(
             operation_type, 
             self.file_path,
-            str(self.affiliated_container.container_index) if self.affiliated_container is not None else None
+            self.affiliated_container if self.affiliated_container is not None else None
         )
 
     def browse_file_to_bind(self):

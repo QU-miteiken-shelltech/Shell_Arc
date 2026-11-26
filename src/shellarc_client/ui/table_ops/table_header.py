@@ -95,6 +95,7 @@ class HeaderEditDialog(QDialog):
             max_count=max_count,
             do_sort_by_num=do_sort_by_num
         )
+        initial_start_pos = start_pos
         for _ in range(repetition):
             next_start_pos = header_builder.write_header(
                 header_pos=self.logical_index,
@@ -107,7 +108,7 @@ class HeaderEditDialog(QDialog):
             is_vertical=self.is_vertical,
             header_pos=self.logical_index,
             repetition=repetition,
-            start_pos=start_pos,
+            start_pos=initial_start_pos + 1,
             max_count=max_count,
             step=step,
             key_property=self.property_combo.currentText(),

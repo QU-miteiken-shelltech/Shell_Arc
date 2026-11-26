@@ -84,7 +84,7 @@ class MSKDF_DiffSolver:
             return []
         
         exceeding_start = min(our_len, their_len)
-        ba = self.ours[exceeding_start :] if exceeding == "ours" else ba = self.theirs[exceeding_start :]
+        ba = self.ours[exceeding_start :] if exceeding == "ours" else self.theirs[exceeding_start :]
         return (
             [bytes(ba[i : i + self.chunk_size]) 
              for i in range(0, len(ba), self.chunk_size)] 

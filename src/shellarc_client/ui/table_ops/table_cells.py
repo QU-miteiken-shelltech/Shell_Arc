@@ -176,9 +176,6 @@ class CellEditDialog(QDialog):
             do_override=True
         )
         self.cell.metanode[cell_index_in_metanode].entity = new_entity
-        print(f"container_index = {new_entity.container_index}"
-              f"property = {new_entity.prop.prop_name}"
-              f"address = {new_entity.address.value}")
         self.init_items_view()
 
 
