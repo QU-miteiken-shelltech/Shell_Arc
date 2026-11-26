@@ -1,8 +1,6 @@
-import urllib.request
-import urllib.error
 import socket
 
-class NetworkUtils:
+class TransferUtils:
     @staticmethod
     def check_url_connection() -> bool:
         try:

@@ -203,6 +203,7 @@ class MSK_ContainerCollection:
                      container_index: MSK_HexIndex,
                      prop: MSK_Property,
                      proceed_step: int,
+                     is_absolute_step: bool=False,
                      do_override: bool=False
                      ) -> MSK_Entity:
         ...
@@ -212,6 +213,7 @@ class MSK_ContainerCollection:
                      prop: MSK_Property,
                      adress: Optional[MSK_Address]=None,
                      proceed_step: Optional[int]=None,
+                     is_absolute_step: bool=False,
                      do_override: bool=False
                      ) -> MSK_Entity:
         return self._internal_write_entity(
@@ -219,6 +221,7 @@ class MSK_ContainerCollection:
             prop=prop,
             adress=adress,
             proceed_step=proceed_step,
+            is_absolute_step = False,
             do_override=do_override,
             force_append=False
         )
@@ -228,6 +231,7 @@ class MSK_ContainerCollection:
                      prop: MSK_Property,
                      adress: Optional[MSK_Address]=None,
                      proceed_step: Optional[int]=None,
+                     is_absolute_step: bool=False,
                      do_override: bool=False,
                      force_append: bool=False
                      ) -> MSK_Entity:
@@ -292,12 +296,22 @@ class MSK_ContainerCollection:
                         f"is of type {prop.prop_type.type_name} which has no literals"
                     )
                 current_literal_index = type_literals.index(current_address_index)
-                new_literal_index = current_literal_index + proceed_step
-                if new_literal_index >= len(type_literals) or new_literal_index < 0:
-                    raise MSKObject_QueryLogicError(
-                        msg=f"Literal out of range (literal at index {new_literal_index} is queried "
-                        f"but the literal list only has a length of {len(type_literals)})"
-                    )
+                if is_absolute_step:
+                    if current_literal_index == proceed_step:
+                        return
+                    if proceed_step >= len(type_literals):
+                        raise MSKObject_QueryLogicError(
+                            msg=f"Literal out of range (literal at index {new_literal_index} is requested "
+                            f"but the literal list only has a length of {len(type_literals)})"
+                        )
+                    new_literal_index = proceed_step
+                else:
+                    new_literal_index = current_literal_index + proceed_step
+                    if new_literal_index >= len(type_literals) or new_literal_index < 0:
+                        raise MSKObject_QueryLogicError(
+                            msg=f"Literal out of range (literal at index {new_literal_index} is requested "
+                            f"but the literal list only has a length of {len(type_literals)})"
+                        )
                 adress = MSK_Address(adress_index=type_literals[new_literal_index]) 
             new_entity_binary = (
                 container_index.to_bytes() + 

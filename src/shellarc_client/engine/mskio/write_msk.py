@@ -57,6 +57,7 @@ def update_info(
 def proceed_info(
     prop: MSK_Property,
     proceed_step: int,
+    is_absolute_step: bool,
     container: MSK_Container
     ) -> None:
     ...
@@ -65,6 +66,7 @@ def proceed_info(
 def proceed_info(
     prop: MSK_Property,
     proceed_step: int,
+    is_absolute_step: bool,
     field_name: str,
     container_index: MSK_HexIndex
     ) -> None:
@@ -73,6 +75,7 @@ def proceed_info(
 def proceed_info(
         prop: MSK_Property,
         proceed_step: int,
+        is_absolute_step: bool=False,
         container: MSK_Container | None=None,
         field_name: str | None=None,
         container_index: MSK_HexIndex | None=None
@@ -82,11 +85,13 @@ def proceed_info(
         coll.write_entity(
             container_index=container_index,
             prop=prop,
-            proceed_step=proceed_step
+            proceed_step=proceed_step,
+            is_absolute_step=is_absolute_step
         )
     else:
         container.write_entity(
             prop=prop,
-            proceed_step=proceed_step
+            proceed_step=proceed_step,
+            is_absolute_step=is_absolute_step,
         )
     

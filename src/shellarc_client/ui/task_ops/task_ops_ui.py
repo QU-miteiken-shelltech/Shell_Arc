@@ -14,7 +14,6 @@ from shellarc_client.ui.task_ops.task_display_chip import TaskDisplayChip
 from shellarc_client.ui.task_ops.task_register_dialog import RegisterTaskDialog
 from shellarc_client.ui.task_ops.call_dialog import TaskCallDialog
 from shellarc_client.engine.mount import mount_file_manager
-from shellarc_client.engine.transfer import workflows
 from shellarc_client.engine.config.read_config import ReadClientConfig
 
 
@@ -161,20 +160,15 @@ class TaskOpsUi(QWidget):
                     info={"remove": [file_path]}
                 ) 
             elif operation_type == "CALL":
-                TaskCallDialog(
-                    affiliation=affiliation,
-                    parent=self
-                ).exec()
-                return
                 if affiliation is None:
                     raise ValueError(
-                        "Files without an affiliated MSK_Container is not callable "
+                        "Files without an affiliated MSK_Container is not subjected to MSK Call Operation "
                     )
-                print("StartWF")
-                workflows.put_to_storage(
-                    affiliated_container=affiliation,
-                    local_file_path=file_path
-                )
+                TaskCallDialog(
+                    affiliation=affiliation,
+                    file_path=file_path,
+                    parent=self
+                ).exec()
             else:
                 raise ValueError("Unknown operation type")
         except Exception as e:

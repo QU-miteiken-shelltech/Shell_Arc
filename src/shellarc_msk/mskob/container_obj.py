@@ -125,6 +125,7 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                      prop: MSK_Property,
                      adress: Optional[MSK_Address]=None,
                      proceed_step: Optional[int]=None,
+                     is_absolute_step: bool=False,
                      do_override: bool=False
                      ) -> MSK_Entity:
         if len(self) == 0:
@@ -133,6 +134,7 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                 prop=prop,
                 adress=adress,
                 proceed_step=proceed_step,
+                is_absolute_step=is_absolute_step,
                 do_override=do_override,
                 force_append=True
             )
@@ -142,5 +144,6 @@ class MSK_Container(UserList[MSK_Entity], MSK_ContainerCollection):
                 prop=prop,
                 adress=adress,
                 proceed_step=proceed_step,
+                is_absolute_step=is_absolute_step,
                 do_override=do_override
             )

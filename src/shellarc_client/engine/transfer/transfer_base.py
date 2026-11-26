@@ -10,6 +10,8 @@ import requests
 class RemoteKeyPrefix(StrEnum):
     PROJECT_FILE = "production/stage/"
     DATA_BINARY = "production/data/"
+    DELIVERIES = "production/delivery/"
+    NOTIFICATIONS = "production/notice/"
 
 class TransferBase:
     def __init__(self):
